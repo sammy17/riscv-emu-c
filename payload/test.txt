@@ -1,0 +1,53 @@
+
+K_1.elf:     file format elf32-littleriscv
+
+
+Disassembly of section .text:
+
+00010000 <main>:
+   10000:	ff010113          	addi	sp,sp,-16
+   10004:	00812623          	sw	s0,12(sp)
+   10008:	01010413          	addi	s0,sp,16
+   1000c:	e00017b7          	lui	a5,0xe0001
+   10010:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10014:	06800713          	li	a4,104
+   10018:	00e7a023          	sw	a4,0(a5)
+   1001c:	e00017b7          	lui	a5,0xe0001
+   10020:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10024:	06500713          	li	a4,101
+   10028:	00e7a023          	sw	a4,0(a5)
+   1002c:	e00017b7          	lui	a5,0xe0001
+   10030:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10034:	06c00713          	li	a4,108
+   10038:	00e7a023          	sw	a4,0(a5)
+   1003c:	e00017b7          	lui	a5,0xe0001
+   10040:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10044:	06c00713          	li	a4,108
+   10048:	00e7a023          	sw	a4,0(a5)
+   1004c:	e00017b7          	lui	a5,0xe0001
+   10050:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10054:	03000713          	li	a4,48
+   10058:	00e7a023          	sw	a4,0(a5)
+   1005c:	e00017b7          	lui	a5,0xe0001
+   10060:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10064:	02100713          	li	a4,33
+   10068:	00e7a023          	sw	a4,0(a5)
+   1006c:	e00017b7          	lui	a5,0xe0001
+   10070:	03078793          	addi	a5,a5,48 # e0001030 <main+0xdfff1030>
+   10074:	00a00713          	li	a4,10
+   10078:	00e7a023          	sw	a4,0(a5)
+   1007c:	0000006f          	j	1007c <main+0x7c>
+
+Disassembly of section .comment:
+
+00000000 <.comment>:
+   0:	3a434347          	fmsub.d	ft6,ft6,ft4,ft7,rmm
+   4:	2820                	fld	fs0,80(s0)
+   6:	29554e47          	fmsub.s	ft8,fa0,fs5,ft5,rmm
+   a:	3720                	fld	fs0,104(a4)
+   c:	312e                	fld	ft2,232(sp)
+   e:	312e                	fld	ft2,232(sp)
+  10:	3220                	fld	fs0,96(a2)
+  12:	3130                	fld	fa2,96(a0)
+  14:	30353037          	lui	zero,0x30353
+  18:	0039                	c.addi	zero,14
