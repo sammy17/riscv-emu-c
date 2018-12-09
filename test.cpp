@@ -38,6 +38,13 @@ int main(){
 
     cout << b1 << endl;
 
+    uint8_t c = 0b10110100;
+
+    bitset<8> c1(signed_value(c));
+    bitset<8> c2(signed_value(c)>>1);
+    cout << c1 <<endl;
+    cout << c2 <<endl;
+
     //printf("Value : %d\n",signed_value(128));
 
 	return 0;

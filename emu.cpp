@@ -9,19 +9,20 @@ using namespace std;
 
 // type defs
 enum opcode_t { 
-				  lui   = 0b0110111,
+				lui   = 0b0110111,
     			auipc = 0b0010111,
     			jump  = 0b1101111,
     			jumpr = 0b1100111,
     			cjump = 0b1100011,
     			load  = 0b0000011,
-    			store = 0b0100011
+    			store = 0b0100011,
+                iops  = 0b0010011
     		};
 
 typedef uint64_t uint_t;
 typedef uint64_t data_t;
 
-#define MEM_SIZE 10
+#define MEM_SIZE 20
 #define XLEN     64
 #define FIFO_ADDR 0xe0001030
 
@@ -42,6 +43,14 @@ int64_t signed_value(uint_t x){
       return (x ^ (1llu<<63)) - (1llu<<63);
   else
       return x;
+}
+
+void print_reg_file(){
+    string reg_file_names [] = {"zero","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6",\
+                              "a7","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","t3","t4","t5","t6"};
+    for (int i=0;i<32;i++){
+        printf("%s : %lu\n",reg_file_names[i].c_str(),reg_file[i]);
+    }
 }
 /*enum opcode_t { 
 				0b0110111 = lui   ,
@@ -74,6 +83,10 @@ int main(){
     uint_t load_data = 0;
     uint_t store_addr = 0;
 
+    //initializing reg file
+    reg_file[2]  = 0x40000; //SP
+    reg_file[11] = 0x10000  ;
+
     enum opcode_t opcode;
 
     while (std::getline(infile, line)) {            // Initialize memory with instructions
@@ -86,6 +99,9 @@ int main(){
 
 
     while (PC < (1<<MEM_SIZE)){
+
+        printf("PC/4 : %d\n",PC/4);
+        print_reg_file();
 
         instruction = memory.at(PC/4);
 
@@ -140,17 +156,19 @@ int main(){
             case cjump : 
                 printf("CJUMP\n");
                 switch(func3){
-                    case 0b000 : branch = (reg_file[rs1] == reg_file[rs2]); //BEQ
+                    case 0b000 : branch = (reg_file[rs1] == reg_file[rs2]); break; //BEQ
 
-                    case 0b001 : branch = (reg_file[rs1] != reg_file[rs2]); //BNE
+                    case 0b001 : branch = (reg_file[rs1] != reg_file[rs2]); break; //BNE
 
-                    case 0b100 : branch = (signed_value(reg_file[rs1]) < signed_value(reg_file[rs2])); //BLT
+                    case 0b100 : branch = (signed_value(reg_file[rs1]) < signed_value(reg_file[rs2])); break; //BLT
 
-                    case 0b101 : branch = (signed_value(reg_file[rs1]) > signed_value(reg_file[rs2])); //BGE
+                    case 0b101 : branch = (signed_value(reg_file[rs1]) > signed_value(reg_file[rs2])); break; //BGE
 
-                    case 0b110 : branch = (reg_file[rs1] < reg_file[rs2]); //BLTU
+                    case 0b110 : branch = (reg_file[rs1] < reg_file[rs2]); break; //BLTU
 
-                    case 0b111 : branch = (reg_file[rs1] > reg_file[rs2]); //BGEU
+                    case 0b111 : branch = (reg_file[rs1] > reg_file[rs2]); break; //BGEU
+
+                    default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); break;
                 }
                 if (branch==true)
                     PC = PC - 4 + sign_extend<uint_t>(imm_b,13);
@@ -159,45 +177,100 @@ int main(){
 
             case load : 
                 printf("LOAD\n");
+                if ((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR){
                 load_data = memory.at(reg_file[rs1] + sign_extend<uint_t>(imm11_0,12));
-                switch(func3){
-                    case 0b000 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFF      , 8); //LB sign extend  8 bit value
+                        switch(func3){
+                            case 0b000 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFF      , 8); break; //LB sign extend  8 bit value
 
-                    case 0b001 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFFFF    ,16); //LH sign extend 16 bit value
+                            case 0b001 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFFFF    ,16); break; //LH sign extend 16 bit value
 
-                    case 0b010 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFFFFFFFF,32); //LW sign extend 32 bit value
+                            case 0b010 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFFFFFFFF,32); break; //LW sign extend 32 bit value
 
-                    case 0b100 : reg_file[rd] = load_data & 0xFF      ; //LBU zero extend  8 bit value
+                            case 0b100 : reg_file[rd] = load_data & 0xFF      ; break; //LBU zero extend  8 bit value
 
-                    case 0b101 : reg_file[rd] = load_data & 0xFFFF    ; //LHU zero extend 16 bit value
+                            case 0b101 : reg_file[rd] = load_data & 0xFFFF    ; break; //LHU zero extend 16 bit value
 
-                    case 0b110 : reg_file[rd] = load_data & 0xFFFFFFFF; //LWU zero extend 32 bit value
+                            case 0b110 : reg_file[rd] = load_data & 0xFFFFFFFF; break; //LWU zero extend 32 bit value
 
-                    case 0b011 : reg_file[rd] = load_data ; //LD
+                            case 0b011 : reg_file[rd] = load_data ; //LD
+
+                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); break;
+                        }
+                } else {
+                    reg_file[rd] = 0 ;
                 }
                 break;
 
             case store : 
                 printf("STORE\n");
-                store_addr = memory.at(reg_file[rs1] + sign_extend<uint_t>(imm_s,12));
+                store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
+                printf("base : ");
+                cout << hex << store_addr<<endl;
+                printf("offset : %lu\n",sign_extend<uint_t>(imm_s,12));
+                //print_reg_file();
                 if (store_addr != FIFO_ADDR){
                     printf("STORE1\n");
-                    cout << sign_extend<uint_t>(imm_s,12) <<endl;
-                    store_addr = memory.at(reg_file[rs1] + sign_extend<uint_t>(imm_s,12));
                     switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
-                        case 0b000 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFFFF<< 8)) + (reg_file[rs2] & 0xFF      )    ; //SB  setting LSB 8 bit 
+                        case 0b000 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFFFF<< 8)) + (reg_file[rs2] & 0xFF      )    ; break;//SB  setting LSB 8 bit 
 
-                        case 0b001 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFF  <<16)) + (reg_file[rs2] & 0xFFFF    )    ; //SH setting LSB 16 bit value
+                        case 0b001 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFF  <<16)) + (reg_file[rs2] & 0xFFFF    )    ; break;//SH setting LSB 16 bit value
 
-                        case 0b010 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFull   <<32)) + (reg_file[rs2] & 0xFFFFFFFF)    ; //SW setting LSB 32 bit value
+                        case 0b010 : memory.at(store_addr/4) = ((memory.at(store_addr/4) & (0xFFFFFFFFull   <<32))) + (reg_file[rs2] & 0xFFFFFFFF)    ; break;//SW setting LSB 32 bit value
 
                         case 0b011 : memory.at(store_addr/4) = reg_file[rs2] ; //SD
+
+                        default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); break;
                     }
                 } else {
                     printf("STORE2\n");
                     cout << (char)reg_file[rs2] ;
                 }
-                break;                
+                break;
+            case iops  :
+                printf("IOPS %lu\n",imm11_0);
+                switch(func3){
+                    case 0b000 : 
+                        wb_data = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12); //ADDI
+                        break;
+
+                    case 0b010 : 
+                        wb_data = (signed_value(reg_file[rs1]) < signed_value(sign_extend<uint_t>(imm11_0,12))) ? 1 : 0; //SLTI
+                        break;
+
+                    case 0b011 : 
+                        wb_data = (reg_file[rs1] < sign_extend<uint_t>(imm11_0,12)) ? 1 : 0; //SLTIU
+                        break;
+
+                    case 0b111 : 
+                        wb_data = reg_file[rs1] & sign_extend<uint_t>(imm11_0,12); //ANDI
+                        break;
+
+                    case 0b110 : 
+                        wb_data = reg_file[rs1] | sign_extend<uint_t>(imm11_0,12); //ORI
+                        break;
+
+                    case 0b100 : 
+                        wb_data = reg_file[rs1] ^ sign_extend<uint_t>(imm11_0,12); //XORI
+                        break;
+
+                    case 0b001 : 
+                        wb_data = reg_file[rs1] << (imm11_0 & 0b11111); //SLLI
+                        break;
+
+                    case 0b101 : 
+                        if ((imm11_0 >> 5) == 0)
+                            wb_data = reg_file[rs1] >> (imm11_0 & 0b11111); //SRLI
+                        else if ((imm11_0 >> 5) == 1)
+                            wb_data = (reg_file[rs1] & (1llu<<63)) | (reg_file[rs1] >> (imm11_0 & 0b11111)); //SRAI
+                        break;
+                    default : 
+                        printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
+                        break;
+                }
+                reg_file[rd] = wb_data;
+                printf("I WB data :%lu\n",wb_data);
+                break;
+
             default : printf("default\n");
         }
     }
