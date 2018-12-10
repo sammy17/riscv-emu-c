@@ -26,6 +26,8 @@ typedef uint64_t data_t;
 #define XLEN     64
 #define FIFO_ADDR 0xe0001030
 
+#define DEBUG
+
 vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
 vector<uint_t> reg_file(32);       // register file
@@ -94,14 +96,18 @@ int main(){
         //cout << memory[i] << endl;
         i+=1;
     }
-    printf("Mem load successful\n");
+    #ifdef DEBUG 
+        printf("Mem load successful\n");
+    #endif
 
 
 
     while (PC < (1<<MEM_SIZE)){
 
-        printf("PC/4 : %d\n",PC/4);
-        print_reg_file();
+        #ifdef DEBUG 
+            printf("PC/4 : %d\n",PC/4);
+        #endif
+        //print_reg_file();
 
         instruction = memory.at(PC/4);
 
@@ -130,31 +136,41 @@ int main(){
         PC += 4;
         switch(opcode){
             case lui : 
-                printf("LUI\n");
+                #ifdef DEBUG 
+                    printf("LUI\n");
+                #endif
                 reg_file[rd] = sign_extend<uint_t>((imm31_12 << 12),32);
                 break;
 
             case auipc : 
-                printf("AUIPC\n");
+                #ifdef DEBUG 
+                    printf("AUIPC\n");
+                #endif
                 reg_file[rd] = (PC-4) + sign_extend<uint_t>((imm31_12 << 12),32);
                 break;
 
             case jump : 
-                printf("JUMP\n");
+                #ifdef DEBUG 
+                    printf("JUMP\n");
+                #endif
                 wb_data = PC;
                 PC = (PC-4) + sign_extend<uint_t>(imm_j,21); //21 bits sign extend
                 reg_file[rd] = wb_data ;// PC + 4 to rd
                 break;
 
             case jumpr : 
-                printf("JUMPR\n");
+                #ifdef DEBUG 
+                    printf("JUMPR\n");
+                #endif
                 wb_data = PC;
                 PC = (reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) & 0b0; //setting LSB to 0 as spec page 20
                 reg_file[rd] = wb_data ;// PC + 4 to rd
                 break;
 
             case cjump : 
-                printf("CJUMP\n");
+                #ifdef DEBUG 
+                    printf("CJUMP\n");
+                #endif
                 switch(func3){
                     case 0b000 : branch = (reg_file[rs1] == reg_file[rs2]); break; //BEQ
 
@@ -168,7 +184,10 @@ int main(){
 
                     case 0b111 : branch = (reg_file[rs1] > reg_file[rs2]); break; //BGEU
 
-                    default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); break;
+                    default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
+                        bitset<3> ins(func3);
+                        cout<<  "func3 : "<<ins<<endl;
+                        break;
                 }
                 if (branch==true)
                     PC = PC - 4 + sign_extend<uint_t>(imm_b,13);
@@ -176,7 +195,9 @@ int main(){
                 break;
 
             case load : 
-                printf("LOAD\n");
+                #ifdef DEBUG 
+                    printf("LOAD\n");
+                #endif
                 if ((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR){
                 load_data = memory.at(reg_file[rs1] + sign_extend<uint_t>(imm11_0,12));
                         switch(func3){
@@ -194,7 +215,10 @@ int main(){
 
                             case 0b011 : reg_file[rd] = load_data ; //LD
 
-                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); break;
+                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
+                                bitset<3> ins(func3);
+                                cout<<  "func3 : "<<ins<<endl;
+                                break;
                         }
                 } else {
                     reg_file[rd] = 0 ;
@@ -202,14 +226,11 @@ int main(){
                 break;
 
             case store : 
-                printf("STORE\n");
+                #ifdef DEBUG 
+                    printf("STORE\n");
+                #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
-                printf("base : ");
-                cout << hex << store_addr<<endl;
-                printf("offset : %lu\n",sign_extend<uint_t>(imm_s,12));
-                //print_reg_file();
                 if (store_addr != FIFO_ADDR){
-                    printf("STORE1\n");
                     switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
                         case 0b000 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFFFF<< 8)) + (reg_file[rs2] & 0xFF      )    ; break;//SB  setting LSB 8 bit 
 
@@ -217,17 +238,21 @@ int main(){
 
                         case 0b010 : memory.at(store_addr/4) = ((memory.at(store_addr/4) & (0xFFFFFFFFull   <<32))) + (reg_file[rs2] & 0xFFFFFFFF)    ; break;//SW setting LSB 32 bit value
 
-                        case 0b011 : memory.at(store_addr/4) = reg_file[rs2] ; //SD
+                        case 0b011 : memory.at(store_addr/4) = reg_file[rs2] ; break; //SD
 
-                        default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); break;
+                        default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
+                        bitset<3> ins(func3);
+                        cout<<  "func3 : "<<func3<<endl;
+                        break;
                     }
                 } else {
-                    printf("STORE2\n");
                     cout << (char)reg_file[rs2] ;
                 }
                 break;
             case iops  :
-                printf("IOPS %lu\n",imm11_0);
+                #ifdef DEBUG 
+                    printf("IOPS %lu\n",imm11_0);
+                #endif
                 switch(func3){
                     case 0b000 : 
                         wb_data = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12); //ADDI
@@ -265,10 +290,11 @@ int main(){
                         break;
                     default : 
                         printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
+                        bitset<3> ins(func3);
+                        cout<<  "func3 : "<<ins<<endl;
                         break;
                 }
                 reg_file[rd] = wb_data;
-                printf("I WB data :%lu\n",wb_data);
                 break;
 
             default : printf("default\n");

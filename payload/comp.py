@@ -18,7 +18,7 @@ int_addr=int(lines.pop(0)[1:],16)
 curr_addr= 0
 mem=[]
 
-for i in xrange (1<<6):
+for i in xrange (1<<10):
 	mem.append(["00","00","00","00"])
 
 
@@ -40,5 +40,5 @@ for val in lines:
 
 
 
-for i in xrange (1<<6):
+for i in xrange (1<<10):
 	out.write(''.join(mem[i])+'\n')
