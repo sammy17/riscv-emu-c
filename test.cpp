@@ -21,10 +21,12 @@ int8_t signed_value(uint8_t x){
       return x;
 }
 
+__uint128_t testt;
+
 int main(){
 	uint8_t a = 255;
 	//uint32_t b = 
-    bitset<8> ins(a & (0xF<<4));
+    /*bitset<8> ins(a & (0xF<<4));
 
     cout << ins << endl;
 
@@ -43,9 +45,18 @@ int main(){
     bitset<8> c1(signed_value(c));
     bitset<8> c2(signed_value(c)>>1);
     cout << c1 <<endl;
-    cout << c2 <<endl;
+    cout << c2 <<endl;*/
 
     //printf("Value : %d\n",signed_value(128));
 
+  int8_t a =-1;
+  int8_t b = 10;
+
+  cout << div(b,a)<<endl;
+
+
+  
+  bitset<8> ins( );
+  cout << ins<<endl;
 	return 0;
 }

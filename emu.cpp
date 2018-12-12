@@ -4,19 +4,22 @@
 #include <fstream>
 #include <vector>
 #include <bits/stdc++.h> 
+#include <math.h> 
 
 using namespace std;
 
 // type defs
 enum opcode_t { 
-				lui   = 0b0110111,
-    			auipc = 0b0010111,
-    			jump  = 0b1101111,
-    			jumpr = 0b1100111,
-    			cjump = 0b1100011,
-    			load  = 0b0000011,
-    			store = 0b0100011,
-                iops  = 0b0010011
+				lui    = 0b0110111,
+    			auipc  = 0b0010111,
+    			jump   = 0b1101111,
+    			jumpr  = 0b1100111,
+    			cjump  = 0b1100011,
+    			load   = 0b0000011,
+    			store  = 0b0100011,
+                iops   = 0b0010011,
+                rops   = 0b0110011,
+                rops64 = 0b0111011
     		};
 
 typedef uint64_t uint_t;
@@ -26,7 +29,10 @@ typedef uint64_t data_t;
 #define XLEN     64
 #define FIFO_ADDR 0xe0001030
 
-#define DEBUG
+#define MASK64 0xFFFFFFFFFFFFFFFF
+#define MASK32 0xFFFFFFFF
+
+//#define DEBUG
 
 vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
@@ -40,11 +46,93 @@ T sign_extend(T x, const int bits) {
     return (x ^ m) - m;
 }
 
+template<class T>
+T divi(T num1, T num2,int s) {
+    if (num2==0){
+        switch(s){
+            case(0)  : return (T)(-1); break;
+            case(1) : return (T)MASK64; break;
+            case(2)  : return num1; break;
+            case(3) : return num1; break;
+        }
+    } else if(s==0 || s==2){
+        if (num1==(-pow(2ull,63)) && num2==-1){
+            switch(s){
+                case(0)  : return -pow(2ull,63); break;
+                case(2)  : return 0; break;
+            }
+        }
+    } else {
+        ldiv_t div_result;
+        switch(s){
+            case(0)  : 
+                div_result = div((int64_t)num1,(int64_t)num2);
+                return div_result.quot;
+                break;
+            case(1) : 
+                return num1/num2; 
+                break;
+            case(2)  : 
+                div_result = div((int64_t)num1,(int64_t)num2);
+                return div_result.rem; 
+                break;
+            case(3) : 
+                return num1%num2;
+                break;
+        }
+    }
+}
+
+template<class T>
+T divi32(T num1, T num2,int s) {
+    if (num2==0){
+        switch(s){
+            case(0)  : return (T)(-1); break;
+            case(1) : return (T)MASK32; break;
+            case(2)  : return num1; break;
+            case(3) : return num1; break;
+        }
+    } else if(s==0 || s==2){
+        if (num1==(-pow(2,31)) && num2==-1){
+            switch(s){
+                case(0)  : return -pow(2,31); break;
+                case(2)  : return 0; break;
+            }
+        }
+    } else {
+        div_t div_result;
+        switch(s){
+            case(0)  : 
+                div_result = div((int32_t)num1,(int32_t)num2);
+                return div_result.quot;
+                break;
+            case(1) : 
+                return num1/num2; 
+                break;
+            case(2)  : 
+                div_result = div((int32_t)num1,(int32_t)num2);
+                return div_result.rem; 
+                break;
+            case(3) : 
+                return num1%num2;
+                break;
+        }
+    }
+}
+
 int64_t signed_value(uint_t x){
   if (((x>>63) & 0b1) == 1)
       return (x ^ (1llu<<63)) - (1llu<<63);
   else
       return x;
+}
+
+int32_t signed_value32(uint_t x){
+    uint32_t y = x & MASK32;
+  if (((y>>31) & 0b1) == 1)
+      return (y ^ (1lu<<31)) - (1lu<<31);
+  else
+      return y;
 }
 
 void print_reg_file(){
@@ -54,23 +142,6 @@ void print_reg_file(){
         printf("%s : %lu\n",reg_file_names[i].c_str(),reg_file[i]);
     }
 }
-/*enum opcode_t { 
-				0b0110111 = lui   ,
-    			0b0010111 = auipc ,
-    			0b1101111 = jump  ,
-    			0b1100111 = jumpr ,
-    			0b1100011 = cjump ,
-    			0b0000011 = load  ,
-    			0b0100011 = store
-
-        try {
-        } catch (const out_of_range& e){
-            printf("Memory out of range at PC : %lu\n",PC);
-            return 1;
-        }
-    		};*/
-
-
 
 int main(){
 
@@ -84,6 +155,8 @@ int main(){
     bool branch = false;
     uint_t load_data = 0;
     uint_t store_addr = 0;
+
+    __uint128_t mult_temp;
 
     //initializing reg file
     reg_file[2]  = 0x40000; //SP
@@ -107,14 +180,15 @@ int main(){
         #ifdef DEBUG 
             printf("PC/4 : %d\n",PC/4);
         #endif
-        //print_reg_file();
 
         instruction = memory.at(PC/4);
 
         reg_file[0] = 0;
-        //bitset<32> ins(instruction);
 
-        //cout << instruction << endl;
+        #ifdef DEBUG
+            bitset<32> ins(instruction);
+            cout << "Instruction : "<<ins << endl;
+        #endif
 
         opcode = static_cast<opcode_t>(instruction & 0b1111111);
 
@@ -129,10 +203,10 @@ int main(){
         uint_t imm11_0  = (instruction >> 20) & 0b111111111111 ;
         uint_t imm31_12 = (instruction >> 12) & 1048575 ;       // extract 20 bits
 
-        uint_t imm_j    = ((instruction>>31) & 0b1)<<20 + (((rs1<<3)+func3)<<12) + ((instruction>>20) & 0b1)<<11 + ((instruction>>20) & 0b11111111110) ;
-        uint_t imm_b    = ((instruction>>31) & 0b1)<<12 + ((instruction>>7) & 0b1)<<11 + ((instruction>>25) & 0b111111)<<5 + ((instruction>>7) & 0b11110) ;
-        uint_t imm_s    = ((instruction>>25) & 0b1111111)<<5 + (instruction>>7) & 0b11111 ;
-
+        uint_t imm_j    = (((instruction>>31) & 0b1)<<20) + (instruction & (0b11111111<<12)) + (((instruction>>20) & 0b1)<<11) + (((instruction>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
+        uint_t imm_b    = (((instruction>>31) & 0b1)<<12) + (((instruction>>7) & 0b1)<<11) + (((instruction>>25) & 0b111111)<<5) + ((instruction>>7) & 0b11110) ;
+        uint_t imm_s    = (((instruction>>25) & 0b1111111)<<5) + ((instruction>>7) & 0b11111) ;
+        //printf("IMJ %d\n",imm_j);
         PC += 4;
         switch(opcode){
             case lui : 
@@ -213,7 +287,7 @@ int main(){
 
                             case 0b110 : reg_file[rd] = load_data & 0xFFFFFFFF; break; //LWU zero extend 32 bit value
 
-                            case 0b011 : reg_file[rd] = load_data ; //LD
+                            case 0b011 : reg_file[rd] = load_data ; break;//LD
 
                             default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
                                 bitset<3> ins(func3);
@@ -297,7 +371,62 @@ int main(){
                 reg_file[rd] = wb_data;
                 break;
 
-            default : printf("default\n");
+
+            case rops :
+                if (func7 == 0b0000001){
+                    switch (func3) {
+                        case 0b000 : //MUL
+                            mult_temp = reg_file[rs1] * reg_file[rs2];
+                            reg_file[rd] = mult_temp & MASK64;
+                            break;
+
+                        case 0b001 : //MULH
+                            mult_temp = (__uint128_t)(signed_value(reg_file[rs1]) * signed_value(reg_file[rs2]));
+                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            break;
+
+                        case 0b010 : //MULHSU
+                            mult_temp = (__uint128_t)(signed_value(reg_file[rs1]) * reg_file[rs2]);
+                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            break;
+
+                        case 0b011 : //MULHU
+                            mult_temp = reg_file[rs1] * reg_file[rs2];
+                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            break;
+
+                        case 0b100 : //DIV
+                            reg_file[rd] = (uint_t)divi<int64_t>(signed_value(reg_file[rs1]), signed_value(reg_file[rs2]),0);
+                        case 0b101 : //DIVU
+                            reg_file[rd] = divi<uint_t>(reg_file[rs1], reg_file[rs2],1);
+                        case 0b110 : //REM
+                            reg_file[rd] = (uint_t)divi<int64_t>(signed_value(reg_file[rs1]), signed_value(reg_file[rs2]),2);
+                        case 0b111 : //REMU
+                            reg_file[rd] = divi<uint_t>(reg_file[rs1], reg_file[rs2],3);
+                    }
+                }
+                break;
+
+            case rops64 :
+                if (func7 == 0b0000001){
+                    switch (func3) {
+                        case 0b000 : //MULW
+                            reg_file[rd] = sign_extend<uint_t>(((reg_file[rs1] & MASK32) * (reg_file[rs2] & MASK32)) & MASK32, 32) ;
+                            break;
+                        case 0b100 : //DIVW
+                            reg_file[rd] = sign_extend((uint_t)divi32<int32_t>(signed_value32(reg_file[rs1]), signed_value32(reg_file[rs2]),0),32);
+                        case 0b101 : //DIVUW
+                            reg_file[rd] = sign_extend((uint_t)divi32<uint32_t>(reg_file[rs1], reg_file[rs2],1),32);
+                        case 0b110 : //REMW
+                            reg_file[rd] = sign_extend((uint_t)divi32<int32_t>(signed_value32(reg_file[rs1]), signed_value32(reg_file[rs2]),2),32);
+                        case 0b111 : //REMUW
+                            reg_file[rd] = sign_extend((uint_t)divi32<uint32_t>(reg_file[rs1], reg_file[rs2],3),32);
+                    }
+                }
+            default : 
+                printf("default\n");
+                bitset<32> ins1(instruction);
+                cout << "Instruction : "<<ins1 << endl;
         }
     }
 
