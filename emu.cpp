@@ -5,7 +5,11 @@
 #include <vector>
 #include <bits/stdc++.h> 
 #include <math.h> 
+#include <chrono>
+#include <thread>
 
+using namespace std::this_thread; // sleep_for, sleep_until
+using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
 // type defs
@@ -18,6 +22,7 @@ enum opcode_t {
     			load   = 0b0000011,
     			store  = 0b0100011,
                 iops   = 0b0010011,
+                iops64 = 0b0011011,
                 rops   = 0b0110011,
                 rops64 = 0b0111011
     		};
@@ -25,9 +30,10 @@ enum opcode_t {
 typedef uint64_t uint_t;
 typedef uint64_t data_t;
 
-#define MEM_SIZE 20
+#define MEM_SIZE 24
 #define XLEN     64
-#define FIFO_ADDR 0xe0001030
+#define FIFO_ADDR_RX 0xe000102c
+#define FIFO_ADDR_TX 0xe0001030
 
 #define MASK64 0xFFFFFFFFFFFFFFFF
 #define MASK32 0xFFFFFFFF
@@ -156,7 +162,20 @@ int main(){
     uint_t load_data = 0;
     uint_t store_addr = 0;
 
-    __uint128_t mult_temp;
+    __uint128_t mult_temp=0;
+
+    uint_t wb_data  = 0;
+    uint_t lPC      = 0;
+    uint_t rd       = 0;
+    uint_t func3    = 0;
+    uint_t rs1      = 0;
+    uint_t rs2      = 0;
+    uint_t func7    = 0;
+    uint_t imm11_0  = 0;
+    uint_t imm31_12 = 0;
+    uint_t imm_j    = 0;
+    uint_t imm_b    = 0;
+    uint_t imm_s    = 0;
 
     //initializing reg file
     reg_file[2]  = 0x40000; //SP
@@ -178,7 +197,8 @@ int main(){
     while (PC < (1<<MEM_SIZE)){
 
         #ifdef DEBUG 
-            printf("PC/4 : %d\n",PC/4);
+            sleep_for(milliseconds(500));
+            printf("PC : %x\n",PC);
         #endif
 
         instruction = memory.at(PC/4);
@@ -192,21 +212,22 @@ int main(){
 
         opcode = static_cast<opcode_t>(instruction & 0b1111111);
 
-        uint_t wb_data = 0;
+        wb_data = 0;
 
-        uint_t rd      = (instruction >> 7 ) & 0b11111   ;
-        uint_t func3   = (instruction >> 12) & 0b111     ;
-        uint_t rs1     = (instruction >> 15) & 0b11111   ;
-        uint_t rs2     = (instruction >> 20) & 0b11111   ;
-        uint_t func7   = (instruction >> 25) & 0b1111111 ;
+        rd      = (instruction >> 7 ) & 0b11111   ;
+        func3   = (instruction >> 12) & 0b111     ;
+        rs1     = (instruction >> 15) & 0b11111   ;
+        rs2     = (instruction >> 20) & 0b11111   ;
+        func7   = (instruction >> 25) & 0b1111111 ;
 
-        uint_t imm11_0  = (instruction >> 20) & 0b111111111111 ;
-        uint_t imm31_12 = (instruction >> 12) & 1048575 ;       // extract 20 bits
+        imm11_0  = (instruction >> 20) & 0b111111111111 ;
+        imm31_12 = (instruction >> 12) & 1048575 ;       // extract 20 bits
 
-        uint_t imm_j    = (((instruction>>31) & 0b1)<<20) + (instruction & (0b11111111<<12)) + (((instruction>>20) & 0b1)<<11) + (((instruction>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
-        uint_t imm_b    = (((instruction>>31) & 0b1)<<12) + (((instruction>>7) & 0b1)<<11) + (((instruction>>25) & 0b111111)<<5) + ((instruction>>7) & 0b11110) ;
-        uint_t imm_s    = (((instruction>>25) & 0b1111111)<<5) + ((instruction>>7) & 0b11111) ;
+        imm_j    = (((instruction>>31) & 0b1)<<20) + (instruction & (0b11111111<<12)) + (((instruction>>20) & 0b1)<<11) + (((instruction>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
+        imm_b    = (((instruction>>31) & 0b1)<<12) + (((instruction>>7) & 0b1)<<11) + (((instruction>>25) & 0b111111)<<5) + ((instruction>>7) & 0b11110) ;
+        imm_s    = (((instruction>>25) & 0b1111111)<<5) + ((instruction>>7) & 0b11111) ;
         //printf("IMJ %d\n",imm_j);
+        lPC = PC;
         PC += 4;
         switch(opcode){
             case lui : 
@@ -237,7 +258,7 @@ int main(){
                     printf("JUMPR\n");
                 #endif
                 wb_data = PC;
-                PC = (reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) & 0b0; //setting LSB to 0 as spec page 20
+                PC = (reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) & 0xFFFFFFFFFFFFFFFE; //setting LSB to 0 as spec page 20
                 reg_file[rd] = wb_data ;// PC + 4 to rd
                 break;
 
@@ -272,8 +293,8 @@ int main(){
                 #ifdef DEBUG 
                     printf("LOAD\n");
                 #endif
-                if ((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR){
-                load_data = memory.at(reg_file[rs1] + sign_extend<uint_t>(imm11_0,12));
+                if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR_RX) && (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR_TX))){
+                load_data = memory.at((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))/4);
                         switch(func3){
                             case 0b000 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFF      , 8); break; //LB sign extend  8 bit value
 
@@ -294,8 +315,11 @@ int main(){
                                 cout<<  "func3 : "<<ins<<endl;
                                 break;
                         }
-                } else {
+                } else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))/4) == FIFO_ADDR_RX) {
                     reg_file[rd] = 0 ;
+                }
+                else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))/4) == FIFO_ADDR_TX){
+                    reg_file[rd] = (uint_t)getchar() ;
                 }
                 break;
 
@@ -304,7 +328,7 @@ int main(){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
-                if (store_addr != FIFO_ADDR){
+                if (store_addr != FIFO_ADDR_TX){
                     switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
                         case 0b000 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFFFF<< 8)) + (reg_file[rs2] & 0xFF      )    ; break;//SB  setting LSB 8 bit 
 
@@ -320,7 +344,12 @@ int main(){
                         break;
                     }
                 } else {
+                    #ifdef DEBUG 
+                        printf("STORE2\n");
+                    #endif
+                    //    printf("STORE2 %llu\n",rs2);
                     cout << (char)reg_file[rs2] ;
+                    //printf("PC : %x\n",PC-4);
                 }
                 break;
             case iops  :
@@ -371,9 +400,35 @@ int main(){
                 reg_file[rd] = wb_data;
                 break;
 
+            case iops64 :
+                #ifdef DEBUG 
+                    printf("IOPS64 %lu\n",imm11_0);
+                #endif
+                switch(func3){
+                    case 0b000 :  //ADDIW
+                        wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)),32);
+                        break;
+
+                    case 0b001 : //SLLIW
+                        wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] << (imm11_0 & 0b11111)),32); 
+                        break;
+
+                    case 0b101 : 
+                        if ((imm11_0 >> 5) == 0) //SRLIW
+                            wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] >> (imm11_0 & 0b11111)),32); 
+                        else if ((imm11_0 >> 5) == 1) //SRAIW
+                            wb_data = sign_extend<uint_t>(MASK32 & ((reg_file[rs1] & (1lu<<31)) | (reg_file[rs1] >> (imm11_0 & 0b11111))),32); 
+                        break;
+                }
+                reg_file[rd] = wb_data;
+                break;
+
 
             case rops :
                 if (func7 == 0b0000001){
+                    #ifdef DEBUG 
+                        printf("ROPS\n");
+                    #endif
                     switch (func3) {
                         case 0b000 : //MUL
                             mult_temp = reg_file[rs1] * reg_file[rs2];
@@ -397,36 +452,120 @@ int main(){
 
                         case 0b100 : //DIV
                             reg_file[rd] = (uint_t)divi<int64_t>(signed_value(reg_file[rs1]), signed_value(reg_file[rs2]),0);
+                            break;
+
                         case 0b101 : //DIVU
                             reg_file[rd] = divi<uint_t>(reg_file[rs1], reg_file[rs2],1);
+                            break;
+
                         case 0b110 : //REM
                             reg_file[rd] = (uint_t)divi<int64_t>(signed_value(reg_file[rs1]), signed_value(reg_file[rs2]),2);
+                            break;
+
                         case 0b111 : //REMU
                             reg_file[rd] = divi<uint_t>(reg_file[rs1], reg_file[rs2],3);
+                            break;
                     }
+                } else if (func7 == 0b0000000){
+                    #ifdef DEBUG 
+                        printf("RROPS1\n");
+                    #endif
+                    switch(func3){
+                        case 0b000 :
+                            wb_data = reg_file[rs1] + reg_file[rs2]; //ADD
+                            break;
+                        case 0b010 :
+                            wb_data = (signed_value(reg_file[rs1]) < signed_value(reg_file[rs2])) ? 1 : 0; //SLT
+                            break;
+
+                        case 0b011 : 
+                            wb_data = (reg_file[rs1] < reg_file[rs2]) ? 1 : 0; //SLTU
+                            break;
+
+                        case 0b111 : 
+                            wb_data = reg_file[rs1] & reg_file[rs2]; //AND
+                            break;
+
+                        case 0b110 : 
+                            wb_data = reg_file[rs1] | reg_file[rs2]; //OR
+                            break;
+
+                        case 0b100 : 
+                            wb_data = reg_file[rs1] ^ reg_file[rs2]; //XOR
+                            break;
+
+                        case 0b001 : 
+                            wb_data = reg_file[rs1] << (reg_file[rs2] & 0b11111); //SLL
+                            break;
+
+                        case 0b101 : 
+                            wb_data = reg_file[rs1] >> (reg_file[rs2] & 0b11111); //SRL
+                            break;
+                        default : 
+                            printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
+                            bitset<3> ins(func3);
+                            cout<<  "func3 : "<<ins<<endl;
+                            break;
+
+                    }
+                    reg_file[rd] = wb_data;
+
+                } else if (func7 == 0b0100000){
+                    #ifdef DEBUG 
+                        printf("RROPS2\n");
+                    #endif
+                    switch(func3){
+                        case 0b000 : //SUB
+                            wb_data = reg_file[rs1] - reg_file[rs2];
+                            break;
+
+                        case 0b101 : //SRA
+                            wb_data = (reg_file[rs1] & (1llu<<63)) | (reg_file[rs1] >> (reg_file[rs2] & 0b11111));
+                            break;
+                    }
+                    reg_file[rd] = wb_data;
                 }
                 break;
 
             case rops64 :
                 if (func7 == 0b0000001){
+                    #ifdef DEBUG 
+                        printf("ROPS64\n");
+                    #endif
                     switch (func3) {
                         case 0b000 : //MULW
                             reg_file[rd] = sign_extend<uint_t>(((reg_file[rs1] & MASK32) * (reg_file[rs2] & MASK32)) & MASK32, 32) ;
                             break;
                         case 0b100 : //DIVW
                             reg_file[rd] = sign_extend((uint_t)divi32<int32_t>(signed_value32(reg_file[rs1]), signed_value32(reg_file[rs2]),0),32);
+                            break;
+
                         case 0b101 : //DIVUW
                             reg_file[rd] = sign_extend((uint_t)divi32<uint32_t>(reg_file[rs1], reg_file[rs2],1),32);
+                            break;
+
                         case 0b110 : //REMW
                             reg_file[rd] = sign_extend((uint_t)divi32<int32_t>(signed_value32(reg_file[rs1]), signed_value32(reg_file[rs2]),2),32);
+                            break;
+
                         case 0b111 : //REMUW
                             reg_file[rd] = sign_extend((uint_t)divi32<uint32_t>(reg_file[rs1], reg_file[rs2],3),32);
+                            break;
                     }
                 }
+                break;
             default : 
                 printf("default\n");
                 bitset<32> ins1(instruction);
                 cout << "Instruction : "<<ins1 << endl;
+                printf("PC : %x\n",PC-4);
+                break;
+        }
+
+        if (lPC==PC || instruction==0){
+            //infinite loop
+            cout << "Infinite loop!"<<endl;
+            break;
         }
     }
 

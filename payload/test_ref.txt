@@ -1,0 +1,98 @@
+
+K_1.elf:     file format elf64-littleriscv
+
+
+Disassembly of section .text:
+
+0000000000000000 <main>:
+   0:	ff010113          	addi	sp,sp,-16
+   4:	00113423          	sd	ra,8(sp)
+   8:	00813023          	sd	s0,0(sp)
+   c:	01010413          	addi	s0,sp,16
+  10:	00000517          	auipc	a0,0x0
+  14:	0e050513          	addi	a0,a0,224 # f0 <hprintf+0x98>
+  18:	040000ef          	jal	ra,58 <hprintf>
+  1c:	0000006f          	j	1c <main+0x1c>
+
+0000000000000020 <hprintf_c>:
+  20:	fe010113          	addi	sp,sp,-32
+  24:	00813c23          	sd	s0,24(sp)
+  28:	02010413          	addi	s0,sp,32
+  2c:	00050793          	mv	a5,a0
+  30:	fef42623          	sw	a5,-20(s0)
+  34:	0e0007b7          	lui	a5,0xe000
+  38:	10378793          	addi	a5,a5,259 # e000103 <hprintf+0xe0000ab>
+  3c:	00479793          	slli	a5,a5,0x4
+  40:	fec42703          	lw	a4,-20(s0)
+  44:	00e7a023          	sw	a4,0(a5)
+  48:	00000013          	nop
+  4c:	01813403          	ld	s0,24(sp)
+  50:	02010113          	addi	sp,sp,32
+  54:	00008067          	ret
+
+0000000000000058 <hprintf>:
+  58:	f9010113          	addi	sp,sp,-112
+  5c:	02113423          	sd	ra,40(sp)
+  60:	02813023          	sd	s0,32(sp)
+  64:	03010413          	addi	s0,sp,48
+  68:	fca43c23          	sd	a0,-40(s0)
+  6c:	00b43423          	sd	a1,8(s0)
+  70:	00c43823          	sd	a2,16(s0)
+  74:	00d43c23          	sd	a3,24(s0)
+  78:	02e43023          	sd	a4,32(s0)
+  7c:	02f43423          	sd	a5,40(s0)
+  80:	03043823          	sd	a6,48(s0)
+  84:	03143c23          	sd	a7,56(s0)
+  88:	04040793          	addi	a5,s0,64
+  8c:	fc878793          	addi	a5,a5,-56
+  90:	fef43023          	sd	a5,-32(s0)
+  94:	fe042623          	sw	zero,-20(s0)
+  98:	02c0006f          	j	c4 <hprintf+0x6c>
+
+  9c:	fec42783          	lw	a5,-20(s0)
+  a0:	fd843703          	ld	a4,-40(s0)
+  a4:	00f707b3          	add	a5,a4,a5
+  a8:	0007c783          	lbu	a5,0(a5)
+  ac:	0007879b          	sext.w	a5,a5
+  b0:	00078513          	mv	a0,a5
+  b4:	f6dff0ef          	jal	ra,20 <hprintf_c>
+
+  b8:	fec42783          	lw	a5,-20(s0)
+  bc:	0017879b          	addiw	a5,a5,1
+  c0:	fef42623          	sw	a5,-20(s0)
+  
+  c4:	fec42783          	lw	a5,-20(s0)
+  c8:	fd843703          	ld	a4,-40(s0)
+  cc:	00f707b3          	add	a5,a4,a5
+  d0:	0007c783          	lbu	a5,0(a5)
+  d4:	fc0794e3          	bnez	a5,9c <hprintf+0x44>
+
+  d8:	00000013          	nop
+  dc:	02813083          	ld	ra,40(sp)
+  e0:	02013403          	ld	s0,32(sp)
+  e4:	07010113          	addi	sp,sp,112
+  e8:	00008067          	ret
+
+Disassembly of section .rodata:
+
+00000000000000f0 <.rodata>:
+  f0:	6548                	ld	a0,136(a0)
+  f2:	6c6c                	ld	a1,216(s0)
+  f4:	6f775f6f          	jal	t5,75fea <hprintf+0x75f92>
+  f8:	6c72                	ld	s8,280(sp)
+  fa:	0a64                	addi	s1,sp,284
+	...
+
+Disassembly of section .comment:
+
+0000000000000000 <.comment>:
+   0:	3a434347          	fmsub.d	ft6,ft6,ft4,ft7,rmm
+   4:	2820                	fld	fs0,80(s0)
+   6:	29554e47          	fmsub.s	ft8,fa0,fs5,ft5,rmm
+   a:	3720                	fld	fs0,104(a4)
+   c:	312e                	fld	ft2,232(sp)
+   e:	312e                	fld	ft2,232(sp)
+  10:	3220                	fld	fs0,96(a2)
+  12:	3130                	fld	fa2,96(a0)
+  14:	30353037          	lui	zero,0x30353
+  18:	0039                	c.addi	zero,14
