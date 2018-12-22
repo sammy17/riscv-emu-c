@@ -214,18 +214,18 @@ int main(){
 
         wb_data = 0;
 
-        rd      = (instruction >> 7 ) & 0b11111   ;
-        func3   = (instruction >> 12) & 0b111     ;
-        rs1     = (instruction >> 15) & 0b11111   ;
-        rs2     = (instruction >> 20) & 0b11111   ;
-        func7   = (instruction >> 25) & 0b1111111 ;
+        rd      = ((instruction) >> 7 ) & 0b11111   ;
+        func3   = ((instruction) >> 12) & 0b111     ;
+        rs1     = ((instruction) >> 15) & 0b11111   ;
+        rs2     = ((instruction) >> 20) & 0b11111   ;
+        func7   = ((instruction) >> 25) & 0b1111111 ;
 
-        imm11_0  = (instruction >> 20) & 0b111111111111 ;
-        imm31_12 = (instruction >> 12) & 1048575 ;       // extract 20 bits
+        imm11_0  = ((instruction) >> 20) & 0b111111111111 ;
+        imm31_12 = ((instruction) >> 12) & 1048575 ;       // extract 20 bits
 
-        imm_j    = (((instruction>>31) & 0b1)<<20) + (instruction & (0b11111111<<12)) + (((instruction>>20) & 0b1)<<11) + (((instruction>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
-        imm_b    = (((instruction>>31) & 0b1)<<12) + (((instruction>>7) & 0b1)<<11) + (((instruction>>25) & 0b111111)<<5) + ((instruction>>7) & 0b11110) ;
-        imm_s    = (((instruction>>25) & 0b1111111)<<5) + ((instruction>>7) & 0b11111) ;
+        imm_j    = ((((instruction)>>31) & 0b1)<<20) + ((instruction) & (0b11111111<<12)) + ((((instruction)>>20) & 0b1)<<11) + ((((instruction)>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
+        imm_b    = ((((instruction)>>31) & 0b1)<<12) + ((((instruction)>>7) & 0b1)<<11) + ((((instruction)>>25) & 0b111111)<<5) + (((instruction)>>7) & 0b11110) ;
+        imm_s    = ((((instruction)>>25) & 0b1111111)<<5) + (((instruction)>>7) & 0b11111) ;
         //printf("IMJ %d\n",imm_j);
         lPC = PC;
         PC += 4;
@@ -234,14 +234,14 @@ int main(){
                 #ifdef DEBUG 
                     printf("LUI\n");
                 #endif
-                reg_file[rd] = sign_extend<uint_t>((imm31_12 << 12),32);
+                reg_file[rd] = sign_extend<uint_t>(((imm31_12) << 12),32);
                 break;
 
             case auipc : 
                 #ifdef DEBUG 
                     printf("AUIPC\n");
                 #endif
-                reg_file[rd] = (PC-4) + sign_extend<uint_t>((imm31_12 << 12),32);
+                reg_file[rd] = (PC-4) + sign_extend<uint_t>(((imm31_12) << 12),32);
                 break;
 
             case jump : 
@@ -330,11 +330,11 @@ int main(){
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){
                     switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
-                        case 0b000 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFFFF<< 8)) + (reg_file[rs2] & 0xFF      )    ; break;//SB  setting LSB 8 bit 
+                        case 0b000 : memory.at(store_addr/4) = (memory.at(store_addr/4) & ((0xFFFFFFFFFFFFFF)<< 8)) + (reg_file[rs2] & (0xFF)      )    ; break;//SB  setting LSB 8 bit 
 
-                        case 0b001 : memory.at(store_addr/4) = (memory.at(store_addr/4) & (0xFFFFFFFFFFFF  <<16)) + (reg_file[rs2] & 0xFFFF    )    ; break;//SH setting LSB 16 bit value
+                        case 0b001 : memory.at(store_addr/4) = (memory.at(store_addr/4) & ((0xFFFFFFFFFFFF)  <<16)) + (reg_file[rs2] & (0xFFFF)    )    ; break;//SH setting LSB 16 bit value
 
-                        case 0b010 : memory.at(store_addr/4) = ((memory.at(store_addr/4) & (0xFFFFFFFFull   <<32))) + (reg_file[rs2] & 0xFFFFFFFF)    ; break;//SW setting LSB 32 bit value
+                        case 0b010 : memory.at(store_addr/4) = ((memory.at(store_addr/4) & ((0xFFFFFFFFull)   <<32))) + (reg_file[rs2] & (0xFFFFFFFF))    ; break;//SW setting LSB 32 bit value
 
                         case 0b011 : memory.at(store_addr/4) = reg_file[rs2] ; break; //SD
 
@@ -382,14 +382,14 @@ int main(){
                         break;
 
                     case 0b001 : 
-                        wb_data = reg_file[rs1] << (imm11_0 & 0b11111); //SLLI
+                        wb_data = reg_file[rs1] << ((imm11_0) & (0b11111)); //SLLI
                         break;
 
                     case 0b101 : 
                         if ((imm11_0 >> 5) == 0)
-                            wb_data = reg_file[rs1] >> (imm11_0 & 0b11111); //SRLI
+                            wb_data = reg_file[rs1] >> ((imm11_0) & (0b11111)); //SRLI
                         else if ((imm11_0 >> 5) == 1)
-                            wb_data = (reg_file[rs1] & (1llu<<63)) | (reg_file[rs1] >> (imm11_0 & 0b11111)); //SRAI
+                            wb_data = (reg_file[rs1] & ((1llu)<<63)) | (reg_file[rs1] >> ((imm11_0) & (0b11111))); //SRAI
                         break;
                     default : 
                         printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
@@ -410,14 +410,14 @@ int main(){
                         break;
 
                     case 0b001 : //SLLIW
-                        wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] << (imm11_0 & 0b11111)),32); 
+                        wb_data = sign_extend<uint_t>((MASK32) & (reg_file[rs1] << (imm11_0 & 0b11111)),32); 
                         break;
 
                     case 0b101 : 
                         if ((imm11_0 >> 5) == 0) //SRLIW
-                            wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] >> (imm11_0 & 0b11111)),32); 
+                            wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] >> ((imm11_0) & 0b11111)),32); 
                         else if ((imm11_0 >> 5) == 1) //SRAIW
-                            wb_data = sign_extend<uint_t>(MASK32 & ((reg_file[rs1] & (1lu<<31)) | (reg_file[rs1] >> (imm11_0 & 0b11111))),32); 
+                            wb_data = sign_extend<uint_t>(MASK32 & ((reg_file[rs1] & (1lu<<31)) | (reg_file[rs1] >> ((imm11_0) & 0b11111))),32); 
                         break;
                 }
                 reg_file[rd] = wb_data;
@@ -432,22 +432,22 @@ int main(){
                     switch (func3) {
                         case 0b000 : //MUL
                             mult_temp = reg_file[rs1] * reg_file[rs2];
-                            reg_file[rd] = mult_temp & MASK64;
+                            reg_file[rd] = (mult_temp) & MASK64;
                             break;
 
                         case 0b001 : //MULH
                             mult_temp = (__uint128_t)(signed_value(reg_file[rs1]) * signed_value(reg_file[rs2]));
-                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            reg_file[rd] = ((mult_temp) >> 64) & MASK64;
                             break;
 
                         case 0b010 : //MULHSU
                             mult_temp = (__uint128_t)(signed_value(reg_file[rs1]) * reg_file[rs2]);
-                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            reg_file[rd] = ((mult_temp) >> 64) & MASK64;
                             break;
 
                         case 0b011 : //MULHU
                             mult_temp = reg_file[rs1] * reg_file[rs2];
-                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            reg_file[rd] = ((mult_temp) >> 64) & MASK64;
                             break;
 
                         case 0b100 : //DIV
@@ -520,7 +520,7 @@ int main(){
                             break;
 
                         case 0b101 : //SRA
-                            wb_data = (reg_file[rs1] & (1llu<<63)) | (reg_file[rs1] >> (reg_file[rs2] & 0b11111));
+                            wb_data = (reg_file[rs1] & ((1llu)<<63)) | (reg_file[rs1] >> (reg_file[rs2] & 0b11111));
                             break;
                     }
                     reg_file[rd] = wb_data;

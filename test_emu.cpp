@@ -3,8 +3,8 @@
 #include <string>
 #include <fstream>
 #include <vector>
-#include <bits/stdc++.h> 
-#include <math.h> 
+#include <bits/stdc++.h>
+#include <math.h>
 #include <chrono>
 #include <thread>
 
@@ -13,19 +13,19 @@ using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
 // type defs
-enum opcode_t { 
-				lui    = 0b0110111,
-    			auipc  = 0b0010111,
-    			jump   = 0b1101111,
-    			jumpr  = 0b1100111,
-    			cjump  = 0b1100011,
-    			load   = 0b0000011,
-    			store  = 0b0100011,
+enum opcode_t {
+                lui    = 0b0110111,
+                auipc  = 0b0010111,
+                jump   = 0b1101111,
+                jumpr  = 0b1100111,
+                cjump  = 0b1100011,
+                load   = 0b0000011,
+                store  = 0b0100011,
                 iops   = 0b0010011,
                 iops64 = 0b0011011,
                 rops   = 0b0110011,
                 rops64 = 0b0111011
-    		};
+            };
 
 typedef uint64_t uint_t;
 typedef uint64_t data_t;
@@ -35,8 +35,8 @@ typedef uint64_t data_t;
 #define FIFO_ADDR_RX 0xe000102c
 #define FIFO_ADDR_TX 0xe0001030
 
-#define MASK64 0xFFFFFFFFFFFFFFFF
-#define MASK32 0xFFFFFFFF
+#define MASK64 0xFFFFFFFFFFFFFFFFllu
+#define MASK32 0xFFFFFFFFllu
 
 //#define DEBUG
 
@@ -71,18 +71,18 @@ T divi(T num1, T num2,int s) {
     } else {
         ldiv_t div_result;
         switch(s){
-            case(0)  : 
+            case(0)  :
                 div_result = div((int64_t)num1,(int64_t)num2);
                 return div_result.quot;
                 break;
-            case(1) : 
-                return num1/num2; 
+            case(1) :
+                return num1/num2;
                 break;
-            case(2)  : 
+            case(2)  :
                 div_result = div((int64_t)num1,(int64_t)num2);
-                return div_result.rem; 
+                return div_result.rem;
                 break;
-            case(3) : 
+            case(3) :
                 return num1%num2;
                 break;
         }
@@ -108,18 +108,18 @@ T divi32(T num1, T num2,int s) {
     } else {
         div_t div_result;
         switch(s){
-            case(0)  : 
+            case(0)  :
                 div_result = div((int32_t)num1,(int32_t)num2);
                 return div_result.quot;
                 break;
-            case(1) : 
-                return num1/num2; 
+            case(1) :
+                return num1/num2;
                 break;
-            case(2)  : 
+            case(2)  :
                 div_result = div((int32_t)num1,(int32_t)num2);
-                return div_result.rem; 
+                return div_result.rem;
                 break;
-            case(3) : 
+            case(3) :
                 return num1%num2;
                 break;
         }
@@ -141,7 +141,7 @@ int32_t signed_value32(uint_t x){
       return y;
 }
 
-void print_reg_file(){
+void print_reg_file(vector<uint_t> reg_file){
     string reg_file_names [] = {"zero","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6",\
                               "a7","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","t3","t4","t5","t6"};
     for (int i=0;i<32;i++){
@@ -149,7 +149,164 @@ void print_reg_file(){
     }
 }
 
+uint_t getINST(uint_t PC,vector<uint_t> * memory){
+    if(PC%2==0)
+        return ((MASK32) & (memory->at(PC/2)));
+    else
+        return ((memory->at(PC/2))>>32);
+}
+
+uint_t store_word(uint_t store_addr, uint_t load_data, uint_t value){
+    uint_t wb_data = 0;
+    if ((store_addr%8)==0){
+        wb_data = (load_data & ((0xFFFFFFFFull)   <<32)) + (value & 0xFFFFFFFF);
+    }
+    else if ((store_addr%8)==4){
+        wb_data = (load_data & (0xFFFFFFFF)) + ((value & 0xFFFFFFFFull)<<32);
+    }
+    else{
+        cout<<"######## Mis-aligned memory store #########\n";
+        wb_data = -1;
+    }
+
+    return wb_data;
+}
+uint_t store_halfw(uint_t store_addr, uint_t load_data, uint_t value){
+    uint_t wb_data = 0;
+    switch(store_addr%8){
+        case 0 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + (value & 0xFFFF);
+            break;
+        case 2 :
+            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFFFF)<<16) + (load_data & 0xFFFF);
+            break;
+        case 4 :
+            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFFFF)<<32) + (load_data & 0xFFFFFFFF);
+            break;
+        case 6 :
+            wb_data = ((value & 0xFFFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
+            break;
+        default :
+            cout<<"######## Mis-aligned memory store #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
+uint_t store_byte(uint_t store_addr, uint_t load_data, uint_t value){
+    uint_t wb_data = 0;
+    switch(store_addr%8){
+        case 0 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFFFFFull)<<8)) + (value & 0xFF);
+            break;
+        case 1 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + ((value & 0xFF)<<8) + (load_data & 0xFF);
+            break;
+        case 2 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFull)<<24)) + ((value & 0xFF)<<16) + (load_data & 0xFFFF);
+            break;
+        case 3 :
+            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFF)<<24) + (load_data & 0xFFFFFF);
+            break;
+        case 4 :
+            wb_data = ( load_data & ((0xFFFFFFull)<<40)) + ((value & 0xFF)<<32) + (load_data & 0xFFFFFFFF);
+            break;
+        case 5 :
+            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFF)<<40) + (load_data & 0xFFFFFFFFFF);
+            break;
+        case 6 :
+            wb_data = ( load_data & ((0xFFull)<<56)) + ((value & 0xFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
+            break;
+        case 7 :
+            wb_data = ((value & 0xFF)<<56) + (load_data & 0xFFFFFFFFFFFFFF);
+            break;
+        default :
+            cout<<"######## Mis-aligned memory store #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
+uint_t load_word(uint_t load_addr, uint_t load_data){
+    uint_t wb_data = 0;
+    if ((load_addr%8)==0)
+        wb_data = (load_data & 0xFFFFFFFF);
+    else if ((load_addr%8)==4)
+        wb_data = (((load_data)>>32) & 0xFFFFFFFF);
+    else{
+        cout<< "Mis-aligned memory load\n";
+        wb_data = -1;
+    }
+
+    return wb_data;
+}
+
+uint_t load_halfw(uint_t load_addr, uint_t load_data){
+    uint_t wb_data = 0;
+    switch(load_addr%8){
+        case 0 :
+            wb_data = (load_data & 0xFFFF) ;
+            break;
+        case 2 :
+            wb_data = (((load_data)>>16) & 0xFFFF) ;
+            break;
+        case 4 :
+            wb_data = (((load_data)>>32) & 0xFFFF) ;
+            break;
+        case 6 :
+            wb_data = (((load_data)>>48) & 0xFFFF) ;
+            break;
+        default :
+            cout<<"######## Mis-aligned memory load #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
+
+uint_t load_byte(uint_t load_addr, uint_t load_data){
+    uint_t wb_data = 0;
+    switch(load_addr%8){
+        case 0 :
+            wb_data = (load_data & 0xFF) ;
+            break;
+        case 1 :
+            wb_data = (((load_data)>>8) & 0xFF) ;
+            break;
+        case 2 :
+            wb_data = (((load_data)>>16) & 0xFF) ;
+            break;
+        case 3 :
+            wb_data = (((load_data)>>24) & 0xFF) ;
+            break;
+        case 4 :
+            wb_data = (((load_data)>>32) & 0xFF) ;
+            break;
+        case 5 :
+            wb_data = (((load_data)>>40) & 0xFF) ;
+            break;
+        case 6 :
+            wb_data = (((load_data)>>48) & 0xFF) ;
+            break;
+        case 7 :
+            wb_data = (((load_data)>>56) & 0xFF) ;
+            break;
+        default :
+            cout<<"######## Mis-aligned memory load #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
 int main(){
+
+    vector<uint_t> memory(1<<MEM_SIZE); // main memory
+
+    vector<uint_t> reg_file(32);       // register file
 
     ifstream infile("data_hex.txt");
     string line;
@@ -160,7 +317,10 @@ int main(){
     uint_t instruction = 0;
     bool branch = false;
     uint_t load_data = 0;
+    uint_t store_data = 0;
     uint_t store_addr = 0;
+    uint_t load_addr = 0;
+    uint_t val = 0;
 
     __uint128_t mult_temp=0;
 
@@ -183,25 +343,30 @@ int main(){
 
     enum opcode_t opcode;
 
+    uint_t temp;
+
     while (std::getline(infile, line)) {            // Initialize memory with instructions
-        memory[i] = stoul(line,nullptr,16);
-        //cout << memory[i] << endl;
+        temp = stoul(line,nullptr,16);
+        if (i%2==0)
+            memory.at(i/2) = temp;
+        else
+            memory.at(i/2) = ((memory.at(i/2)) | ((temp)<<32));
         i+=1;
     }
-    #ifdef DEBUG 
+    #ifdef DEBUG
         printf("Mem load successful\n");
     #endif
 
 
 
-    while (PC < (1<<MEM_SIZE)){
+    while (PC < ((1llu)<<MEM_SIZE)){
 
-        #ifdef DEBUG 
+        #ifdef DEBUG
             sleep_for(milliseconds(500));
-            printf("PC : %x\n",PC/2);
+            printf("PC : %x\n",PC);
         #endif
 
-        instruction = memory.at(PC/8);
+        instruction = getINST(PC/4,&memory);
 
         reg_file[0] = 0;
 
@@ -210,51 +375,53 @@ int main(){
             cout << "Instruction : "<<ins << endl;
         #endif
 
-        opcode = static_cast<opcode_t>(instruction & 0b1111111);
+        opcode = static_cast<opcode_t>((instruction) & 0b1111111);
 
         wb_data = 0;
 
-        rd      = (instruction >> 7 ) & 0b11111   ;
-        func3   = (instruction >> 12) & 0b111     ;
-        rs1     = (instruction >> 15) & 0b11111   ;
-        rs2     = (instruction >> 20) & 0b11111   ;
-        func7   = (instruction >> 25) & 0b1111111 ;
+        rd      = ((instruction) >> 7 ) & 0b11111   ;
+        func3   = ((instruction) >> 12) & 0b111     ;
+        rs1     = ((instruction) >> 15) & 0b11111   ;
+        rs2     = ((instruction) >> 20) & 0b11111   ;
+        func7   = ((instruction) >> 25) & 0b1111111 ;
 
-        imm11_0  = (instruction >> 20) & 0b111111111111 ;
-        imm31_12 = (instruction >> 12) & 1048575 ;       // extract 20 bits
+        imm11_0  = ((instruction) >> 20) & 0b111111111111 ;
+        imm31_12 = ((instruction) >> 12) & 1048575 ;       // extract 20 bits
 
-        imm_j    = (((instruction>>31) & 0b1)<<20) + (instruction & (0b11111111<<12)) + (((instruction>>20) & 0b1)<<11) + (((instruction>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
-        imm_b    = (((instruction>>31) & 0b1)<<12) + (((instruction>>7) & 0b1)<<11) + (((instruction>>25) & 0b111111)<<5) + ((instruction>>7) & 0b11110) ;
-        imm_s    = (((instruction>>25) & 0b1111111)<<5) + ((instruction>>7) & 0b11111) ;
+        imm_j    = ((((instruction)>>31) & 0b1)<<20) + ((instruction) & (0b11111111<<12)) + ((((instruction)>>20) & 0b1)<<11) + ((((instruction)>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
+        imm_b    = ((((instruction)>>31) & 0b1)<<12) + ((((instruction)>>7) & 0b1)<<11) + ((((instruction)>>25) & 0b111111)<<5) + (((instruction)>>7) & 0b11110) ;
+        imm_s    = ((((instruction)>>25) & 0b1111111)<<5) + (((instruction)>>7) & 0b11111) ;
         //printf("IMJ %d\n",imm_j);
         lPC = PC;
-        PC += 8;
+        PC += 4;
         switch(opcode){
-            case lui : 
-                #ifdef DEBUG 
+            case lui :
+                #ifdef DEBUG
                     printf("LUI\n");
                 #endif
-                reg_file[rd] = sign_extend<uint_t>((imm31_12 << 12),32);
+                wb_data = sign_extend<uint_t>(((imm31_12) << 12),32);
+                reg_file[rd] = wb_data;
                 break;
 
-            case auipc : 
-                #ifdef DEBUG 
+            case auipc :
+                #ifdef DEBUG
                     printf("AUIPC\n");
                 #endif
-                reg_file[rd] = (PC-8) + sign_extend<uint_t>((imm31_12 << 12),32);
+                wb_data = (PC-4) + sign_extend<uint_t>(((imm31_12) << 12),32);
+                reg_file[rd] = wb_data;
                 break;
 
-            case jump : 
-                #ifdef DEBUG 
+            case jump :
+                #ifdef DEBUG
                     printf("JUMP\n");
                 #endif
                 wb_data = PC;
-                PC = (PC-8) + sign_extend<uint_t>(imm_j,21); //21 bits sign extend
+                PC = (PC-4) + sign_extend<uint_t>(imm_j,21); //21 bits sign extend
                 reg_file[rd] = wb_data ;// PC + 4 to rd
                 break;
 
-            case jumpr : 
-                #ifdef DEBUG 
+            case jumpr :
+                #ifdef DEBUG
                     printf("JUMPR\n");
                 #endif
                 wb_data = PC;
@@ -262,8 +429,8 @@ int main(){
                 reg_file[rd] = wb_data ;// PC + 4 to rd
                 break;
 
-            case cjump : 
-                #ifdef DEBUG 
+            case cjump :
+                #ifdef DEBUG
                     printf("CJUMP\n");
                 #endif
                 switch(func3){
@@ -279,72 +446,85 @@ int main(){
 
                     case 0b111 : branch = (reg_file[rs1] > reg_file[rs2]); break; //BGEU
 
-                    default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
+                    default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                         bitset<3> ins(func3);
                         cout<<  "func3 : "<<ins<<endl;
                         break;
                 }
                 if (branch==true)
-                    PC = PC - 8 + sign_extend<uint_t>(imm_b,13);
+                    PC = PC - 4 + sign_extend<uint_t>(imm_b,13);
 
                 break;
 
-            case load : 
-                #ifdef DEBUG 
+            case load :
+                #ifdef DEBUG
                     printf("LOAD\n");
                 #endif
-                if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR_RX) && (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) != FIFO_ADDR_TX))){
-                load_data = memory.at((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))/8);
+                load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
+                if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
+                load_data = memory.at(load_addr/8);
                         switch(func3){
-                            case 0b000 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFF      , 8); break; //LB sign extend  8 bit value
+                            case 0b000 : wb_data = sign_extend<uint_t>(load_byte(load_addr,load_data) & (0xFF)      , 8); break; //LB sign extend  8 bit value
 
-                            case 0b001 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFFFF    ,16); break; //LH sign extend 16 bit value
+                            case 0b001 : wb_data = sign_extend<uint_t>(load_halfw(load_addr,load_data) & (0xFFFF)    ,16); break; //LH sign extend 16 bit value
 
-                            case 0b010 : reg_file[rd] = sign_extend<uint_t>(load_data & 0xFFFFFFFF,32); break; //LW sign extend 32 bit value
+                            case 0b010 : wb_data = sign_extend<uint_t>(load_word(load_addr,load_data) & (0xFFFFFFFF),32); break; //LW sign extend 32 bit value
 
-                            case 0b100 : reg_file[rd] = load_data & 0xFF      ; break; //LBU zero extend  8 bit value
+                            case 0b100 : wb_data = load_byte(load_addr,load_data) & 0xFF      ; break; //LBU zero extend  8 bit value
 
-                            case 0b101 : reg_file[rd] = load_data & 0xFFFF    ; break; //LHU zero extend 16 bit value
+                            case 0b101 : wb_data = load_halfw(load_addr,load_data) & 0xFFFF    ; break; //LHU zero extend 16 bit value
 
-                            case 0b110 : reg_file[rd] = load_data & 0xFFFFFFFF; break; //LWU zero extend 32 bit value
+                            case 0b110 : wb_data = load_word(load_addr,load_data) & 0xFFFFFFFF; break; //LWU zero extend 32 bit value
 
-                            case 0b011 : reg_file[rd] = load_data ; break;//LD
+                            case 0b011 : wb_data = load_data ; break;//LD
 
-                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
+                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                                 bitset<3> ins(func3);
                                 cout<<  "func3 : "<<ins<<endl;
                                 break;
                         }
-                } else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))/8) == FIFO_ADDR_RX) {
-                    reg_file[rd] = 0 ;
+                } else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_RX) {
+                    wb_data = 0 ;
                 }
-                else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))/8) == FIFO_ADDR_TX){
-                    reg_file[rd] = (uint_t)getchar() ;
+                else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_TX){
+                    wb_data = (uint_t)getchar() ;
                 }
+                reg_file[rd] = wb_data;
                 break;
 
-            case store : 
-                #ifdef DEBUG 
+            case store :
+                #ifdef DEBUG
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){
+                store_data = memory.at(store_addr/8);
                     switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
-                        case 0b000 : memory.at(store_addr/8) = (memory.at(store_addr/8) & (0xFFFFFFFFFFFFFF<< 8)) + (reg_file[rs2] & 0xFF      )    ; break;//SB  setting LSB 8 bit 
+                        case 0b000 :
+                            val = reg_file[rs2] & 0xFF;
+                            wb_data = store_byte(store_addr,store_data,val);
+                            break;//SB  setting LSB 8 bit
 
-                        case 0b001 : memory.at(store_addr/8) = (memory.at(store_addr/8) & (0xFFFFFFFFFFFF  <<16)) + (reg_file[rs2] & 0xFFFF    )    ; break;//SH setting LSB 16 bit value
+                        case 0b001 :
+                            val = reg_file[rs2] & 0xFFFF;
+                            wb_data = store_halfw(store_addr,store_data,val);
+                            break;//SH setting LSB 16 bit value
 
-                        case 0b010 : memory.at(store_addr/8) = ((memory.at(store_addr/8) & (0xFFFFFFFFull   <<32))) + (reg_file[rs2] & 0xFFFFFFFF)    ; break;//SW setting LSB 32 bit value
+                        case 0b010 :
+                            val = reg_file[rs2] & 0xFFFFFFFF;
+                            wb_data = store_word(store_addr,store_data,val);
+                            break;//SW setting LSB 32 bit value
 
-                        case 0b011 : memory.at(store_addr/8) = reg_file[rs2] ; break; //SD
+                        case 0b011 : wb_data = reg_file[rs2] ; break; //SD
 
-                        default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111); 
+                        default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                         bitset<3> ins(func3);
                         cout<<  "func3 : "<<func3<<endl;
                         break;
                     }
+                    memory.at(store_addr/8) = wb_data;
                 } else {
-                    #ifdef DEBUG 
+                    #ifdef DEBUG
                         printf("STORE2\n");
                     #endif
                     //    printf("STORE2 %llu\n",rs2);
@@ -353,45 +533,45 @@ int main(){
                 }
                 break;
             case iops  :
-                #ifdef DEBUG 
+                #ifdef DEBUG
                     printf("IOPS %lu\n",imm11_0);
                 #endif
                 switch(func3){
-                    case 0b000 : 
+                    case 0b000 :
                         wb_data = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12); //ADDI
                         break;
 
-                    case 0b010 : 
+                    case 0b010 :
                         wb_data = (signed_value(reg_file[rs1]) < signed_value(sign_extend<uint_t>(imm11_0,12))) ? 1 : 0; //SLTI
                         break;
 
-                    case 0b011 : 
+                    case 0b011 :
                         wb_data = (reg_file[rs1] < sign_extend<uint_t>(imm11_0,12)) ? 1 : 0; //SLTIU
                         break;
 
-                    case 0b111 : 
+                    case 0b111 :
                         wb_data = reg_file[rs1] & sign_extend<uint_t>(imm11_0,12); //ANDI
                         break;
 
-                    case 0b110 : 
+                    case 0b110 :
                         wb_data = reg_file[rs1] | sign_extend<uint_t>(imm11_0,12); //ORI
                         break;
 
-                    case 0b100 : 
+                    case 0b100 :
                         wb_data = reg_file[rs1] ^ sign_extend<uint_t>(imm11_0,12); //XORI
                         break;
 
-                    case 0b001 : 
+                    case 0b001 :
                         wb_data = reg_file[rs1] << (imm11_0 & 0b11111); //SLLI
                         break;
 
-                    case 0b101 : 
-                        if ((imm11_0 >> 5) == 0)
-                            wb_data = reg_file[rs1] >> (imm11_0 & 0b11111); //SRLI
-                        else if ((imm11_0 >> 5) == 1)
-                            wb_data = (reg_file[rs1] & (1llu<<63)) | (reg_file[rs1] >> (imm11_0 & 0b11111)); //SRAI
+                    case 0b101 :
+                        if (((imm11_0) >> 5) == 0)
+                            wb_data = reg_file[rs1] >> ((imm11_0) & 0b11111); //SRLI
+                        else if (((imm11_0) >> 5) == 1)
+                            wb_data = (reg_file[rs1] & (1llu<<63)) | (reg_file[rs1] >> ((imm11_0) & 0b11111)); //SRAI
                         break;
-                    default : 
+                    default :
                         printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                         bitset<3> ins(func3);
                         cout<<  "func3 : "<<ins<<endl;
@@ -401,7 +581,7 @@ int main(){
                 break;
 
             case iops64 :
-                #ifdef DEBUG 
+                #ifdef DEBUG
                     printf("IOPS64 %lu\n",imm11_0);
                 #endif
                 switch(func3){
@@ -410,14 +590,14 @@ int main(){
                         break;
 
                     case 0b001 : //SLLIW
-                        wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] << (imm11_0 & 0b11111)),32); 
+                        wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] << (imm11_0 & 0b11111)),32);
                         break;
 
-                    case 0b101 : 
-                        if ((imm11_0 >> 5) == 0) //SRLIW
-                            wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] >> (imm11_0 & 0b11111)),32); 
-                        else if ((imm11_0 >> 5) == 1) //SRAIW
-                            wb_data = sign_extend<uint_t>(MASK32 & ((reg_file[rs1] & (1lu<<31)) | (reg_file[rs1] >> (imm11_0 & 0b11111))),32); 
+                    case 0b101 :
+                        if (((imm11_0) >> 5) == 0) //SRLIW
+                            wb_data = sign_extend<uint_t>(MASK32 & (reg_file[rs1] >> (imm11_0 & 0b11111)),32);
+                        else if (((imm11_0) >> 5) == 1) //SRAIW
+                            wb_data = sign_extend<uint_t>(MASK32 & ((reg_file[rs1] & ((1llu)<<31)) | ((reg_file[rs1]) >> ((imm11_0) & 0b11111))),32);
                         break;
                 }
                 reg_file[rd] = wb_data;
@@ -426,28 +606,28 @@ int main(){
 
             case rops :
                 if (func7 == 0b0000001){
-                    #ifdef DEBUG 
+                    #ifdef DEBUG
                         printf("ROPS\n");
                     #endif
                     switch (func3) {
                         case 0b000 : //MUL
                             mult_temp = reg_file[rs1] * reg_file[rs2];
-                            reg_file[rd] = mult_temp & MASK64;
+                            reg_file[rd] = (mult_temp) & MASK64;
                             break;
 
                         case 0b001 : //MULH
                             mult_temp = (__uint128_t)(signed_value(reg_file[rs1]) * signed_value(reg_file[rs2]));
-                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            reg_file[rd] = ((mult_temp) >> 64) & MASK64;
                             break;
 
                         case 0b010 : //MULHSU
                             mult_temp = (__uint128_t)(signed_value(reg_file[rs1]) * reg_file[rs2]);
-                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            reg_file[rd] = ((mult_temp) >> 64) & MASK64;
                             break;
 
                         case 0b011 : //MULHU
                             mult_temp = reg_file[rs1] * reg_file[rs2];
-                            reg_file[rd] = (mult_temp >> 64) & MASK64;
+                            reg_file[rd] = ((mult_temp) >> 64) & MASK64;
                             break;
 
                         case 0b100 : //DIV
@@ -467,7 +647,7 @@ int main(){
                             break;
                     }
                 } else if (func7 == 0b0000000){
-                    #ifdef DEBUG 
+                    #ifdef DEBUG
                         printf("RROPS1\n");
                     #endif
                     switch(func3){
@@ -478,30 +658,30 @@ int main(){
                             wb_data = (signed_value(reg_file[rs1]) < signed_value(reg_file[rs2])) ? 1 : 0; //SLT
                             break;
 
-                        case 0b011 : 
+                        case 0b011 :
                             wb_data = (reg_file[rs1] < reg_file[rs2]) ? 1 : 0; //SLTU
                             break;
 
-                        case 0b111 : 
+                        case 0b111 :
                             wb_data = reg_file[rs1] & reg_file[rs2]; //AND
                             break;
 
-                        case 0b110 : 
+                        case 0b110 :
                             wb_data = reg_file[rs1] | reg_file[rs2]; //OR
                             break;
 
-                        case 0b100 : 
+                        case 0b100 :
                             wb_data = reg_file[rs1] ^ reg_file[rs2]; //XOR
                             break;
 
-                        case 0b001 : 
+                        case 0b001 :
                             wb_data = reg_file[rs1] << (reg_file[rs2] & 0b11111); //SLL
                             break;
 
-                        case 0b101 : 
+                        case 0b101 :
                             wb_data = reg_file[rs1] >> (reg_file[rs2] & 0b11111); //SRL
                             break;
-                        default : 
+                        default :
                             printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                             bitset<3> ins(func3);
                             cout<<  "func3 : "<<ins<<endl;
@@ -511,7 +691,7 @@ int main(){
                     reg_file[rd] = wb_data;
 
                 } else if (func7 == 0b0100000){
-                    #ifdef DEBUG 
+                    #ifdef DEBUG
                         printf("RROPS2\n");
                     #endif
                     switch(func3){
@@ -529,7 +709,7 @@ int main(){
 
             case rops64 :
                 if (func7 == 0b0000001){
-                    #ifdef DEBUG 
+                    #ifdef DEBUG
                         printf("ROPS64\n");
                     #endif
                     switch (func3) {
@@ -554,11 +734,11 @@ int main(){
                     }
                 }
                 break;
-            default : 
+            default :
                 printf("default\n");
                 bitset<32> ins1(instruction);
                 cout << "Instruction : "<<ins1 << endl;
-                printf("PC : %x\n",PC-8);
+                printf("PC : %x\n",PC-4);
                 break;
         }
 
@@ -569,6 +749,6 @@ int main(){
         }
     }
 
-	return 0;
+    return 0;
 }
 

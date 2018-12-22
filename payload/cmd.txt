@@ -1,0 +1,1 @@
+riscv64-unknown-elf-gcc hello_world.c -o K_1.elf -nostartfiles -march=rv64im -mabi=lp64 -Xlinker -T"link.ld"
