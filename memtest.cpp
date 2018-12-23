@@ -183,6 +183,51 @@ uint_t load_byte(uint_t load_addr, uint_t load_data){
 	return wb_data;		
 }
 
+
+template<class T>
+T divi(T num1, T num2,int s) {
+    if (num2==0){
+        switch(s){
+            case(0)  : return (T)(-1); break;
+            case(1) : return (T)MASK64; break;
+            case(2)  : return num1; break;
+            case(3) : return num1; break;
+        }
+    } else if(num1==(-pow(2ull,63)) && num2==-1){
+        if (s==0 || s==2){
+            switch(s){
+                case(0)  : return -pow(2ull,63); break;
+                case(2)  : return 0; break;
+            }
+        }
+    } else {
+        ldiv_t div_result;
+        switch(s){
+            case(0)  :
+                div_result = div((int64_t)num1,(int64_t)num2);
+                return div_result.quot;
+                break;
+            case(1) :
+                return num1/num2;
+                break;
+            case(2)  :
+                div_result = div((int64_t)num1,(int64_t)num2);
+                return div_result.rem;
+                break;
+            case(3) :
+                return num1%num2;
+                break;
+        }
+    }
+}
+
+int64_t signed_value(uint_t x){
+  if (((x>>63) & 0b1) == 1)
+      return (x ^ (1llu<<63)) - (1llu<<63);
+  else
+      return x;
+}
+
 int main(){
 
     ifstream infile("data_test.txt");
@@ -243,7 +288,7 @@ int main(){
     cout << hex<<store_byte(5,0xFFFFFFFFFFFFFFFFlu,0)<<endl;
     cout << hex<<store_byte(6,0xFFFFFFFFFFFFFFFFlu,0)<<endl;
     cout << hex<<store_byte(7,0xFFFFFFFFFFFFFFFFlu,0)<<endl;
-*/
+*//*
     cout << hex<<load_word(8,0xfedcba9876543210lu)<<endl;
     cout << hex<<load_word(4,0xfedcba9876543210lu)<<endl;
     cout << hex<<load_word(2,0xfedcba9876543210lu)<<endl;
@@ -262,6 +307,25 @@ int main(){
     cout << hex<<load_byte(5,0xfedcba9876543210lu)<<endl;
     cout << hex<<load_byte(6,0xfedcba9876543210lu)<<endl;
     cout << hex<<load_byte(7,0xfedcba9876543210lu)<<endl;
+*/
+    
+    //cout << hex<<signed_value(1ull<<63)<<endl;
+    //cout << divi<int64_t>(100,10,0)<<endl;
+
+    uint_t val = (uint_t)(-8);
+
+    bitset<64> ins1(val);
+
+    uint_t wb_data = (( val & ((1llu)<<63)) | ((val) >> (2 & 0b111111)));
+    //cout << hex << wb_data << endl;
+
+    bitset<64> ins2(wb_data);
+
+    cout << ins1 << endl;
+    cout << ins2 << endl;
+    cout << signed_value(wb_data) << endl;
+
+
 
 /*
     while (std::getline(infile, line)) {            // Initialize memory with instructions

@@ -1,0 +1,85 @@
+../src/riscv_isa_tests/amoadd_d.S \
+../src/riscv_isa_tests/amoadd_w.S \
+../src/riscv_isa_tests/amoand_d.S \
+../src/riscv_isa_tests/amoand_w.S \
+../src/riscv_isa_tests/amomax_d.S \
+../src/riscv_isa_tests/amomaxu_d.S \
+../src/riscv_isa_tests/amomaxu_w.S \
+../src/riscv_isa_tests/amomax_w.S \
+../src/riscv_isa_tests/amomin_d.S \
+../src/riscv_isa_tests/amominu_d.S \
+../src/riscv_isa_tests/amominu_w.S \
+../src/riscv_isa_tests/amomin_w.S \
+../src/riscv_isa_tests/amoor_d.S \
+../src/riscv_isa_tests/amoor_w.S \
+../src/riscv_isa_tests/amoswap_d.S \
+../src/riscv_isa_tests/amoswap_w.S \
+../src/riscv_isa_tests/amoxor_d.S \
+../src/riscv_isa_tests/amoxor_w.S \
+../src/riscv_isa_tests/lrsc.S \
+
+
+
+./src/riscv_isa_tests/amoadd_d.o \
+./src/riscv_isa_tests/amoadd_w.o \
+./src/riscv_isa_tests/amoand_d.o \
+./src/riscv_isa_tests/amoand_w.o \
+./src/riscv_isa_tests/amomax_d.o \
+./src/riscv_isa_tests/amomaxu_d.o \
+./src/riscv_isa_tests/amomaxu_w.o \
+./src/riscv_isa_tests/amomax_w.o \
+./src/riscv_isa_tests/amomin_d.o \
+./src/riscv_isa_tests/amominu_d.o \
+./src/riscv_isa_tests/amominu_w.o \
+./src/riscv_isa_tests/amomin_w.o \
+./src/riscv_isa_tests/amoor_d.o \
+./src/riscv_isa_tests/amoor_w.o \
+./src/riscv_isa_tests/amoswap_d.o \
+./src/riscv_isa_tests/amoswap_w.o \
+./src/riscv_isa_tests/amoxor_d.o \
+./src/riscv_isa_tests/amoxor_w.o \
+./src/riscv_isa_tests/lrsc.o \
+
+
+./src/riscv_isa_tests/amoadd_d.d \
+./src/riscv_isa_tests/amoadd_w.d \
+./src/riscv_isa_tests/amoand_d.d \
+./src/riscv_isa_tests/amoand_w.d \
+./src/riscv_isa_tests/amomax_d.d \
+./src/riscv_isa_tests/amomaxu_d.d \
+./src/riscv_isa_tests/amomaxu_w.d \
+./src/riscv_isa_tests/amomax_w.d \
+./src/riscv_isa_tests/amomin_d.d \
+./src/riscv_isa_tests/amominu_d.d \
+./src/riscv_isa_tests/amominu_w.d \
+./src/riscv_isa_tests/amomin_w.d \
+./src/riscv_isa_tests/amoor_d.d \
+./src/riscv_isa_tests/amoor_w.d \
+./src/riscv_isa_tests/amoswap_d.d \
+./src/riscv_isa_tests/amoswap_w.d \
+./src/riscv_isa_tests/amoxor_d.d \
+./src/riscv_isa_tests/amoxor_w.d \
+./src/riscv_isa_tests/lrsc.d \
+
+amoadd_d.S
+amoadd_w.S
+amoand_d.S
+amoand_w.S
+amomax_d.S
+amomaxu_d.S
+amomaxu_w.S
+amomax_w.S
+amomin_d.S
+amominu_d.S
+amominu_w.S
+amomin_w.S
+amoor_d.S
+amoor_w.S
+amoswap_d.S
+amoswap_w.S
+amoxor_d.S
+amoxor_w.S
+lrsc.S
+
+\.\.\/src\/riscv_isa_tests\/(\w+)\.S
+\.\.\/src\/riscv_isa_tests\/$1\.S \

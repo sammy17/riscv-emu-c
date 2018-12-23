@@ -27,14 +27,14 @@ C_DEPS += \
 src/%.o: ../src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: RISC-V GCC/Newlib C Compiler'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64im -DTIME -DUSE_MYSTDLIB -DRISCV -O2 -Wall -ffreestanding -nostdlib  -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -DTIME -DUSE_MYSTDLIB -DRISCV -O2 -Wall -ffreestanding -nostdlib  -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
 src/%.o: ../src/%.S
 	@echo 'Building file: $<'
 	@echo 'Invoking: RISC-V GCC/Newlib Assembler'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64im -x assembler-with-cpp -Wall -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -Wa,-march=rv64im -o "$@" "$<"
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -x assembler-with-cpp -Wall -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -Wa,-march=rv64ima -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
