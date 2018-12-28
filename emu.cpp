@@ -1154,6 +1154,8 @@ int main(){
             case fence :
                 continue;
 
+            
+
             default :
                 printf("default\n");
                 bitset<32> ins1(instruction);
