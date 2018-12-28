@@ -9,7 +9,7 @@ int main()
 		//hprintf_c((int)'o');
 	hprintf("Hello_world\n");
 
-		while(1);
+	while(1);
 }
 
 

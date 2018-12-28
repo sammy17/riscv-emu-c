@@ -1,5 +1,5 @@
 comp :
-	g++ emu.cpp -o emu
+	g++ emu.cpp -o emu -std=c++11
 
 run : comp
 	./emu
