@@ -10,45 +10,22 @@
 #include <algorithm> 
 #include <map>
 
-#include "reg_file.h"
+
+#include "csr_file.h"
+#include "emu.h"
 
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
-// type defs
-enum opcode_t {
-                lui    = 0b0110111,
-                auipc  = 0b0010111,
-                jump   = 0b1101111,
-                jumpr  = 0b1100111,
-                cjump  = 0b1100011,
-                load   = 0b0000011,
-                store  = 0b0100011,
-                iops   = 0b0010011,
-                iops64 = 0b0011011,
-                rops   = 0b0110011,
-                rops64 = 0b0111011,
-                amo    = 0b0101111,
-                fence  = 0b0001111
-            };
-
-typedef uint64_t uint_t;
-typedef uint64_t data_t;
-
-#define MEM_SIZE 24
-#define XLEN     64
-#define FIFO_ADDR_RX 0xe000102c
-#define FIFO_ADDR_TX 0xe0001030
-
-#define MASK64 0xFFFFFFFFFFFFFFFFllu
-#define MASK32 0xFFFFFFFFllu
 
 //#define DEBUG
 
 vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
 vector<uint_t> reg_file(32);       // register file
+
+vector<uint_t> csr_file(1<<12);    // csr file
 
 
 template<class T>
@@ -308,6 +285,7 @@ uint_t load_byte(uint_t load_addr, uint_t load_data){
     return wb_data;
 }
 
+
 int main(){
 
     vector<uint_t> memory(1<<MEM_SIZE); // main memory
@@ -344,6 +322,8 @@ int main(){
     uint_t imm_j    = 0;
     uint_t imm_b    = 0;
     uint_t imm_s    = 0;
+    uint_t csr_data = 0;
+    plevel_t cp     = (plevel_t)MMODE;
 
     uint_t amo_op   = 0;
     bool amo_reserve_valid = false;
@@ -405,6 +385,9 @@ int main(){
         imm_s    = ((((instruction)>>25) & 0b1111111)<<5) + (((instruction)>>7) & 0b11111) ;
 
         amo_op   = ((instruction) >> 27) & 0b11111 ;
+
+        //csr
+        csr_file[MSTATUS] = (csr_file[MSTATUS] | (0b11<<11)) ; //setting mpp to 11 always
         //printf("IMJ %d\n",imm_j);
         lPC = PC;
         PC += 4;
@@ -1154,7 +1137,98 @@ int main(){
             case fence :
                 continue;
 
-            
+            case systm :
+                switch(func3){
+                    case 0b001 : // CSRRW
+                        //csr_data = csr_file[imm11_0];
+                        csr_data = csr_read(imm11_0);
+                        store_data = reg_file[rs1];
+                        //csr_file[imm11_0] = store_data;
+                        csr_write(imm11_0,store_data);
+                        if (rd!=0)
+                            reg_file[rd] = csr_data;
+                        break;
+
+                    case 0b010 : // CSRRS
+                        //csr_data = csr_file[imm11_0];
+                        csr_data = csr_read(imm11_0);
+                        store_data = reg_file[rs1];
+                        store_data = (store_data | csr_data);
+                        //csr_file[imm11_0] = store_data;
+                        csr_write(imm11_0,store_data);
+                        reg_file[rd] = csr_data;
+                        break;
+
+                    case 0b011 : // CSRRC
+                        //csr_data = csr_file[imm11_0];
+                        csr_data = csr_read(imm11_0);
+                        store_data = reg_file[rs1];
+                        store_data = (csr_data & (MASK64 - store_data));
+                        //csr_file[imm11_0] = store_data;
+                        csr_write(imm11_0,store_data);
+                        reg_file[rd] = csr_data;
+                        break;
+
+                    case 0b101 : // CSRRWI
+                        //csr_data = csr_file[imm11_0];
+                        csr_data = csr_read(imm11_0);
+                        //csr_file[imm11_0] = rs1;
+                        csr_write(imm11_0,rs1);
+                        if (rd!=0)
+                            reg_file[rd] = csr_data;
+                        break;
+
+                    case 0b110 : // CSRRSI
+                        //csr_data = csr_file[imm11_0];
+                        csr_data = csr_read(imm11_0);
+                        store_data = (rs1 | csr_data);
+                        //csr_file[imm11_0] = store_data;
+                        csr_write(imm11_0,store_data);
+                        reg_file[rd] = csr_data;
+                        break;
+
+                    case 0b111 : // CSRRCI
+                        //csr_data = csr_file[imm11_0];
+                        csr_data = csr_read(imm11_0);
+                        store_data = (csr_data & (MASK64 - rs1));
+                        //csr_file[imm11_0] = store_data;
+                        csr_write(imm11_0,store_data);
+                        reg_file[rd] = csr_data;
+                        break;
+
+                    case 0b000 : 
+                        switch(imm11_0){
+                            case 0 : //ecall
+                                mstatus.mpie = mstatus.mie;
+                                mstatus.mie  = 0;
+                                mstatus.mpp = 0b11;
+
+                                mcause.interrupt = 0;
+                                mcause.ecode = 11;
+                                mepc = PC-4;
+                                cout << PC-4 <<endl;
+                                PC = mtvec.base;
+                                cout << PC+4 <<endl;
+                                break;
+
+                            case 1 : //ebreak
+                                cout << "EBREAK"<<endl;
+                                break;
+
+                            case 770 : //mret
+                                PC = mepc;
+                                cp = (plevel_t)MMODE;
+                                mstatus.mie = mstatus.mpie;
+                                mstatus.mpie = 1;
+                                break;
+                        }
+                        break;
+
+                    default :
+                        cout << "Invalid system instruction : "<< func3 << endl;
+                        break;
+                }
+                break;
 
             default :
                 printf("default\n");

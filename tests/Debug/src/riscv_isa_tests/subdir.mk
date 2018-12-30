@@ -85,6 +85,9 @@ S_UPPER_SRCS += \
 ../src/riscv_isa_tests/amoxor_d.S \
 ../src/riscv_isa_tests/amoxor_w.S \
 ../src/riscv_isa_tests/lrsc.S \
+../src/riscv_isa_tests/csr.S \
+../src/riscv_isa_tests/scall.S \
+../src/riscv_isa_tests/sbreak.S \
 
 OBJS += \
 ./src/riscv_isa_tests/add.o \
@@ -168,6 +171,9 @@ OBJS += \
 ./src/riscv_isa_tests/amoxor_d.o \
 ./src/riscv_isa_tests/amoxor_w.o \
 ./src/riscv_isa_tests/lrsc.o \
+./src/riscv_isa_tests/csr.o \
+./src/riscv_isa_tests/scall.o \
+./src/riscv_isa_tests/sbreak.o \
 
 S_UPPER_DEPS += \
 ./src/riscv_isa_tests/add.d \
@@ -251,6 +257,9 @@ S_UPPER_DEPS += \
 ./src/riscv_isa_tests/amoxor_d.d \
 ./src/riscv_isa_tests/amoxor_w.d \
 ./src/riscv_isa_tests/lrsc.d \
+./src/riscv_isa_tests/csr.d \
+./src/riscv_isa_tests/scall.d \
+./src/riscv_isa_tests/sbreak.d \
 
 # Each subdirectory must supply rules for building sources it contributes
 src/riscv_isa_tests/%.o: ../src/riscv_isa_tests/%.S
