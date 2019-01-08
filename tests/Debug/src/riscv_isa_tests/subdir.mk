@@ -4,6 +4,7 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 S_UPPER_SRCS += \
+../src/riscv_isa_tests/setup.S \
 ../src/riscv_isa_tests/add.S \
 ../src/riscv_isa_tests/addw.S \
 ../src/riscv_isa_tests/addi.S \
@@ -90,6 +91,7 @@ S_UPPER_SRCS += \
 ../src/riscv_isa_tests/sbreak.S \
 
 OBJS += \
+./src/riscv_isa_tests/setup.o \
 ./src/riscv_isa_tests/add.o \
 ./src/riscv_isa_tests/addw.o \
 ./src/riscv_isa_tests/addi.o \
@@ -176,6 +178,7 @@ OBJS += \
 ./src/riscv_isa_tests/sbreak.o \
 
 S_UPPER_DEPS += \
+./src/riscv_isa_tests/setup.d \
 ./src/riscv_isa_tests/add.d \
 ./src/riscv_isa_tests/addw.d \
 ./src/riscv_isa_tests/addi.d \
@@ -265,7 +268,7 @@ S_UPPER_DEPS += \
 src/riscv_isa_tests/%.o: ../src/riscv_isa_tests/%.S
 	@echo 'Building file: $<'
 	@echo 'Invoking: RISC-V GCC/Newlib Assembler'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -x assembler-with-cpp -Wall -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -Wa,-march=rv64ima -o "$@" "$<"
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -x assembler-with-cpp -Wall -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -Wa,-march=rv64ima -o "$@" "$<" -I /home/dean/Linux-ext/newenu/tests/src
 	@echo 'Finished building: $<'
 	@echo ' '
 

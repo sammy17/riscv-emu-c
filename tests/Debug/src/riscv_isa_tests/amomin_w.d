@@ -1,12 +1,13 @@
 src/riscv_isa_tests/amomin_w.o: ../src/riscv_isa_tests/amomin_w.S \
- ../src/riscv_isa_tests/riscv_test.h ../src/riscv_isa_tests/../firmware.h \
- ../src/riscv_isa_tests/../encoding.h \
- ../src/riscv_isa_tests/test_macros.h
+ /home/dean/Linux-ext/newenu/tests/src/riscv_test.h \
+ /home/dean/Linux-ext/newenu/tests/src/firmware.h \
+ /home/dean/Linux-ext/newenu/tests/src/encoding.h \
+ /home/dean/Linux-ext/newenu/tests/src/test_macros.h
 
-../src/riscv_isa_tests/riscv_test.h:
+/home/dean/Linux-ext/newenu/tests/src/riscv_test.h:
 
-../src/riscv_isa_tests/../firmware.h:
+/home/dean/Linux-ext/newenu/tests/src/firmware.h:
 
-../src/riscv_isa_tests/../encoding.h:
+/home/dean/Linux-ext/newenu/tests/src/encoding.h:
 
-../src/riscv_isa_tests/test_macros.h:
+/home/dean/Linux-ext/newenu/tests/src/test_macros.h:

@@ -388,6 +388,7 @@ int main(){
 
         //csr
         csr_file[MSTATUS] = (csr_file[MSTATUS] | (0b11<<11)) ; //setting mpp to 11 always
+        mstatus.mpp = 0b11;
         //printf("IMJ %d\n",imm_j);
         lPC = PC;
         PC += 4;
@@ -1199,6 +1200,7 @@ int main(){
                     case 0b000 : 
                         switch(imm11_0){
                             case 0 : //ecall
+                                cout << "ECALL"<<endl;
                                 mstatus.mpie = mstatus.mie;
                                 mstatus.mie  = 0;
                                 mstatus.mpp = 0b11;
@@ -1208,7 +1210,7 @@ int main(){
                                 mepc = PC-4;
                                 cout << PC-4 <<endl;
                                 PC = mtvec.base;
-                                cout << PC+4 <<endl;
+                                cout << PC <<endl;
                                 break;
 
                             case 1 : //ebreak
@@ -1216,10 +1218,18 @@ int main(){
                                 break;
 
                             case 770 : //mret
+                                cout << PC-4 <<endl;
+                                cout << "MRET"<<endl;
                                 PC = mepc;
                                 cp = (plevel_t)MMODE;
                                 mstatus.mie = mstatus.mpie;
                                 mstatus.mpie = 1;
+
+                                cout << PC <<endl;
+                                break;
+
+                            default :
+                                cout << "Invalid EXCEP"<<endl;
                                 break;
                         }
                         break;

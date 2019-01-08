@@ -33,20 +33,8 @@ RVTEST_CODE_BEGIN
   li TESTNUM, 2
 
   # This is the expected trap code.
-  li t1, CAUSE_USER_ECALL
-
-#ifdef __MACHINE_MODE
-  # If running in M mode, use mstatus.MPP to check existence of U mode.
-  # Otherwise, if in S mode, then U mode must exist and we don't need to check.
-  li t0, MSTATUS_MPP
-  csrc mstatus, t0
-  csrr t2, mstatus
-  and t0, t0, t2
-  beqz t0, 1f
-
-  # If U mode doesn't exist, mcause should indicate ECALL from M mode.
   li t1, CAUSE_MACHINE_ECALL
-#endif
+
 
 1:
   li t0, SSTATUS_SPP
