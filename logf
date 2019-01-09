@@ -1,0 +1,96 @@
+
+
+------------------------ RISC-V ISA Test's Begins ------------------------
+add 	OK
+addw 	OK
+addi 	OK
+addiw 	OK
+and 	OK
+andi 	OK
+auipc 	OK
+beq 	OK
+bge 	OK
+bgeu 	OK
+blt 	OK
+bltu 	OK
+bne 	OK
+jal 	OK
+jalr 	OK
+lb 	OK
+lbu 	OK
+lh 	OK
+lhu 	OK
+lw 	OK
+lwu 	OK
+ld 	OK
+lui 	OK
+or 	OK
+ori 	OK
+sb 	OK
+sh 	OK
+sw 	OK
+sd 	OK
+sll 	OK
+slli 	OK
+slliw 	OK
+sllw 	OK
+slt 	OK
+sltu 	OK
+slti 	OK
+sltiu 	OK
+sra 	OK
+sraw 	OK
+srai 	OK
+sraiw 	OK
+srl 	OK
+srlw 	OK
+srli 	OK
+srliw 	OK
+sub 	OK
+subw 	OK
+xor 	OK
+xori 	OK
+div 	OK
+divu 	OK
+divw 	OK
+divuw 	OK
+mul 	OK
+mulh 	OK
+mulhsu 	OK
+mulhu 	OK
+mulw 	OK
+rem 	OK
+remu 	OK
+remuw 	OK
+remw 	OK
+lrsc 	OK
+amoswap_w 	OK
+amoadd_w 	OK
+amoxor_w 	OK
+amoand_w 	OK
+amoor_w 	OK
+amomin_w 	OK
+amomax_w 	OK
+amominu_w 	OK
+amomaxu_w 	OK
+amoswap_d 	OK
+amoadd_d 	OK
+amoxor_d 	OK
+amoand_d 	OK
+amoor_d 	OK
+amomin_d 	OK
+amomax_d 	OK
+amominu_d 	OK
+amomaxu_d 	OK
+csr 	OK
+ecall 	mtvecccc132336
+132200
+MRET
+132204
+ECALL
+132208
+132336
+OK
+ebreak 	EBREAK
+ERROR
+Infinite loop!

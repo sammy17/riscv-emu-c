@@ -1,18 +1,4 @@
-#include <stdio.h>
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <vector>
-#include <bits/stdc++.h>
-#include <math.h>
-#include <chrono>
-#include <thread>
-#include <algorithm> 
-#include <map>
-
-using namespace std::this_thread; // sleep_for, sleep_until
-using namespace std::chrono; // nanoseconds, system_clock, seconds
-using namespace std;
+#include "emu.h"
 
 #define MCAUSE			0x342 	
 #define MTVAL			0x343 	
@@ -232,8 +218,7 @@ using namespace std;
 #define MHPMEVENT11		0x32B 
 #define MHPMEVENT12		0x32C 	
 
-typedef uint64_t uint_t;
-typedef uint64_t data_t;
+
 
 struct mstat{
     uint8_t uie, sie, mie, upie, spie, mpie, spp, mpp, fs, xs, mprv, sum, mxr, tvm, tw, tsr, uxl, sxl, sd;
@@ -257,6 +242,12 @@ struct mstat{
 
 uint_t mscratch=0;
 
+uint_t medeleg = 0;
+uint_t sedeleg = 0;
+
+uint_t mideleg = 0;
+uint_t sideleg = 0;
+
 uint_t misa = 0b1000100000001;
 
 uint_t mepc = 0;
@@ -274,7 +265,7 @@ struct mtvec_t{
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
-    	base = (val>>2);    
+    	base = (val & (MASK64 - 0b11));    
     }
 } mtvec;
 
@@ -286,14 +277,48 @@ struct mcause_t{
     	ecode = 0;
     }
     uint_t read_reg(){
-        return ((((1<<63)-1) & ecode)+(interrupt<<63));
+        return ((((1llu<<63)-1) & ecode)+(interrupt<<63));
     }
 
     void write_reg(uint_t val){
-    	ecode = val & ((1<<63)-1);
+    	ecode = val & ((1llu<<63)-1);
     	interrupt = (val>>63) & 0b1;    
     }
 } mcause;
+
+struct scause_t{
+    uint8_t interrupt;
+    uint_t ecode;
+    scause_t() {
+    	interrupt = 0;
+    	ecode = 0;
+    }
+    uint_t read_reg(){
+        return ((((1llu<<63)-1) & ecode)+(interrupt<<63));
+    }
+
+    void write_reg(uint_t val){
+    	ecode = val & ((1llu<<63)-1);
+    	interrupt = (val>>63) & 0b1;    
+    }
+} scause;
+
+struct ucause_t{
+    uint8_t interrupt;
+    uint_t ecode;
+    ucause_t() {
+    	interrupt = 0;
+    	ecode = 0;
+    }
+    uint_t read_reg(){
+        return ((((1llu<<63)-1) & ecode)+(interrupt<<63));
+    }
+
+    void write_reg(uint_t val){
+    	ecode = val & ((1llu<<63)-1);
+    	interrupt = (val>>63) & 0b1;    
+    }
+} ucause;
 
 uint_t csr_read(uint_t csr_addr){
     switch(csr_addr){
@@ -314,6 +339,24 @@ uint_t csr_read(uint_t csr_addr){
         	break;
         case MCAUSE :
         	return mcause.read_reg();
+        	break;
+        case SCAUSE :
+        	return scause.read_reg();
+        	break;
+        case UCAUSE :
+        	return ucause.read_reg();
+        	break;
+        case MEDELEG :
+        	return medeleg;
+        	break;
+        case SEDELEG :
+        	return sedeleg;
+        	break;
+        case MIDELEG :
+        	return mideleg;
+        	break;
+        case SIDELEG :
+        	return sideleg;
         	break;
         default:
             cout << "CSR not implemented : " << hex << csr_addr << endl;
@@ -336,14 +379,76 @@ void csr_write(uint_t csr_addr, uint_t val){
         	mepc = val;
         	break;
         case MTVEC :
-        	cout << "mtvecccc"<<endl;
+        	//cout << "mtvecccc"<<val<<endl;
             mtvec.write_reg(val);
             break;
         case MCAUSE :
             mcause.write_reg(val);
             break;
+        case SCAUSE :
+            scause.write_reg(val);
+            break;
+        case UCAUSE :
+            ucause.write_reg(val);
+            break;
+        case MEDELEG :
+        	medeleg = val;
+        	break;
+        case SEDELEG :
+        	sedeleg = val;
+        	break;
+        case MIDELEG :
+        	mideleg = val;
+        	break;
+        case SIDELEG :
+        	sideleg = val;
+        	break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
             break;
     }
+}
+
+
+plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privilage){
+	uint_t mtrap_deleg_reg = 0;
+	uint_t strap_deleg_reg = 0;
+	switch(current_privilage){
+		case MMODE : 
+			return MMODE;
+			break;
+
+		case SMODE :
+			if (interrupt)
+				mtrap_deleg_reg = mideleg;
+			else 
+				mtrap_deleg_reg = medeleg;
+
+			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1)
+				return SMODE;
+			else 
+				return MMODE;
+			break;
+
+		case UMODE :
+			if (interrupt){
+				mtrap_deleg_reg = mideleg;
+				strap_deleg_reg = sideleg;
+			}
+			else {
+				mtrap_deleg_reg = medeleg;
+				strap_deleg_reg = sedeleg;
+			}
+
+			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1){     		//delegating to smode
+            	if (((strap_deleg_reg>>cause) & 0b1 ) == 1)      //delegating to umode
+                	return UMODE;
+            	else
+                	return SMODE;
+            }
+        	else
+        		return MMODE;
+
+        	break;
+	}
 }

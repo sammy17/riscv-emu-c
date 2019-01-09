@@ -357,6 +357,7 @@ int main(){
             sleep_for(milliseconds(500));
             printf("PC : %x\n",PC);
         #endif
+        //sleep_for(milliseconds(10));
 
         instruction = getINST(PC/4,&memory);
 
@@ -1200,32 +1201,30 @@ int main(){
                     case 0b000 : 
                         switch(imm11_0){
                             case 0 : //ecall
-                                cout << "ECALL"<<endl;
                                 mstatus.mpie = mstatus.mie;
                                 mstatus.mie  = 0;
                                 mstatus.mpp = 0b11;
-
                                 mcause.interrupt = 0;
-                                mcause.ecode = 11;
+                                mcause.ecode = ECODE_M_ECALL;
                                 mepc = PC-4;
-                                cout << PC-4 <<endl;
                                 PC = mtvec.base;
-                                cout << PC <<endl;
                                 break;
 
                             case 1 : //ebreak
-                                cout << "EBREAK"<<endl;
+                                mstatus.mpie = mstatus.mie;
+                                mstatus.mie  = 0;
+                                mstatus.mpp = 0b11;
+                                mcause.interrupt = 0;
+                                mcause.ecode = ECODE_M_EBREAK;
+                                mepc = PC-4;
+                                PC = mtvec.base;
                                 break;
 
                             case 770 : //mret
-                                cout << PC-4 <<endl;
-                                cout << "MRET"<<endl;
                                 PC = mepc;
                                 cp = (plevel_t)MMODE;
                                 mstatus.mie = mstatus.mpie;
                                 mstatus.mpie = 1;
-
-                                cout << PC <<endl;
                                 break;
 
                             default :

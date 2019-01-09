@@ -24,11 +24,6 @@ void risvCoremarkStartMsg(void){
 }
 
 
-void pgr_exit(void){
-	printf("\n\n------------------------ Exiting Program ------------------------\n");
-	while(1);
-}
-
 void init(void){
 	//while(1){
 		//printf("\n------------------------ Welcome to RISC-V ------------------------\n");

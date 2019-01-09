@@ -19,6 +19,9 @@
 
 /* Main program
  **********************************/
+
+ #define stvec_handler mtvec_handler
+
 _start:
 	jal ra,init
 	/* trap */
@@ -79,53 +82,3 @@ coremarkBenchmark:
 	jal ra,COREMARK
 	jal ra,init
 
-trap_vector:                                                                           
-        csrr t5, mcause;                                                
-        li t6, CAUSE_USER_ECALL;                                        
-        beq t5, t6, write_tohost;                                       
-        li t6, CAUSE_SUPERVISOR_ECALL;                                  
-        beq t5, t6, write_tohost;                                       
-        li t6, CAUSE_MACHINE_ECALL;                                     
-        beq t5, t6, write_tohost;                                                      
-        la t5, mtvec_handler;                                           
-        beqz t5, 1f;                                                    
-        jr t5;                                                                                
-  1:    csrr t5, mcause;                                                
-        bgez t5, handle_exception;                                      
-        INTERRUPT_HANDLER;                                              
-handle_exception:    
-
-  other_exception:                                                      
-                   
-  1:    ori TESTNUM, TESTNUM, 1337;                                     
-  write_tohost:                                                         
-        sw TESTNUM, tohost, t5;                                         
-        j write_tohost;   
-
-reset_vector:                                                           
-        RISCV_MULTICORE_DISABLE;                                        
-        INIT_SATP;                                                     
-        INIT_PMP;                                                       
-        DELEGATE_NO_TRAPS;                                              
-        li TESTNUM, 0;                                                  
-        la t0, trap_vector;                                             
-        csrw mtvec, t0;                                                 
-        CHECK_XLEN;                                                     
-
-        la t0, stvec_handler;                                           
-        beqz t0, 1f;                                                    
-        csrw stvec, t0;                                                 
-		li t0, (1 << CAUSE_LOAD_PAGE_FAULT) | (1 << CAUSE_STORE_PAGE_FAULT) | (1 << CAUSE_FETCH_PAGE_FAULT) | (1 << CAUSE_MISALIGNED_FETCH) | (1 << CAUSE_USER_ECALL) | (1 << CAUSE_BREAKPOINT);                                 
-        csrw medeleg, t0;                                               
-        csrr t1, medeleg;                                               
-        bne t0, t1, other_exception; 
-
-1:      csrwi mstatus, 0;                                               
-        //init;                                                           
-        EXTRA_INIT;                                                     
-        EXTRA_INIT_TIMER;                                               
-        la t0, 1f;                                                      
-        csrw mepc, t0;                                                  
-        csrr a0, mhartid;                                               
-        mret;                                                           
-1:

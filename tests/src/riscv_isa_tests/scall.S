@@ -24,11 +24,20 @@ RVTEST_CODE_BEGIN
   #define sstatus mstatus
   #define scause mcause
   #define sepc mepc
+  #define stvec mtvec
   #define sret mret
   #define stvec_handler2 mtvec_handler2
   #undef SSTATUS_SPP
   #define SSTATUS_SPP MSTATUS_MPP
 #endif
+
+                                               
+setup_stvec:
+  lui t0,%hi(stvec_handler2)
+  addi t0,t0,%lo(stvec_handler2)
+  csrw mtvec, t0                              
+                                                      
+1: 
 
   li TESTNUM, 2
 
@@ -69,3 +78,9 @@ RVTEST_DATA_BEGIN
   TEST_DATA
 
 RVTEST_DATA_END
+
+tohost: 
+  .dword 0;
+
+fromhost: 
+  .dword 0;

@@ -1,3 +1,6 @@
+#ifndef _EMU_H_
+#define _EMU_H_
+
 #include <stdio.h>
 #include <iostream>
 #include <string>
@@ -39,6 +42,9 @@ enum plevel_t {
     UMODE = 0b00
 };
 
+#define ECODE_M_ECALL 11
+#define ECODE_M_EBREAK 3
+
 
 typedef uint64_t uint_t;
 typedef uint64_t data_t;
@@ -51,8 +57,4 @@ typedef uint64_t data_t;
 #define MASK64 0xFFFFFFFFFFFFFFFFllu
 #define MASK32 0xFFFFFFFFllu
 
-
-#define MMODE 0b11
-#define HMODE 0b10
-#define SMODE 0b01
-#define UMODE 0b00
+#endif
