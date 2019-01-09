@@ -20800,7 +20800,7 @@ Disassembly of section .text:
 0000000000020528 <setup_stvec>:
    20528:	000202b7          	lui	t0,0x20
    2052c:	5b828293          	addi	t0,t0,1464 # 205b8 <stvec_handler1>
-   20530:	30529073          	csrw	mtvec,t0
+   20530:	10529073          	csrw	stvec,t0
    20534:	00200e13          	li	t3,2
 
 0000000000020538 <do_break>:

@@ -31,7 +31,7 @@ RVTEST_CODE_BEGIN
 setup_stvec:
   lui t0,%hi(stvec_handler1)
   addi t0,t0,%lo(stvec_handler1)
-  csrw mtvec, t0  
+  csrw stvec, t0  
 
   li TESTNUM, 2
 

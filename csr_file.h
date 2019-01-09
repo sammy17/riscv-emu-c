@@ -220,9 +220,9 @@
 
 
 
-struct mstat{
+struct mstatus_t{
     uint8_t uie, sie, mie, upie, spie, mpie, spp, mpp, fs, xs, mprv, sum, mxr, tvm, tw, tsr, uxl, sxl, sd;
-    mstat() {
+    mstatus_t() {
         uie = 0; sie = 0; mie = 0;
         upie = 0; spie = 0; mpie = 0; 
         spp = 0; mpp = 0b11; 
@@ -240,6 +240,26 @@ struct mstat{
     }
 } mstatus;
 
+struct sstatus_t{
+    uint8_t uie, sie, upie, spie, spp, fs, xs, sum, mxr, uxl, sd;
+    sstatus_t() {
+        uie = 0; sie = 0; 
+        upie = 0; spie = 0; 
+        spp = 0; 
+        fs = 0; xs = 0; sum = 0; mxr = 0; uxl = 0;sd = 0; 
+    }
+    uint_t read_reg(){
+        return (((uint_t)sd<<63)+((uint_t)uxl<<32)+(mxr<<19)+(sum<<18)+(xs<<15)+(fs<<13)+(spp<<8)+(spie<<5)+(upie<<4)+(sie<<1)+uie);
+    }
+
+    void write_reg(uint_t val){
+        uie = (val & 0b1); sie = ((val>>1)& 0b1); 
+        upie= ((val>>5)& 0b1); spie= ((val>>6)& 0b1);
+        spp= ((val>>8)& 0b1); 
+        fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); uxl= ((val>>32)& 0b11);  sd= ((val>>63)& 0b1); 
+    }
+} sstatus;
+
 uint_t mscratch=0;
 
 uint_t medeleg = 0;
@@ -251,6 +271,8 @@ uint_t sideleg = 0;
 uint_t misa = 0b1000100000001;
 
 uint_t mepc = 0;
+uint_t sepc = 0;
+uint_t uepc = 0;
 
 struct mtvec_t{
     uint8_t mode;
@@ -268,6 +290,40 @@ struct mtvec_t{
     	base = (val & (MASK64 - 0b11));    
     }
 } mtvec;
+
+struct stvec_t{
+    uint8_t mode;
+    uint_t base;
+    stvec_t() {
+    	mode = 0;
+    	base = 0;
+    }
+    uint_t read_reg(){
+        return (mode+(base<<2));
+    }
+
+    void write_reg(uint_t val){
+    	mode = val & 0b11;
+    	base = (val & (MASK64 - 0b11));    
+    }
+} stvec;
+
+struct utvec_t{
+    uint8_t mode;
+    uint_t base;
+    utvec_t() {
+    	mode = 0;
+    	base = 0;
+    }
+    uint_t read_reg(){
+        return (mode+(base<<2));
+    }
+
+    void write_reg(uint_t val){
+    	mode = val & 0b11;
+    	base = (val & (MASK64 - 0b11));    
+    }
+} utvec;
 
 struct mcause_t{
     uint8_t interrupt;
@@ -325,6 +381,9 @@ uint_t csr_read(uint_t csr_addr){
         case MSTATUS :
             return mstatus.read_reg();
             break;
+        case SSTATUS :
+            return sstatus.read_reg();
+            break;
         case MSCRATCH :
         	return mscratch;
         	break;
@@ -334,8 +393,20 @@ uint_t csr_read(uint_t csr_addr){
         case MEPC :
         	return mepc;
         	break;
+        case SEPC :
+        	return sepc;
+        	break;
+        case UEPC :
+        	return uepc;
+        	break;
         case MTVEC :
         	return mtvec.read_reg();
+        	break;
+        case STVEC :
+        	return stvec.read_reg();
+        	break;
+        case UTVEC :
+        	return utvec.read_reg();
         	break;
         case MCAUSE :
         	return mcause.read_reg();
@@ -369,6 +440,9 @@ void csr_write(uint_t csr_addr, uint_t val){
         case MSTATUS :
             mstatus.write_reg(val);
             break;
+        case SSTATUS :
+            sstatus.write_reg(val);
+            break;
         case MSCRATCH :
         	mscratch = val;
         	break;
@@ -378,9 +452,20 @@ void csr_write(uint_t csr_addr, uint_t val){
         case MEPC :
         	mepc = val;
         	break;
+        case SEPC :
+        	sepc = val;
+        	break;
+        case UEPC :
+        	uepc = val;
+        	break;
         case MTVEC :
-        	//cout << "mtvecccc"<<val<<endl;
             mtvec.write_reg(val);
+            break;
+        case STVEC :
+            stvec.write_reg(val);
+            break;
+        case UTVEC :
+            utvec.write_reg(val);
             break;
         case MCAUSE :
             mcause.write_reg(val);
