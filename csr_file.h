@@ -241,12 +241,13 @@ struct mstatus_t{
 } mstatus;
 
 struct sstatus_t{
-    uint8_t uie, sie, upie, spie, spp, fs, xs, sum, mxr, uxl, sd;
+    //uint8_t uie, sie, upie, spie, spp, fs, xs, sum, mxr, uxl, sd;
+    uint8_t &uie = mstatus.uie; uint8_t &sie = mstatus.sie; 
+    uint8_t &upie = mstatus.upie; uint8_t &spie = mstatus.spie; 
+    uint8_t &spp = mstatus.spp; 
+    uint8_t &fs = mstatus.fs; uint8_t &xs = mstatus.xs; uint8_t &sum = mstatus.sum; uint8_t &mxr = mstatus.mxr; uint8_t &uxl = mstatus.uxl; uint8_t &sd = mstatus.sd; 
     sstatus_t() {
-        uie = 0; sie = 0; 
-        upie = 0; spie = 0; 
-        spp = 0; 
-        fs = 0; xs = 0; sum = 0; mxr = 0; uxl = 0;sd = 0; 
+
     }
     uint_t read_reg(){
         return (((uint_t)sd<<63)+((uint_t)uxl<<32)+(mxr<<19)+(sum<<18)+(xs<<15)+(fs<<13)+(spp<<8)+(spie<<5)+(upie<<4)+(sie<<1)+uie);
@@ -259,6 +260,25 @@ struct sstatus_t{
         fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); uxl= ((val>>32)& 0b11);  sd= ((val>>63)& 0b1); 
     }
 } sstatus;
+
+struct ustatus_t{
+    //uint8_t uie, sie, upie, spie, spp, fs, xs, sum, mxr, uxl, sd;
+    uint8_t &uie = mstatus.uie; 
+    uint8_t &upie = mstatus.upie; 
+    uint8_t &fs = mstatus.fs; uint8_t &xs = mstatus.xs; uint8_t &sum = mstatus.sum; uint8_t &mxr = mstatus.mxr; uint8_t &uxl = mstatus.uxl; uint8_t &sd = mstatus.sd; 
+    ustatus_t() {
+
+    }
+    uint_t read_reg(){
+        return (((uint_t)sd<<63)+((uint_t)uxl<<32)+(mxr<<19)+(sum<<18)+(xs<<15)+(fs<<13)+(upie<<4)+uie);
+    }
+
+    void write_reg(uint_t val){
+        uie = (val & 0b1);  
+        upie= ((val>>5)& 0b1); 
+        fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); uxl= ((val>>32)& 0b11);  sd= ((val>>63)& 0b1); 
+    }
+} ustatus;
 
 uint_t mscratch=0;
 
@@ -384,6 +404,9 @@ uint_t csr_read(uint_t csr_addr){
         case SSTATUS :
             return sstatus.read_reg();
             break;
+        case USTATUS :
+            return ustatus.read_reg();
+            break;
         case MSCRATCH :
         	return mscratch;
         	break;
@@ -442,6 +465,9 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         case SSTATUS :
             sstatus.write_reg(val);
+            break;
+        case USTATUS :
+            ustatus.write_reg(val);
             break;
         case MSCRATCH :
         	mscratch = val;
@@ -536,4 +562,59 @@ plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privila
 
         	break;
 	}
+}
+
+
+uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, plevel_t current_privilage){
+
+	uint_t ecode = 0;
+	uint_t new_PC = 0;
+
+	if (current_privilage == UMODE)
+        ecode = uecode;
+    else if (current_privilage == SMODE)
+        ecode = secode;
+    else if (current_privilage == MMODE)
+        ecode = mecode;
+
+    plevel_t handling_mode = trap_mode_select(ecode, false, current_privilage);
+
+    if (handling_mode == UMODE){
+    	ustatus.upie = ustatus.uie;
+        ustatus.uie  = 0;
+        ucause.interrupt = 0;
+        ucause.ecode = ecode;
+        uepc = PC-4;
+
+        mstatus.mpp = 0b0; // setting both to UMODE
+        mstatus.spp = 0b0;
+
+        new_PC = utvec.base;   
+    }
+    else if (handling_mode == SMODE){
+    	sstatus.spie = sstatus.sie;
+        sstatus.sie  = 0;
+        scause.interrupt = 0;
+        scause.ecode = ecode;
+        sepc = PC-4;
+
+        mstatus.mpp = 0b01; // setting both to SMODE
+        mstatus.spp = 0b1;
+
+        new_PC = stvec.base; 
+    }
+    else if (handling_mode == MMODE){
+    	mstatus.mpie = mstatus.mie;
+        mstatus.mie  = 0;
+        mcause.interrupt = 0;
+        mcause.ecode = ecode;
+        mepc = PC-4;
+        mstatus.mpp = 0b11; // setting to MMODE
+
+        new_PC = mtvec.base; 
+    }
+    else 
+    	cout << "Unrecognized mode for excep_function" <<endl;
+
+    return new_PC;
 }

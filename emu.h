@@ -43,6 +43,9 @@ enum plevel_t {
 };
 
 #define ECODE_M_ECALL 11
+#define ECODE_S_ECALL 9
+#define ECODE_U_ECALL 8
+
 #define ECODE_M_EBREAK 3
 
 

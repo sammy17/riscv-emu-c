@@ -389,7 +389,7 @@ int main(){
 
         //csr
         csr_file[MSTATUS] = (csr_file[MSTATUS] | (0b11<<11)) ; //setting mpp to 11 always
-        mstatus.mpp = 0b11;
+        //mstatus.mpp = 0b11;
         //printf("IMJ %d\n",imm_j);
         lPC = PC;
         PC += 4;
@@ -1201,6 +1201,7 @@ int main(){
                     case 0b000 : 
                         switch(imm11_0){
                             case 0 : //ecall
+                                /*
                                 mstatus.mpie = mstatus.mie;
                                 mstatus.mie  = 0;
                                 mstatus.mpp = 0b11;
@@ -1209,22 +1210,46 @@ int main(){
                                 mepc = PC-4;
                                 PC = mtvec.base;
                                 break;
+                                */
+                                PC = excep_function(PC,11,9,8,cp);
+                                break;
 
                             case 1 : //ebreak
+                            /*
                                 mstatus.mpie = mstatus.mie;
                                 mstatus.mie  = 0;
                                 mstatus.mpp = 0b11;
                                 mcause.interrupt = 0;
-                                mcause.ecode = ECODE_M_EBREAK;
+                                mcause.ecode = 3;
                                 mepc = PC-4;
-                                PC = mtvec.base;
+                                PC = mtvec.base;*/
+                                PC = excep_function(PC,3,3,3,cp);
                                 break;
 
                             case 770 : //mret
                                 PC = mepc;
                                 cp = (plevel_t)MMODE;
+                                mstatus.mpp = 0b00; //setting to umode
                                 mstatus.mie = mstatus.mpie;
                                 mstatus.mpie = 1;
+                                break;
+
+                            case 258 : //sret
+                                PC = sepc;
+                                cp = (plevel_t)SMODE;
+                                mstatus.mpp = 0b00; //setting to umode
+                                mstatus.spp = 0b0;
+                                sstatus.sie = sstatus.spie;
+                                sstatus.spie = 1;
+                                break;
+
+                            case 2 : //uret
+                                PC = uepc;
+                                cp = (plevel_t)UMODE;
+                                mstatus.mpp = 0b00; //setting to umode
+                                mstatus.spp = 0b0;
+                                ustatus.uie = ustatus.upie;
+                                ustatus.upie = 1;
                                 break;
 
                             default :

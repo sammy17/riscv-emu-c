@@ -8,8 +8,8 @@
 #include <chrono>
 #include <thread>
 
-#include "emu.h"
-#include "csr_file.h"
+//#include "emu.h"
+//#include "csr_file.h"
 
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
@@ -17,7 +17,7 @@ using namespace std;
 
 
 //#define DEBUG
-
+/*
 vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
 vector<uint_t> reg_file(32);       // register file
@@ -219,54 +219,16 @@ int64_t signed_value(uint_t x){
   else
       return x;
 }
-
-struct mstat{
-	uint8_t uie, sie, mie, upie, spie, mpie, spp, mpp, fs, xs, mprv, sum, mxr, tvm, tw, tsr, uxl, sxl, sd;
-	mstat() {
-		uie = 0; sie = 0; mie = 0;
-		upie = 0; spie = 0; mpie = 0; 
-		spp = 0; mpp = 0b11; 
-		fs = 0; xs = 0; mprv = 0; sum = 0; mxr = 0; tvm = 0; tw = 0; tsr = 0; uxl = 0; sxl = 0; sd = 0; 
-	}
-	uint_t concat_reg(){
-		return (((uint_t)sd<<63)+((uint_t)sxl<<34)+((uint_t)uxl<<32)+(tsr<<22)+(tw<<21)+(tvm<<20)+(mxr<<19)+(sum<<18)+(mprv<<17)+(xs<<15)+(fs<<13)+(mpp<<11)+(spp<<8)+(mpie<<7)+(spie<<5)+(upie<<4)+(mie<<3)+(sie<<1)+uie);
-	}
-
-	void write_reg(uint_t val){
-		uie = (val & 0b1); sie = ((val>>1)& 0b1); mie = ((val>>3)& 0b1);
-		upie= ((val>>5)& 0b1); spie= ((val>>6)& 0b1); mpie= ((val>>7)& 0b1); 
-		spp= ((val>>8)& 0b1); mpp = ((val>>11)& 0b11);
-		fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); mprv= ((val>>17)& 0b1); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); tvm= ((val>>20)& 0b1); tw= ((val>>21)& 0b1); tsr= ((val>>22)& 0b1); uxl= ((val>>32)& 0b11); sxl= ((val>>34)& 0b11); sd= ((val>>63)& 0b1); 
-	}
-} mstatus;
+*/
 
 
-uint_t csr_read(uint_t csr_addr){
-	switch(csr_addr){
-		case MSTATUS :
-			return mstatus.concat_reg();
-			break;
-		default:
-			cout << "CSR not implemented : " << csr_addr << endl;
-			break;
-	}
-}
-
-void csr_write(uint_t csr_addr, uint_t val){
-	switch(csr_addr){
-		case MSTATUS :
-			mstatus.write_reg(val);
-			break;
-		default:
-			cout << "CSR not implemented : " << csr_addr << endl;
-			break;
-	}
-}
+typedef uint64_t uint_t;
+typedef uint64_t data_t;
 
 int main(){
 
-    ifstream infile("data_test.txt");
-    string line;
+    //ifstream infile("data_test.txt");
+    //string line;
 
     //printf("1\n");
 
@@ -362,22 +324,7 @@ int main(){
 */
     //mstat mstatus;
 
-    cout << mstatus.concat_reg() <<endl;
 
-    mstatus.mie = 1;
-
-    cout << mstatus.concat_reg() <<endl;
-
-    mstatus.write_reg(0b1000000001000);
-
-    cout << mstatus.concat_reg() <<endl;
-    cout << mstatus.mpp <<endl;
-
-    cout << csr_read(MSTATUS) <<endl;
-
-    csr_write(MSTATUS, 0b0100000001000);
-
-    cout << csr_read(MSTATUS) <<endl;
 
     //cout << mstatus <<endl;
 
@@ -390,6 +337,19 @@ int main(){
     }
 
 */
+
+    uint_t ref1 = 12;
+    uint_t &ref2 = ref1;
+
+    cout << ref2 << endl;
+
+    ref1 = 40 ;
+
+    cout << ref2 << endl;
+
+    ref2 = 500;
+
+    cout << ref1 << endl;
 
     return 0;
 
