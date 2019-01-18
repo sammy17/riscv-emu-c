@@ -7,7 +7,7 @@
 # Test syscall trap.
 #
 
-#define __MACHINE_MODE 1
+## #define __MACHINE_MODE 1
 
 #define TEST_FUNC_NAME ecall
 #define TEST_FUNC_TXT "ecall \t"
@@ -42,7 +42,7 @@ setup_stvec:
   li TESTNUM, 2
 
   # This is the expected trap code.
-  li t1, CAUSE_USER_ECALL
+  li t1, CAUSE_SUPERVISOR_ECALL
 
 #ifdef __MACHINE_MODE
   # If running in M mode, use mstatus.MPP to check existence of U mode.

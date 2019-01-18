@@ -282,17 +282,23 @@ struct ustatus_t{
 
 uint_t mscratch=0;
 
-uint_t medeleg = 0;
-uint_t sedeleg = 0;
+uint_t medeleg = -1;
+uint_t sedeleg = -1;
 
-uint_t mideleg = 0;
-uint_t sideleg = 0;
+uint_t mideleg = -1;
+uint_t sideleg = -1;
 
-uint_t misa = 0b1000100000001;
+uint_t misa = 0;
 
 uint_t mepc = 0;
 uint_t sepc = 0;
 uint_t uepc = 0;
+
+uint_t mcycle = 0;
+uint_t mcycleh = 0;
+
+uint_t minstret = 0;
+uint_t minstreth = 0;
 
 struct mtvec_t{
     uint8_t mode;
@@ -452,6 +458,18 @@ uint_t csr_read(uint_t csr_addr){
         case SIDELEG :
         	return sideleg;
         	break;
+        case MCYCLE :
+            return mcycle;
+            break;
+        case MCYCLEH :
+            return mcycleh;
+            break;
+        case MINSTRET :
+            return minstret;
+            break;
+        case MINSTRETH :
+            return minstreth;
+            break;
         default:
             cout << "CSR not implemented : " << hex << csr_addr << endl;
             break;
@@ -514,6 +532,18 @@ void csr_write(uint_t csr_addr, uint_t val){
         case SIDELEG :
         	sideleg = val;
         	break;
+        case MCYCLE :
+            mcycle = val;
+            break;
+        case MCYCLEH :
+            mcycleh = val;
+            break;
+        case MINSTRET :
+            minstret = val;
+            break;
+        case MINSTRETH :
+            minstreth = val;
+            break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
             break;
@@ -535,6 +565,9 @@ plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privila
 			else 
 				mtrap_deleg_reg = medeleg;
 
+            if (mtrap_deleg_reg == -1)
+                return current_privilage;
+
 			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1)
 				return SMODE;
 			else 
@@ -550,6 +583,9 @@ plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privila
 				mtrap_deleg_reg = medeleg;
 				strap_deleg_reg = sedeleg;
 			}
+
+            if (mtrap_deleg_reg == -1)
+                return current_privilage;
 
 			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1){     		//delegating to smode
             	if (((strap_deleg_reg>>cause) & 0b1 ) == 1)      //delegating to umode
@@ -578,6 +614,14 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         ecode = mecode;
 
     plevel_t handling_mode = trap_mode_select(ecode, false, current_privilage);
+    //plevel_t handling_mode = current_privilage;
+
+    if (handling_mode == UMODE)
+        ecode = uecode;
+    else if (handling_mode == SMODE)
+        ecode = secode;
+    else if (handling_mode == MMODE)
+        ecode = mecode;
 
     if (handling_mode == UMODE){
     	ustatus.upie = ustatus.uie;

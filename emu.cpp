@@ -307,6 +307,8 @@ int main(){
     uint_t val = 0;
     uint_t itr = 0;
 
+    __uint128_t cycle_count = 0;
+    __uint128_t instr_count = 0;
     __uint128_t mult_temp=0;
 
     uint_t wb_data  = 0;
@@ -327,11 +329,16 @@ int main(){
 
     uint_t amo_op   = 0;
     bool amo_reserve_valid = false;
+    bool amo_reserve_valid64 = false;
     uint_t amo_reserve_addr = 0;
+    uint_t amo_reserve_addr64 = 0;
 
     //initializing reg file
     reg_file[2]  = 0x40000 ; //SP
     reg_file[11] = 0x10000 ;
+
+    misa = 0b1000100000001;
+    misa = (misa | (0b10<<62));
 
     enum opcode_t opcode;
 
@@ -985,13 +992,13 @@ int main(){
                             }
                             else {
                                 ret_data = wb_data;
-                                amo_reserve_valid = true;
-                                amo_reserve_addr = reg_file[rs1];
+                                amo_reserve_valid64 = true;
+                                amo_reserve_addr64 = reg_file[rs1];
                             }
                             break;
 
                         case 0b00011 : //SC.D
-                            if (amo_reserve_valid && (reg_file[rs1]==amo_reserve_addr)){
+                            if (amo_reserve_valid64 && (reg_file[rs1]==amo_reserve_addr64)){
                                 store_data = reg_file[rs2];
                                 store_addr = reg_file[rs1];
                                 if ((store_addr%8)!=0){
@@ -1005,8 +1012,8 @@ int main(){
                             else {
                                 ret_data = 1;
                             }
-                            amo_reserve_addr = 0;
-                            amo_reserve_valid = false;
+                            amo_reserve_addr64 = 0;
+                            amo_reserve_valid64 = false;
                             break;
 
                         case 0b00001 : //AMOSWAP.D
@@ -1211,7 +1218,7 @@ int main(){
                                 PC = mtvec.base;
                                 break;
                                 */
-                                PC = excep_function(PC,11,9,8,cp);
+                                PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
                                 break;
 
                             case 1 : //ebreak
@@ -1223,7 +1230,7 @@ int main(){
                                 mcause.ecode = 3;
                                 mepc = PC-4;
                                 PC = mtvec.base;*/
-                                PC = excep_function(PC,3,3,3,cp);
+                                PC = excep_function(PC,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,cp);
                                 break;
 
                             case 770 : //mret
@@ -1271,6 +1278,12 @@ int main(){
                 printf("PC : %x\n",PC-4);
                 break;
         }
+        cycle_count += 1;
+
+        mcycle  = (cycle_count & MASK64) ;
+        mcycleh = ((cycle_count>>64) & MASK64) ;
+        minstret  = mcycle ;
+        minstreth = mcycleh ;
 
         if (lPC==PC){
             //infinite loop
