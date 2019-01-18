@@ -7,11 +7,11 @@
 # Test syscall trap.
 #
 
-## #define __MACHINE_MODE 1
+#define __MACHINE_MODE 1
 
 #define TEST_FUNC_NAME ebreak
 #define TEST_FUNC_TXT "ebreak \t"
-#define TEST_FUNC_RET isaTestEnd
+#define TEST_FUNC_RET mcsr
 
 #include "riscv_test.h"
 #include "test_macros.h"

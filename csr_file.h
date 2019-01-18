@@ -300,6 +300,13 @@ uint_t mcycleh = 0;
 uint_t minstret = 0;
 uint_t minstreth = 0;
 
+uint_t mhartid = 0;
+uint_t mvendorid = 0;   
+uint_t marchid = 0;
+uint_t mimpid = 0;
+
+uint_t mtval = 0;
+
 struct mtvec_t{
     uint8_t mode;
     uint_t base;
@@ -359,7 +366,7 @@ struct mcause_t{
     	ecode = 0;
     }
     uint_t read_reg(){
-        return ((((1llu<<63)-1) & ecode)+(interrupt<<63));
+        return ((((1llu<<63)-1) & ecode)+((uint_t)interrupt<<63));
     }
 
     void write_reg(uint_t val){
@@ -376,7 +383,7 @@ struct scause_t{
     	ecode = 0;
     }
     uint_t read_reg(){
-        return ((((1llu<<63)-1) & ecode)+(interrupt<<63));
+        return ((((1llu<<63)-1) & ecode)+((uint_t)interrupt<<63));
     }
 
     void write_reg(uint_t val){
@@ -393,7 +400,7 @@ struct ucause_t{
     	ecode = 0;
     }
     uint_t read_reg(){
-        return ((((1llu<<63)-1) & ecode)+(interrupt<<63));
+        return ((((1llu<<63)-1) & ecode)+((uint_t)interrupt<<63));
     }
 
     void write_reg(uint_t val){
@@ -401,6 +408,24 @@ struct ucause_t{
     	interrupt = (val>>63) & 0b1;    
     }
 } ucause;
+
+struct satp_t{
+    uint_t PPN; uint16_t ASID; uint8_t MODE;
+    satp_t(){
+        PPN = 0;
+        ASID = 0;
+        MODE = 0;
+    }
+    uint_t read_reg(){
+        return  ( ( (uint_t)(MODE & 0xF)<<60 ) + ((uint_t)ASID<<44) + (PPN & 0xFFFFFFFFFFFull));
+    }
+
+    void write_reg(uint_t val){
+        PPN = val & 0xFFFFFFFFFFFull;
+        ASID = (val>>44) & 0xFFFF ;
+        MODE = (val>>60) & 0xF ;
+    }
+} satp;
 
 uint_t csr_read(uint_t csr_addr){
     switch(csr_addr){
@@ -469,6 +494,24 @@ uint_t csr_read(uint_t csr_addr){
             break;
         case MINSTRETH :
             return minstreth;
+            break;
+        case MHARTID :
+            return mhartid;
+            break;
+        case MVENDORID :
+            return mvendorid;
+            break;
+        case MARCHID :
+            return marchid;
+            break;
+        case MIMPID :
+            return mimpid;
+            break;
+        case SATP :
+            return satp.read_reg();
+            break;
+        case MTVAL :
+            return mtval;
             break;
         default:
             cout << "CSR not implemented : " << hex << csr_addr << endl;
@@ -543,6 +586,24 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         case MINSTRETH :
             minstreth = val;
+            break;
+        case MHARTID :
+            mhartid = val;
+            break;
+        case MVENDORID :
+            mvendorid = val;
+            break;
+        case MARCHID :
+            marchid = val;
+            break;
+        case MIMPID :
+            mimpid = val;
+            break;
+        case SATP :
+            satp.write_reg(val);
+            break;
+        case MTVAL :
+            mtval = val;
             break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
@@ -659,6 +720,7 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
     }
     else 
     	cout << "Unrecognized mode for excep_function" <<endl;
+
 
     return new_PC;
 }

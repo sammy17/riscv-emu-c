@@ -4,7 +4,6 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 S_UPPER_SRCS += \
-../src/riscv_isa_tests/setup.S \
 ../src/riscv_isa_tests/add.S \
 ../src/riscv_isa_tests/addw.S \
 ../src/riscv_isa_tests/addi.S \
@@ -89,9 +88,14 @@ S_UPPER_SRCS += \
 ../src/riscv_isa_tests/csr.S \
 ../src/riscv_isa_tests/scall.S \
 ../src/riscv_isa_tests/sbreak.S \
+../src/riscv_isa_tests/mcsr.S \
+../src/riscv_isa_tests/ma_addr.S \
+../src/riscv_isa_tests/ma_fetch.S \
+../src/riscv_isa_tests/access.S \
+../src/riscv_isa_tests/wfi.S \
+
 
 OBJS += \
-./src/riscv_isa_tests/setup.o \
 ./src/riscv_isa_tests/add.o \
 ./src/riscv_isa_tests/addw.o \
 ./src/riscv_isa_tests/addi.o \
@@ -176,9 +180,13 @@ OBJS += \
 ./src/riscv_isa_tests/csr.o \
 ./src/riscv_isa_tests/scall.o \
 ./src/riscv_isa_tests/sbreak.o \
+./src/riscv_isa_tests/mcsr.o \
+./src/riscv_isa_tests/ma_addr.o \
+./src/riscv_isa_tests/ma_fetch.o \
+./src/riscv_isa_tests/access.o \
+./src/riscv_isa_tests/wfi.o \
 
 S_UPPER_DEPS += \
-./src/riscv_isa_tests/setup.d \
 ./src/riscv_isa_tests/add.d \
 ./src/riscv_isa_tests/addw.d \
 ./src/riscv_isa_tests/addi.d \
@@ -263,6 +271,11 @@ S_UPPER_DEPS += \
 ./src/riscv_isa_tests/csr.d \
 ./src/riscv_isa_tests/scall.d \
 ./src/riscv_isa_tests/sbreak.d \
+./src/riscv_isa_tests/mcsr.d \
+./src/riscv_isa_tests/ma_addr.d \
+./src/riscv_isa_tests/ma_fetch.d \
+./src/riscv_isa_tests/access.d \
+./src/riscv_isa_tests/wfi.d \
 
 # Each subdirectory must supply rules for building sources it contributes
 src/riscv_isa_tests/%.o: ../src/riscv_isa_tests/%.S

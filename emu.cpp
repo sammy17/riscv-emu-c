@@ -25,9 +25,6 @@ vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
 vector<uint_t> reg_file(32);       // register file
 
-vector<uint_t> csr_file(1<<12);    // csr file
-
-
 template<class T>
 T sign_extend(T x, const int bits) {
     T m = 1;
@@ -84,7 +81,7 @@ T divi32(T num1, T num2,int s) {
     } else if(num1==(-pow(2,31)) && num2==-1){
         if (s==0 || s==2){
             switch(s){
-                case(0)  : return -pow(2,31); break;
+                case(0)  : return -pow(2ull,31); break;
                 case(2)  : return 0; break;
             }
         }
@@ -139,151 +136,6 @@ uint_t getINST(uint_t PC,vector<uint_t> * memory){
         return ((memory->at(PC/2))>>32);
 }
 
-uint_t store_word(uint_t store_addr, uint_t load_data, uint_t value){
-    uint_t wb_data = 0;
-    if ((store_addr%8)==0){
-        wb_data = (load_data & ((0xFFFFFFFFull)   <<32)) + (value & 0xFFFFFFFF);
-    }
-    else if ((store_addr%8)==4){
-        wb_data = (load_data & (0xFFFFFFFF)) + ((value & 0xFFFFFFFFull)<<32);
-    }
-    else{
-        cout<<"######## Mis-aligned memory store #########\n";
-        wb_data = -1;
-    }
-
-    return wb_data;
-}
-uint_t store_halfw(uint_t store_addr, uint_t load_data, uint_t value){
-    uint_t wb_data = 0;
-    switch(store_addr%8){
-        case 0 :
-            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + (value & 0xFFFF);
-            break;
-        case 2 :
-            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFFFF)<<16) + (load_data & 0xFFFF);
-            break;
-        case 4 :
-            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFFFF)<<32) + (load_data & 0xFFFFFFFF);
-            break;
-        case 6 :
-            wb_data = ((value & 0xFFFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
-            break;
-        default :
-            cout<<"######## Mis-aligned memory store #########\n";
-            wb_data = -1;
-            break;
-    }
-    return wb_data;
-}
-
-uint_t store_byte(uint_t store_addr, uint_t load_data, uint_t value){
-    uint_t wb_data = 0;
-    switch(store_addr%8){
-        case 0 :
-            wb_data = ( load_data & ((0xFFFFFFFFFFFFFFull)<<8)) + (value & 0xFF);
-            break;
-        case 1 :
-            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + ((value & 0xFF)<<8) + (load_data & 0xFF);
-            break;
-        case 2 :
-            wb_data = ( load_data & ((0xFFFFFFFFFFull)<<24)) + ((value & 0xFF)<<16) + (load_data & 0xFFFF);
-            break;
-        case 3 :
-            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFF)<<24) + (load_data & 0xFFFFFF);
-            break;
-        case 4 :
-            wb_data = ( load_data & ((0xFFFFFFull)<<40)) + ((value & 0xFF)<<32) + (load_data & 0xFFFFFFFF);
-            break;
-        case 5 :
-            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFF)<<40) + (load_data & 0xFFFFFFFFFF);
-            break;
-        case 6 :
-            wb_data = ( load_data & ((0xFFull)<<56)) + ((value & 0xFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
-            break;
-        case 7 :
-            wb_data = ((value & 0xFF)<<56) + (load_data & 0xFFFFFFFFFFFFFF);
-            break;
-        default :
-            cout<<"######## Mis-aligned memory store #########\n";
-            wb_data = -1;
-            break;
-    }
-    return wb_data;
-}
-
-uint_t load_word(uint_t load_addr, uint_t load_data){
-    uint_t wb_data = 0;
-    if ((load_addr%8)==0)
-        wb_data = (load_data & 0xFFFFFFFF);
-    else if ((load_addr%8)==4)
-        wb_data = (((load_data)>>32) & 0xFFFFFFFF);
-    else{
-        cout<< "Mis-aligned memory load\n";
-        wb_data = -1;
-    }
-
-    return wb_data;
-}
-
-uint_t load_halfw(uint_t load_addr, uint_t load_data){
-    uint_t wb_data = 0;
-    switch(load_addr%8){
-        case 0 :
-            wb_data = (load_data & 0xFFFF) ;
-            break;
-        case 2 :
-            wb_data = (((load_data)>>16) & 0xFFFF) ;
-            break;
-        case 4 :
-            wb_data = (((load_data)>>32) & 0xFFFF) ;
-            break;
-        case 6 :
-            wb_data = (((load_data)>>48) & 0xFFFF) ;
-            break;
-        default :
-            cout<<"######## Mis-aligned memory load #########\n";
-            wb_data = -1;
-            break;
-    }
-    return wb_data;
-}
-
-
-uint_t load_byte(uint_t load_addr, uint_t load_data){
-    uint_t wb_data = 0;
-    switch(load_addr%8){
-        case 0 :
-            wb_data = (load_data & 0xFF) ;
-            break;
-        case 1 :
-            wb_data = (((load_data)>>8) & 0xFF) ;
-            break;
-        case 2 :
-            wb_data = (((load_data)>>16) & 0xFF) ;
-            break;
-        case 3 :
-            wb_data = (((load_data)>>24) & 0xFF) ;
-            break;
-        case 4 :
-            wb_data = (((load_data)>>32) & 0xFF) ;
-            break;
-        case 5 :
-            wb_data = (((load_data)>>40) & 0xFF) ;
-            break;
-        case 6 :
-            wb_data = (((load_data)>>48) & 0xFF) ;
-            break;
-        case 7 :
-            wb_data = (((load_data)>>56) & 0xFF) ;
-            break;
-        default :
-            cout<<"######## Mis-aligned memory load #########\n";
-            wb_data = -1;
-            break;
-    }
-    return wb_data;
-}
 
 
 int main(){
@@ -338,7 +190,7 @@ int main(){
     reg_file[11] = 0x10000 ;
 
     misa = 0b1000100000001;
-    misa = (misa | (0b10<<62));
+    misa = (misa | (0b1llu<<63));
 
     enum opcode_t opcode;
 
@@ -394,8 +246,6 @@ int main(){
 
         amo_op   = ((instruction) >> 27) & 0b11111 ;
 
-        //csr
-        csr_file[MSTATUS] = (csr_file[MSTATUS] | (0b11<<11)) ; //setting mpp to 11 always
         //mstatus.mpp = 0b11;
         //printf("IMJ %d\n",imm_j);
         lPC = PC;
@@ -470,21 +320,82 @@ int main(){
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
-                load_data = memory.at(load_addr/8);
+                    load_data = memory.at(load_addr/8);
                         switch(func3){
-                            case 0b000 : wb_data = sign_extend<uint_t>(load_byte(load_addr,load_data) & (0xFF)      , 8); break; //LB sign extend  8 bit value
+                            case 0b000 : 
+                                if (load_byte(load_addr,load_data)==-1){
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;                                  
+                                } else {
+                                    wb_data = sign_extend<uint_t>(load_byte(load_addr,load_data) & (0xFF)      , 8); 
+                                    reg_file[rd] = wb_data;
+                                }
+                                break; //LB sign extend  8 bit value
 
-                            case 0b001 : wb_data = sign_extend<uint_t>(load_halfw(load_addr,load_data) & (0xFFFF)    ,16); break; //LH sign extend 16 bit value
+                            case 0b001 : 
+                                if (load_halfw(load_addr,load_data)==-1){
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;
+                                } else {
+                                    wb_data = sign_extend<uint_t>(load_halfw(load_addr,load_data) & (0xFFFF)    ,16); 
+                                    reg_file[rd] = wb_data;
+                                }
+                                break; //LH sign extend 16 bit value
 
-                            case 0b010 : wb_data = sign_extend<uint_t>(load_word(load_addr,load_data) & (0xFFFFFFFF),32); break; //LW sign extend 32 bit value
+                            case 0b010 : 
+                                if (load_word(load_addr,load_data)==-1){
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;
+                                    //cout << "LW"<<endl;
+                                } else {
+                                    wb_data = sign_extend<uint_t>(load_word(load_addr,load_data) & (0xFFFFFFFF),32); 
+                                    reg_file[rd] = wb_data;
+                                }
+                                break; //LW sign extend 32 bit value
 
-                            case 0b100 : wb_data = load_byte(load_addr,load_data) & 0xFF      ; break; //LBU zero extend  8 bit value
+                            case 0b100 : 
+                                if (load_byte(load_addr,load_data)==-1){
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;
+                                    //cout << "LBU"<<endl;
+                                } else {
+                                    wb_data = load_byte(load_addr,load_data) & 0xFF      ; 
+                                    reg_file[rd] = wb_data;
+                                }
+                                break; //LBU zero extend  8 bit value
 
-                            case 0b101 : wb_data = load_halfw(load_addr,load_data) & 0xFFFF    ; break; //LHU zero extend 16 bit value
+                            case 0b101 : 
+                                if (load_halfw(load_addr,load_data)==-1){
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;
+                                    //cout << "LHU"<<endl;
+                                } else {
+                                    wb_data = load_halfw(load_addr,load_data) & 0xFFFF    ; 
+                                    reg_file[rd] = wb_data;
+                                }
+                                break; //LHU zero extend 16 bit value
 
-                            case 0b110 : wb_data = load_word(load_addr,load_data) & 0xFFFFFFFF; break; //LWU zero extend 32 bit value
+                            case 0b110 : 
+                                if (load_word(load_addr,load_data)==-1){
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;
+                                    //cout << "LWU"<<endl;
+                                } else {
+                                    wb_data = load_word(load_addr,load_data) & 0xFFFFFFFF; 
+                                    reg_file[rd] = wb_data;
+                                }
+                                break; //LWU zero extend 32 bit value
 
-                            case 0b011 : wb_data = load_data ; break;//LD
+                            case 0b011 : 
+                                if ((load_addr%8)==0){
+                                    wb_data = load_data ; 
+                                    reg_file[rd] = wb_data;
+                                } else {
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    mtval = load_addr;
+                                    //cout << "LD"<<endl;
+                                }
+                                break;//LD
 
                             default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                                 bitset<3> ins(func3);
@@ -493,11 +404,12 @@ int main(){
                         }
                 } else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_RX) {
                     wb_data = 0 ;
+                    reg_file[rd] = wb_data;
                 }
                 else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_TX){
                     wb_data = (uint_t)getchar() ;
+                    reg_file[rd] = wb_data;
                 }
-                reg_file[rd] = wb_data;
                 break;
 
             case store :
@@ -523,21 +435,30 @@ int main(){
                             wb_data = store_word(store_addr,store_data,val);
                             break;//SW setting LSB 32 bit value
 
-                        case 0b011 : wb_data = reg_file[rs2] ; break; //SD
+                        case 0b011 : 
+                            if ((store_addr%8)==0){
+                                wb_data = reg_file[rs2] ; 
+                            }else{
+                                wb_data = -1;
+                            }
+                            break; //SD
 
                         default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
                         bitset<3> ins(func3);
                         cout<<  "func3 : "<<func3<<endl;
                         break;
                     }
-                    memory.at(store_addr/8) = wb_data;
+                    if (wb_data == -1){
+                        PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                        mtval = store_addr;
+                    }else {
+                        memory.at(store_addr/8) = wb_data;
+                    }
                 } else {
                     #ifdef DEBUG
                         printf("STORE2\n");
                     #endif
-                    //    printf("STORE2 %llu\n",rs2);
                     cout << (char)reg_file[rs2] ;
-                    //printf("PC : %x\n",PC-4);
                 }
                 break;
             case iops  :
@@ -806,6 +727,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-LR.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>(wb_data & MASK32,32);
@@ -823,6 +745,7 @@ int main(){
                                 wb_data = store_word(store_addr, load_data, store_data);
                                 if (wb_data == (uint_t)(-1)){
                                     cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                    PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                                 }
                                 else {
                                     memory.at(store_addr/8) = wb_data;
@@ -842,6 +765,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -857,6 +781,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -872,6 +797,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -887,6 +813,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -902,6 +829,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -917,6 +845,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -932,6 +861,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -947,6 +877,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -962,6 +893,7 @@ int main(){
                             wb_data = load_word(load_addr,load_data);
                             if (wb_data == (uint_t)(-1)){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -975,6 +907,7 @@ int main(){
                             printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,(uint_t)opcode);
                             bitset<5> ins(amo_op);
                             cout<<  "amo op : "<<ins<<endl;
+                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                             break;   
                     }
                     reg_file[rd] = ret_data;
@@ -1275,7 +1208,7 @@ int main(){
                 printf("default\n");
                 bitset<32> ins1(instruction);
                 cout << "Instruction : "<<ins1 << endl;
-                printf("PC : %x\n",PC-4);
+                cout << "PC : " << PC-4 <<endl;
                 break;
         }
         cycle_count += 1;
@@ -1284,6 +1217,10 @@ int main(){
         mcycleh = ((cycle_count>>64) & MASK64) ;
         minstret  = mcycle ;
         minstreth = mcycleh ;
+
+        if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
+            PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
+        }
 
         if (lPC==PC){
             //infinite loop

@@ -76,4 +76,152 @@ typedef uint64_t data_t;
 #define MASK64 0xFFFFFFFFFFFFFFFFllu
 #define MASK32 0xFFFFFFFFllu
 
+
+
+uint_t store_word(uint_t store_addr, uint_t load_data, uint_t value){
+    uint_t wb_data = 0;
+    if ((store_addr%8)==0){
+        wb_data = (load_data & ((0xFFFFFFFFull)   <<32)) + (value & 0xFFFFFFFF);
+    }
+    else if ((store_addr%8)==4){
+        wb_data = (load_data & (0xFFFFFFFF)) + ((value & 0xFFFFFFFFull)<<32);
+    }
+    else{
+        //cout<<"######## Mis-aligned memory store #########\n";
+        wb_data = -1;
+    }
+
+    return wb_data;
+}
+uint_t store_halfw(uint_t store_addr, uint_t load_data, uint_t value){
+    uint_t wb_data = 0;
+    switch(store_addr%8){
+        case 0 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + (value & 0xFFFF);
+            break;
+        case 2 :
+            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFFFF)<<16) + (load_data & 0xFFFF);
+            break;
+        case 4 :
+            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFFFF)<<32) + (load_data & 0xFFFFFFFF);
+            break;
+        case 6 :
+            wb_data = ((value & 0xFFFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
+            break;
+        default :
+            //cout<<"######## Mis-aligned memory store #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
+uint_t store_byte(uint_t store_addr, uint_t load_data, uint_t value){
+    uint_t wb_data = 0;
+    switch(store_addr%8){
+        case 0 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFFFFFull)<<8)) + (value & 0xFF);
+            break;
+        case 1 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + ((value & 0xFF)<<8) + (load_data & 0xFF);
+            break;
+        case 2 :
+            wb_data = ( load_data & ((0xFFFFFFFFFFull)<<24)) + ((value & 0xFF)<<16) + (load_data & 0xFFFF);
+            break;
+        case 3 :
+            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFF)<<24) + (load_data & 0xFFFFFF);
+            break;
+        case 4 :
+            wb_data = ( load_data & ((0xFFFFFFull)<<40)) + ((value & 0xFF)<<32) + (load_data & 0xFFFFFFFF);
+            break;
+        case 5 :
+            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFF)<<40) + (load_data & 0xFFFFFFFFFF);
+            break;
+        case 6 :
+            wb_data = ( load_data & ((0xFFull)<<56)) + ((value & 0xFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
+            break;
+        case 7 :
+            wb_data = ((value & 0xFF)<<56) + (load_data & 0xFFFFFFFFFFFFFF);
+            break;
+        default :
+            //cout<<"######## Mis-aligned memory store #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
+uint_t load_word(uint_t load_addr, uint_t load_data){
+    uint_t wb_data = 0;
+    if ((load_addr%8)==0)
+        wb_data = (load_data & 0xFFFFFFFF);
+    else if ((load_addr%8)==4)
+        wb_data = (((load_data)>>32) & 0xFFFFFFFF);
+    else{
+        //cout<< "Mis-aligned memory load\n";
+        wb_data = -1;
+    }
+
+    return wb_data;
+}
+
+uint_t load_halfw(uint_t load_addr, uint_t load_data){
+    uint_t wb_data = 0;
+    switch(load_addr%8){
+        case 0 :
+            wb_data = (load_data & 0xFFFF) ;
+            break;
+        case 2 :
+            wb_data = (((load_data)>>16) & 0xFFFF) ;
+            break;
+        case 4 :
+            wb_data = (((load_data)>>32) & 0xFFFF) ;
+            break;
+        case 6 :
+            wb_data = (((load_data)>>48) & 0xFFFF) ;
+            break;
+        default :
+            //cout<<"######## Mis-aligned memory load #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
+
+uint_t load_byte(uint_t load_addr, uint_t load_data){
+    uint_t wb_data = 0;
+    switch(load_addr%8){
+        case 0 :
+            wb_data = (load_data & 0xFF) ;
+            break;
+        case 1 :
+            wb_data = (((load_data)>>8) & 0xFF) ;
+            break;
+        case 2 :
+            wb_data = (((load_data)>>16) & 0xFF) ;
+            break;
+        case 3 :
+            wb_data = (((load_data)>>24) & 0xFF) ;
+            break;
+        case 4 :
+            wb_data = (((load_data)>>32) & 0xFF) ;
+            break;
+        case 5 :
+            wb_data = (((load_data)>>40) & 0xFF) ;
+            break;
+        case 6 :
+            wb_data = (((load_data)>>48) & 0xFF) ;
+            break;
+        case 7 :
+            wb_data = (((load_data)>>56) & 0xFF) ;
+            break;
+        default :
+            //cout<<"######## Mis-aligned memory load #########\n";
+            wb_data = -1;
+            break;
+    }
+    return wb_data;
+}
+
 #endif
