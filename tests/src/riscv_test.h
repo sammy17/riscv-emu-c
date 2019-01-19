@@ -118,7 +118,7 @@
 #  define TEST_FUNC_RET mytest_ret
 #endif
 
-#define TESTNUM x28
+#define TESTNUM x31
 
 #define RVTEST_CODE_BEGIN   \
   .text;        \

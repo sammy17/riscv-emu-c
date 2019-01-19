@@ -248,6 +248,9 @@ int main(){
 
         //mstatus.mpp = 0b11;
         //printf("IMJ %d\n",imm_j);
+        if ((PC%4)!=0){
+            cout << "PC mis aligned " <<endl;
+        }
         lPC = PC;
         PC += 4;
         switch(opcode){
@@ -271,7 +274,7 @@ int main(){
 
             case jump :
                 #ifdef DEBUG
-                    printf("JUMP\n");
+                    cout << "JUMP - JAL" <<endl;
                 #endif
                 wb_data = PC;
                 PC = (PC-4) + sign_extend<uint_t>(imm_j,21); //21 bits sign extend
@@ -280,11 +283,11 @@ int main(){
 
             case jumpr :
                 #ifdef DEBUG
-                    printf("JUMPR\n");
+                    cout << "JUMPR - JALR" <<endl;
                 #endif
                 wb_data = PC;
                 PC = (reg_file[rs1] + sign_extend<uint_t>(imm11_0,12)) & 0xFFFFFFFFFFFFFFFE; //setting LSB to 0 as spec page 20
-                reg_file[rd] = wb_data ;// PC + 4 to rd
+                reg_file[rd] = wb_data;// PC + 4 to rd 
                 break;
 
             case cjump :
@@ -320,7 +323,12 @@ int main(){
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
-                    load_data = memory.at(load_addr/8);
+                    if (load_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
+                        mtval = load_addr;
+                        PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);   
+                    }
+                    else{
+                        load_data = memory.at(load_addr/8);
                         switch(func3){
                             case 0b000 : 
                                 if (load_byte(load_addr,load_data)==-1){
@@ -402,6 +410,7 @@ int main(){
                                 cout<<  "func3 : "<<ins<<endl;
                                 break;
                         }
+                    }
                 } else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_RX) {
                     wb_data = 0 ;
                     reg_file[rd] = wb_data;
@@ -418,42 +427,49 @@ int main(){
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){
-                store_data = memory.at(store_addr/8);
-                    switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
-                        case 0b000 :
-                            val = reg_file[rs2] & 0xFF;
-                            wb_data = store_byte(store_addr,store_data,val);
-                            break;//SB  setting LSB 8 bit
-
-                        case 0b001 :
-                            val = reg_file[rs2] & 0xFFFF;
-                            wb_data = store_halfw(store_addr,store_data,val);
-                            break;//SH setting LSB 16 bit value
-
-                        case 0b010 :
-                            val = reg_file[rs2] & 0xFFFFFFFF;
-                            wb_data = store_word(store_addr,store_data,val);
-                            break;//SW setting LSB 32 bit value
-
-                        case 0b011 : 
-                            if ((store_addr%8)==0){
-                                wb_data = reg_file[rs2] ; 
-                            }else{
-                                wb_data = -1;
-                            }
-                            break; //SD
-
-                        default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
-                        bitset<3> ins(func3);
-                        cout<<  "func3 : "<<func3<<endl;
-                        break;
-                    }
-                    if (wb_data == -1){
-                        PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                    if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         mtval = store_addr;
-                    }else {
-                        memory.at(store_addr/8) = wb_data;
+                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   
                     }
+                    else {
+                        store_data = memory.at(store_addr/8);
+                        switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
+                            case 0b000 :
+                                val = reg_file[rs2] & 0xFF;
+                                wb_data = store_byte(store_addr,store_data,val);
+                                break;//SB  setting LSB 8 bit
+
+                            case 0b001 :
+                                val = reg_file[rs2] & 0xFFFF;
+                                wb_data = store_halfw(store_addr,store_data,val);
+                                break;//SH setting LSB 16 bit value
+
+                            case 0b010 :
+                                val = reg_file[rs2] & 0xFFFFFFFF;
+                                wb_data = store_word(store_addr,store_data,val);
+                                break;//SW setting LSB 32 bit value
+
+                            case 0b011 : 
+                                if ((store_addr%8)==0){
+                                    wb_data = reg_file[rs2] ; 
+                                }else{
+                                    wb_data = -1;
+                                }
+                                break; //SD
+
+                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
+                            bitset<3> ins(func3);
+                            cout<<  "func3 : "<<func3<<endl;
+                            break;
+                        }
+                        if (wb_data == -1){
+                            PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                            mtval = store_addr;
+                        }else {
+                            memory.at(store_addr/8) = wb_data;
+                        }
+                    }
+
                 } else {
                     #ifdef DEBUG
                         printf("STORE2\n");
@@ -461,6 +477,7 @@ int main(){
                     cout << (char)reg_file[rs2] ;
                 }
                 break;
+            
             case iops  :
                 #ifdef DEBUG
                     printf("IOPS %lu\n",imm11_0);
@@ -540,7 +557,6 @@ int main(){
                 }
                 reg_file[rd] = wb_data;
                 break;
-
 
             case rops :
                 if (func7 == 0b0000001){
@@ -1219,6 +1235,7 @@ int main(){
         minstreth = mcycleh ;
 
         if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
+            mtval = PC;
             PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
         }
 

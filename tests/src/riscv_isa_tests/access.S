@@ -17,14 +17,14 @@
 RVTEST_RV64M
 RVTEST_CODE_BEGIN
 
-
-
-  .align 2
-
-setup_mtvec:
+setup_mtvec5:
   lui t0,%hi(mtvec_handler5)
   addi t0,t0,%lo(mtvec_handler5)
   csrw mtvec, t0;
+
+  .align 2
+
+
   # Flipping just the MSB should result in an illegal address for RV64.
   la t2, fail
   li t0, 1 << (__riscv_xlen - 1)

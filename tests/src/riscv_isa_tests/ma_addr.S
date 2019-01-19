@@ -9,7 +9,7 @@
 
 #define TEST_FUNC_NAME ma_addr
 #define TEST_FUNC_TXT "ma_addr \t"
-#define TEST_FUNC_RET ma_fetch
+#define TEST_FUNC_RET access
 
 #include "riscv_test.h"
 #include "test_macros.h"
@@ -29,7 +29,7 @@ RVTEST_CODE_BEGIN
 
   # indicate it's a load test
   li s1, CAUSE_MISALIGNED_LOAD
-  
+
 setup_mtvec:
   lui t0,%hi(mtvec_handler3)
   addi t0,t0,%lo(mtvec_handler3)
