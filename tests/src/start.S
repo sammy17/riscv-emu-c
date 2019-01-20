@@ -68,7 +68,7 @@ isaTest:
 
 isaTestEnd:
 	jal ra,initReg
-	ret
+	jal ra,init
 
 dhrystoneBenchmark:
 	jal ra,risvDhrystoneStartMsg

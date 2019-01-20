@@ -159,7 +159,8 @@ int main(){
     uint_t val = 0;
     uint_t itr = 0;
 
-    __uint128_t cycle_count = 0;
+    uint_t cycle_count = 0;
+
     __uint128_t instr_count = 0;
     __uint128_t mult_temp=0;
 
@@ -1229,10 +1230,8 @@ int main(){
         }
         cycle_count += 1;
 
-        mcycle  = (cycle_count & MASK64) ;
-        mcycleh = ((cycle_count>>64) & MASK64) ;
-        minstret  = mcycle ;
-        minstreth = mcycleh ;
+        cycle  = cycle_count ;
+        instret  = cycle ;
 
         if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
             mtval = PC;

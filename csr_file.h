@@ -294,11 +294,10 @@ uint_t mepc = 0;
 uint_t sepc = 0;
 uint_t uepc = 0;
 
-uint_t mcycle = 0;
-uint_t mcycleh = 0;
+uint_t cycle = 0;
+uint_t time_csr = 0;
+uint_t instret = 0;
 
-uint_t minstret = 0;
-uint_t minstreth = 0;
 
 uint_t mhartid = 0;
 uint_t mvendorid = 0;   
@@ -483,17 +482,14 @@ uint_t csr_read(uint_t csr_addr){
         case SIDELEG :
         	return sideleg;
         	break;
-        case MCYCLE :
-            return mcycle;
+        case CYCLE :
+            return cycle;
             break;
-        case MCYCLEH :
-            return mcycleh;
+        case TIME :
+            return time_csr;
             break;
-        case MINSTRET :
-            return minstret;
-            break;
-        case MINSTRETH :
-            return minstreth;
+        case INSTRET :
+            return instret;
             break;
         case MHARTID :
             return mhartid;
@@ -575,17 +571,14 @@ void csr_write(uint_t csr_addr, uint_t val){
         case SIDELEG :
         	sideleg = val;
         	break;
-        case MCYCLE :
-            mcycle = val;
+        case CYCLE :
+            cycle = val;
             break;
-        case MCYCLEH :
-            mcycleh = val;
+        case TIME :
+            time_csr = val;
             break;
-        case MINSTRET :
-            minstret = val;
-            break;
-        case MINSTRETH :
-            minstreth = val;
+        case INSTRET :
+            instret = val;
             break;
         case MHARTID :
             mhartid = val;
@@ -723,4 +716,94 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
 
 
     return new_PC;
+}
+
+enum ttype_t{
+    INST = 0b00,
+    LOAD = 0b01,
+    STOR = 0b10
+};
+
+struct sv39va_t{
+    uint16_t page_offset ; uint16_t VPN0; uint16_t VPN1; uint16_t VPN2;
+    sv39va_t(){
+        page_offset = 0;
+        VPN0 = 0;
+        VPN1 = 0;
+        VPN2 = 0;
+    }
+    uint_t read_reg(){
+        return  ( ((VPN2 & 0x1FF)<<30) + ((VPN1 & 0x1FF)<<21) + ((VPN0 & 0x1FF)<<12) + (page_offset & 0xFFF) );
+    }
+    void write_reg(uint_t val){
+        page_offset = val & 0xFFF;
+        VPN0 = (val>>12) & 0x1FF;
+        VPN1 = (val>>21) & 0x1FF;
+        VPN2 = (val>>30) & 0x1FF;
+    }
+};
+
+struct sv39pa_t{
+    uint16_t page_offset ; uint16_t PPN0; uint16_t PPN1; uint32_t PPN2;
+    sv39pa_t(){
+        page_offset = 0;
+        PPN0 = 0;
+        PPN1 = 0;
+        PPN2 = 0;
+    }
+    uint_t read_reg(){
+        return  ( ((PPN2 & 0x3FFFFFF)<<30) + ((PPN1 & 0x1FF)<<21) + ((PPN0 & 0x1FF)<<12) + (page_offset & 0xFFF) );
+    }
+    void write_reg(uint_t val){
+        page_offset = val & 0xFFF;
+        PPN0 = (val>>12) & 0x1FF;
+        PPN1 = (val>>21) & 0x1FF;
+        PPN2 = (val>>30) & 0x3FFFFFF;
+    }
+};
+
+struct sv39pte_t{
+    uint8_t D,A,G,U,X,W,R,V;
+    uint8_t RSW ; uint16_t PPN0; uint16_t PPN1; uint32_t PPN2;
+    sv39pte_t(){
+        D = 0; A = 0; G = 0; U = 0; X = 0; W = 0; R = 0; V = 0; 
+        RSW = 0;
+        PPN0 = 0;
+        PPN1 = 0;
+        PPN2 = 0;
+    }
+    uint_t read_reg(){
+        return  ( ((PPN2 & 0x3FFFFFF)<<28) + ((PPN1 & 0x1FF)<<19) + ((PPN0 & 0x1FF)<<10) \
+                + ((RSW & 0b11)<<8) + ((D & 0b1)<<7) + ((A & 0b1)<<6) \
+                + ((G & 0b1)<<5) + ((U & 0b1)<<4) + ((X & 0b1)<<3) \
+                + ((W & 0b1)<<2) + ((R & 0b1)<<1) + (V & 0b1) ) ;
+    }
+    void write_reg(uint_t val){
+        D = (val>>7) & 0b1; A = (val>>6) & 0b1; G = (val>>5) & 0b1; 
+        U = (val>>4) & 0b1; X = (val>>3) & 0b1; W = (val>>2) & 0b1; 
+        R = (val>>1) & 0b1; V = val & 0b1; 
+        RSW  = (val>> 8) & 0b11;
+        PPN0 = (val>>10) & 0x1FF;
+        PPN1 = (val>>19) & 0x1FF;
+        PPN2 = (val>>28) & 0x3FFFFFF;
+    }
+};
+
+uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current_privilage){
+
+    uint_t physical_addr = 0;
+
+    switch(satp.MODE){
+        case 0 : //Bare
+            physical_addr = virtual_addr;
+            break;
+        case 8 : //Sv39
+            break;
+        case 9 : //Sv48
+            break;
+        default :
+            cout << "Invalid or not-implemented translation mode : "<< satp.MODE <<endl;
+    }
+
+    return physical_addr;
 }
