@@ -789,6 +789,10 @@ struct sv39pte_t{
     }
 };
 
+#define PAGESIZE 4096   //4KiB
+#define LEVELS 3
+#define PTESIZE 8
+
 uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current_privilage){
 
     uint_t physical_addr = 0;
@@ -798,6 +802,26 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
             physical_addr = virtual_addr;
             break;
         case 8 : //Sv39
+            if ((current_privilage == MMODE) & (mstatus.mprv == 0)){
+                physical_addr = virtual_addr;
+                return physical_addr;
+            }
+            else if ((current_privilage == MMODE) & (mstatus.mprv == 1) & (translation_type == INST)){
+                physical_addr = virtual_addr;
+                return physical_addr;
+            }
+
+            sv39va_t vir_addr;
+            vir_addr.write_reg(virtual_addr);
+
+            uint_t a = satp.ppn * PAGESIZE;
+
+
+
+            uint_t pte_addr = a + vir_addr.VPN2 * PTESIZE;
+            sv39pte_t pte2;
+            pte2.write_reg(memory )
+
             break;
         case 9 : //Sv48
             break;
@@ -805,5 +829,5 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
             cout << "Invalid or not-implemented translation mode : "<< satp.MODE <<endl;
     }
 
-    return physical_addr;
+    return -1;
 }
