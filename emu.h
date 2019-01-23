@@ -17,6 +17,18 @@ using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
+typedef uint64_t uint_t;
+typedef uint64_t data_t;
+
+#define MEM_SIZE 25
+#define XLEN     64
+#define FIFO_ADDR_RX 0xe000102c
+#define FIFO_ADDR_TX 0xe0001030
+
+#define MASK64 0xFFFFFFFFFFFFFFFFllu
+#define MASK32 0xFFFFFFFFllu
+
+
 #define CAUSE_MISALIGNED_FETCH 0x0
 #define CAUSE_FETCH_ACCESS 0x1
 #define CAUSE_ILLEGAL_INSTRUCTION 0x2
@@ -32,6 +44,10 @@ using namespace std;
 #define CAUSE_FETCH_PAGE_FAULT 0xc
 #define CAUSE_LOAD_PAGE_FAULT 0xd
 #define CAUSE_STORE_PAGE_FAULT 0xf
+
+vector<uint_t> memory(1<<MEM_SIZE); // main memory
+
+vector<uint_t> reg_file(32);       // register file
 
 // type defs
 enum opcode_t {
@@ -58,23 +74,9 @@ enum plevel_t {
     UMODE = 0b00
 };
 
-#define ECODE_M_ECALL 11
-#define ECODE_S_ECALL 9
-#define ECODE_U_ECALL 8
-
-#define ECODE_M_EBREAK 3
 
 
-typedef uint64_t uint_t;
-typedef uint64_t data_t;
 
-#define MEM_SIZE 24
-#define XLEN     64
-#define FIFO_ADDR_RX 0xe000102c
-#define FIFO_ADDR_TX 0xe0001030
-
-#define MASK64 0xFFFFFFFFFFFFFFFFllu
-#define MASK32 0xFFFFFFFFllu
 
 
 

@@ -305,6 +305,8 @@ uint_t marchid = 0;
 uint_t mimpid = 0;
 
 uint_t mtval = 0;
+uint_t stval = 0;
+uint_t utval = 0;
 
 struct mtvec_t{
     uint8_t mode;
@@ -314,12 +316,13 @@ struct mtvec_t{
     	base = 0;
     }
     uint_t read_reg(){
-        return (mode+(base<<2));
+        return ((mode & 0b11)+(base<<2));
     }
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
-    	base = (val & (MASK64 - 0b11));    
+    	//base = (val & (MASK64 - 0b11));  
+        base = (val>>2);  
     }
 } mtvec;
 
@@ -336,7 +339,8 @@ struct stvec_t{
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
-    	base = (val & (MASK64 - 0b11));    
+    	//base = (val & (MASK64 - 0b11)); 
+        base = (val>>2);    
     }
 } stvec;
 
@@ -353,7 +357,8 @@ struct utvec_t{
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
-    	base = (val & (MASK64 - 0b11));    
+    	//base = (val & (MASK64 - 0b11));  
+        base = (val>>2);   
     }
 } utvec;
 
@@ -409,7 +414,7 @@ struct ucause_t{
 } ucause;
 
 struct satp_t{
-    uint_t PPN; uint16_t ASID; uint8_t MODE;
+    uint_t PPN; uint16_t ASID; uint8_t MODE=0;
     satp_t(){
         PPN = 0;
         ASID = 0;
@@ -509,6 +514,12 @@ uint_t csr_read(uint_t csr_addr){
         case MTVAL :
             return mtval;
             break;
+        case STVAL :
+            return stval;
+            break;
+        case UTVAL :
+            return utval;
+            break;
         default:
             cout << "CSR not implemented : " << hex << csr_addr << endl;
             break;
@@ -528,6 +539,7 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         case MSCRATCH :
         	mscratch = val;
+            //cout << "mscratch : "<<hex<<val<<endl;
         	break;
         case MISA :
         	misa = val;
@@ -543,6 +555,7 @@ void csr_write(uint_t csr_addr, uint_t val){
         	break;
         case MTVEC :
             mtvec.write_reg(val);
+            //cout << "mtvev : "<<hex<<val<<endl;
             break;
         case STVEC :
             stvec.write_reg(val);
@@ -597,6 +610,12 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         case MTVAL :
             mtval = val;
+            break;
+        case STVAL :
+            stval = val;
+            break;
+        case UTVAL :
+            utval = val;
             break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
@@ -765,12 +784,14 @@ struct sv39pa_t{
 struct sv39pte_t{
     uint8_t D,A,G,U,X,W,R,V;
     uint8_t RSW ; uint16_t PPN0; uint16_t PPN1; uint32_t PPN2;
+    uint_t PPN;
     sv39pte_t(){
         D = 0; A = 0; G = 0; U = 0; X = 0; W = 0; R = 0; V = 0; 
         RSW = 0;
         PPN0 = 0;
         PPN1 = 0;
         PPN2 = 0;
+        PPN = 0;
     }
     uint_t read_reg(){
         return  ( ((PPN2 & 0x3FFFFFF)<<28) + ((PPN1 & 0x1FF)<<19) + ((PPN0 & 0x1FF)<<10) \
@@ -786,6 +807,7 @@ struct sv39pte_t{
         PPN0 = (val>>10) & 0x1FF;
         PPN1 = (val>>19) & 0x1FF;
         PPN2 = (val>>28) & 0x3FFFFFF;
+        PPN = (PPN2<<18) + (PPN1<<9) + PPN0;
     }
 };
 
@@ -796,10 +818,15 @@ struct sv39pte_t{
 uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current_privilage){
 
     uint_t physical_addr = 0;
-
+    uint_t a = 0;
+    sv39va_t vir_addr;
+    sv39pa_t phy_addr;
+    sv39pte_t pte2, pte1, pte0, pte_final;
+    uint_t pte_addr;
     switch(satp.MODE){
         case 0 : //Bare
             physical_addr = virtual_addr;
+            return physical_addr;
             break;
         case 8 : //Sv39
             if ((current_privilage == MMODE) & (mstatus.mprv == 0)){
@@ -811,22 +838,116 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 return physical_addr;
             }
 
-            sv39va_t vir_addr;
             vir_addr.write_reg(virtual_addr);
 
-            uint_t a = satp.ppn * PAGESIZE;
+            a = satp.PPN * PAGESIZE;
 
+            pte_addr = a + vir_addr.VPN2 * PTESIZE;
+            
+            pte2.write_reg(memory[pte_addr/4]);
+            if ( (pte2.V==0) | ( (pte2.R==0) & (pte2.W==1) ) ){ //page fault -validity check failed
+                return -1;
+            }
 
+            if ( (pte2.R==1) | (pte2.X==1) ){ //pte is a leaf
+                pte_final = pte2;
+                phy_addr.page_offset = vir_addr.page_offset; ////superpage translation
+                phy_addr.PPN2 = pte2.PPN2;
+                phy_addr.PPN1 = vir_addr.VPN1;
+                phy_addr.PPN0 = vir_addr.VPN0;
+            }
+            else{ //pte2 is a pointer to another pte
+                a = pte2.PPN * PAGESIZE;
+                pte_addr = a + vir_addr.VPN1 * PTESIZE;
 
-            uint_t pte_addr = a + vir_addr.VPN2 * PTESIZE;
-            sv39pte_t pte2;
-            pte2.write_reg(memory )
+                pte1.write_reg(memory[pte_addr/4]);
+                if ( (pte1.V==0) | ( (pte1.R==0) & (pte1.W==1) ) ){ //page fault -validity check failed
+                    return -1;
+                }
+
+                if ( (pte1.R==1) | (pte1.X==1) ){ //pte is a leaf
+                    pte_final = pte1;
+                    phy_addr.page_offset = vir_addr.page_offset; ////superpage translation
+                    phy_addr.PPN2 = pte1.PPN2;
+                    phy_addr.PPN1 = pte1.PPN1;
+                    phy_addr.PPN0 = vir_addr.VPN0;
+                }
+                else{
+                    a = pte1.PPN * PAGESIZE;
+                    pte_addr = a + vir_addr.VPN0 * PTESIZE;
+
+                    pte0.write_reg(memory[pte_addr/4]);
+                    if ( (pte0.V==0) | ( (pte0.R==0) & (pte0.W==1) ) ){ //page fault -validity check failed
+                        return -1;
+                    }
+                    if ( (pte0.R==1) | (pte0.X==1) ){ //pte is a leaf
+                        pte_final = pte0;
+                        phy_addr.page_offset = vir_addr.page_offset; 
+                        phy_addr.PPN2 = pte0.PPN2;
+                        phy_addr.PPN1 = pte0.PPN1;
+                        phy_addr.PPN0 = pte0.PPN0;
+                    }
+                    else{ //page fault - last level pte is also not valid
+                        return -1;
+                    }
+                }
+            }
+
+            if ( (pte_final.A==0) | ( (translation_type==STOR) & (pte_final.D==0) ) ){ // page fault according to spec - point 7
+                return -1;
+            }
+
+            switch(translation_type){
+                case INST : 
+                    if (pte_final.X==0) // fetch page is not executable
+                        return -1;
+
+                    if (current_privilage==UMODE){
+                        if (pte_final.U==0) // mode is U but access in not
+                            return -1;
+                    }
+                    else if (current_privilage==SMODE){
+                        if (pte_final.U==1)  // cant execute user pages in smode
+                            return -1;
+                    }
+                    return phy_addr.read_reg();
+
+                    break;
+
+                case LOAD :
+                    if (pte_final.R==0) // leaf page is not readable
+                        return -1;
+
+                    if (current_privilage==UMODE){
+                        if (pte_final.U==0) // mode is U but access in not
+                            return -1;
+                    }
+                    else if (current_privilage==SMODE){
+                        if ((pte_final.U==1) & (sstatus.sum==0))  
+                            return -1;
+                    }
+
+                    if ( (pte_final.X==1) & (sstatus.mxr==0) ) //load from executable pages are not enabled
+                        return -1;
+
+                    return phy_addr.read_reg();
+                    break;
+
+                case STOR : 
+                    if (pte_final.W==0) // leaf page is not writable
+                        return -1;
+
+                    return phy_addr.read_reg();
+                    break;
+            }
 
             break;
         case 9 : //Sv48
+            cout << "Sv48 mode not implemented"<<endl;
             break;
         default :
             cout << "Invalid or not-implemented translation mode : "<< satp.MODE <<endl;
+            break;
     }
 
     return -1;

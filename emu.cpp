@@ -21,10 +21,6 @@ using namespace std;
 
 //#define DEBUG
 
-vector<uint_t> memory(1<<MEM_SIZE); // main memory
-
-vector<uint_t> reg_file(32);       // register file
-
 template<class T>
 T sign_extend(T x, const int bits) {
     T m = 1;
@@ -121,9 +117,11 @@ int32_t signed_value32(uint_t x){
       return y;
 }
 
-void print_reg_file(vector<uint_t> reg_file){
-    string reg_file_names [] = {"zero","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6",\
+string reg_file_names [] = {"zero","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6",\
                               "a7","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","t3","t4","t5","t6"};
+
+void print_reg_file(vector<uint_t> reg_file){
+    
     for (int i=0;i<32;i++){
         printf("%s : %lu\n",reg_file_names[i].c_str(),reg_file[i]);
     }
@@ -150,12 +148,15 @@ int main(){
     uint_t i = 0;
 
     uint_t PC = 0;
+    uint_t PC_phy = 0;
     uint_t instruction = 0;
     bool branch = false;
     uint_t load_data = 0;
     uint_t store_data = 0;
     uint_t store_addr = 0;
+    uint_t store_addr_phy = 0;
     uint_t load_addr = 0;
+    uint_t load_addr_phy = 0;
     uint_t val = 0;
     uint_t itr = 0;
 
@@ -190,7 +191,7 @@ int main(){
     reg_file[2]  = 0x40000 ; //SP
     reg_file[11] = 0x10000 ;
 
-    misa = 0b1000100000001;
+    misa = 0b101000001000100000001;
     misa = (misa | (0b1llu<<63));
 
     enum opcode_t opcode;
@@ -214,12 +215,18 @@ int main(){
     while (PC < ((1llu)<<MEM_SIZE)){
 
         #ifdef DEBUG
-            sleep_for(milliseconds(500));
-            printf("PC : %x\n",PC);
+            //sleep_for(milliseconds(500));
+            cout << "PC : "<< hex << PC << endl;
         #endif
         //sleep_for(milliseconds(10));
 
-        instruction = getINST(PC/4,&memory);
+        PC_phy = translate(PC, INST, cp);
+        if (PC_phy==-1){
+            PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
+            continue;
+        }
+
+        instruction = getINST(PC_phy/4,&memory);
 
         reg_file[0] = 0;
 
@@ -250,7 +257,7 @@ int main(){
         //mstatus.mpp = 0b11;
         //printf("IMJ %d\n",imm_j);
         if ((PC%4)!=0){
-            cout << "PC mis aligned " <<endl;
+            cout << "PC mis aligned "<<hex<<PC <<endl;
         }
         lPC = PC;
         PC += 4;
@@ -329,74 +336,79 @@ int main(){
                         PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);   
                     }
                     else{
-                        load_data = memory.at(load_addr/8);
+                        load_addr_phy = translate(load_addr, LOAD, cp);
+                        if (load_addr_phy==-1){
+                            PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
+                            continue;
+                        }
+                        load_data = memory.at(load_addr_phy/8);
                         switch(func3){
                             case 0b000 : 
-                                if (load_byte(load_addr,load_data)==-1){
+                                if (load_byte(load_addr_phy,load_data)==-1){
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;                                  
                                 } else {
-                                    wb_data = sign_extend<uint_t>(load_byte(load_addr,load_data) & (0xFF)      , 8); 
+                                    wb_data = sign_extend<uint_t>(load_byte(load_addr_phy,load_data) & (0xFF)      , 8); 
                                     reg_file[rd] = wb_data;
                                 }
                                 break; //LB sign extend  8 bit value
 
                             case 0b001 : 
-                                if (load_halfw(load_addr,load_data)==-1){
+                                if (load_halfw(load_addr_phy,load_data)==-1){
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;
                                 } else {
-                                    wb_data = sign_extend<uint_t>(load_halfw(load_addr,load_data) & (0xFFFF)    ,16); 
+                                    wb_data = sign_extend<uint_t>(load_halfw(load_addr_phy,load_data) & (0xFFFF)    ,16); 
                                     reg_file[rd] = wb_data;
                                 }
                                 break; //LH sign extend 16 bit value
 
                             case 0b010 : 
-                                if (load_word(load_addr,load_data)==-1){
+                                if (load_word(load_addr_phy,load_data)==-1){
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;
                                     //cout << "LW"<<endl;
                                 } else {
-                                    wb_data = sign_extend<uint_t>(load_word(load_addr,load_data) & (0xFFFFFFFF),32); 
+                                    wb_data = sign_extend<uint_t>(load_word(load_addr_phy,load_data) & (0xFFFFFFFF),32); 
                                     reg_file[rd] = wb_data;
                                 }
                                 break; //LW sign extend 32 bit value
 
                             case 0b100 : 
-                                if (load_byte(load_addr,load_data)==-1){
+                                if (load_byte(load_addr_phy,load_data)==-1){
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;
                                     //cout << "LBU"<<endl;
                                 } else {
-                                    wb_data = load_byte(load_addr,load_data) & 0xFF      ; 
+                                    wb_data = load_byte(load_addr_phy,load_data) & 0xFF      ; 
                                     reg_file[rd] = wb_data;
                                 }
                                 break; //LBU zero extend  8 bit value
 
                             case 0b101 : 
-                                if (load_halfw(load_addr,load_data)==-1){
+                                if (load_halfw(load_addr_phy,load_data)==-1){
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;
                                     //cout << "LHU"<<endl;
                                 } else {
-                                    wb_data = load_halfw(load_addr,load_data) & 0xFFFF    ; 
+                                    wb_data = load_halfw(load_addr_phy,load_data) & 0xFFFF    ; 
                                     reg_file[rd] = wb_data;
                                 }
                                 break; //LHU zero extend 16 bit value
 
                             case 0b110 : 
-                                if (load_word(load_addr,load_data)==-1){
+                                if (load_word(load_addr_phy,load_data)==-1){
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;
                                     //cout << "LWU"<<endl;
                                 } else {
-                                    wb_data = load_word(load_addr,load_data) & 0xFFFFFFFF; 
+                                    wb_data = load_word(load_addr_phy,load_data) & 0xFFFFFFFF; 
                                     reg_file[rd] = wb_data;
                                 }
                                 break; //LWU zero extend 32 bit value
 
                             case 0b011 : 
-                                if ((load_addr%8)==0){
+                                if ((load_addr_phy%8)==0){
                                     wb_data = load_data ; 
                                     reg_file[rd] = wb_data;
                                 } else {
@@ -433,25 +445,30 @@ int main(){
                         PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   
                     }
                     else {
-                        store_data = memory.at(store_addr/8);
+                        store_addr_phy = translate(store_addr, STOR, cp);
+                        if (store_addr_phy==-1){
+                            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+                            continue;
+                        }
+                        store_data = memory.at(store_addr_phy/8);
                         switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
                             case 0b000 :
                                 val = reg_file[rs2] & 0xFF;
-                                wb_data = store_byte(store_addr,store_data,val);
+                                wb_data = store_byte(store_addr_phy,store_data,val);
                                 break;//SB  setting LSB 8 bit
 
                             case 0b001 :
                                 val = reg_file[rs2] & 0xFFFF;
-                                wb_data = store_halfw(store_addr,store_data,val);
+                                wb_data = store_halfw(store_addr_phy,store_data,val);
                                 break;//SH setting LSB 16 bit value
 
                             case 0b010 :
                                 val = reg_file[rs2] & 0xFFFFFFFF;
-                                wb_data = store_word(store_addr,store_data,val);
+                                wb_data = store_word(store_addr_phy,store_data,val);
                                 break;//SW setting LSB 32 bit value
 
                             case 0b011 : 
-                                if ((store_addr%8)==0){
+                                if ((store_addr_phy%8)==0){
                                     wb_data = reg_file[rs2] ; 
                                 }else{
                                     wb_data = -1;
@@ -467,7 +484,7 @@ int main(){
                             PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             mtval = store_addr;
                         }else {
-                            memory.at(store_addr/8) = wb_data;
+                            memory.at(store_addr_phy/8) = wb_data;
                         }
                     }
 
