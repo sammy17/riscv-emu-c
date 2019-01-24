@@ -80,8 +80,7 @@ enum plevel_t {
 
 
 
-uint_t store_word(uint_t store_addr, uint_t load_data, uint_t value){
-    uint_t wb_data = 0;
+bool store_word(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_data){
     if ((store_addr%8)==0){
         wb_data = (load_data & ((0xFFFFFFFFull)   <<32)) + (value & 0xFFFFFFFF);
     }
@@ -91,12 +90,12 @@ uint_t store_word(uint_t store_addr, uint_t load_data, uint_t value){
     else{
         //cout<<"######## Mis-aligned memory store #########\n";
         wb_data = -1;
+        return false;
     }
 
-    return wb_data;
+    return true;
 }
-uint_t store_halfw(uint_t store_addr, uint_t load_data, uint_t value){
-    uint_t wb_data = 0;
+bool store_halfw(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_data){
     switch(store_addr%8){
         case 0 :
             wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + (value & 0xFFFF);
@@ -113,13 +112,13 @@ uint_t store_halfw(uint_t store_addr, uint_t load_data, uint_t value){
         default :
             //cout<<"######## Mis-aligned memory store #########\n";
             wb_data = -1;
+            return false;
             break;
     }
-    return wb_data;
+    return true;
 }
 
-uint_t store_byte(uint_t store_addr, uint_t load_data, uint_t value){
-    uint_t wb_data = 0;
+bool store_byte(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_data){
     switch(store_addr%8){
         case 0 :
             wb_data = ( load_data & ((0xFFFFFFFFFFFFFFull)<<8)) + (value & 0xFF);
@@ -148,13 +147,13 @@ uint_t store_byte(uint_t store_addr, uint_t load_data, uint_t value){
         default :
             //cout<<"######## Mis-aligned memory store #########\n";
             wb_data = -1;
+            return false;
             break;
     }
-    return wb_data;
+    return true;
 }
 
-uint_t load_word(uint_t load_addr, uint_t load_data){
-    uint_t wb_data = 0;
+bool load_word(uint_t load_addr, uint_t load_data, uint_t &wb_data){
     if ((load_addr%8)==0)
         wb_data = (load_data & 0xFFFFFFFF);
     else if ((load_addr%8)==4)
@@ -162,13 +161,13 @@ uint_t load_word(uint_t load_addr, uint_t load_data){
     else{
         //cout<< "Mis-aligned memory load\n";
         wb_data = -1;
+        return false;
     }
 
-    return wb_data;
+    return true;
 }
 
-uint_t load_halfw(uint_t load_addr, uint_t load_data){
-    uint_t wb_data = 0;
+bool load_halfw(uint_t load_addr, uint_t load_data, uint_t &wb_data){
     switch(load_addr%8){
         case 0 :
             wb_data = (load_data & 0xFFFF) ;
@@ -185,14 +184,14 @@ uint_t load_halfw(uint_t load_addr, uint_t load_data){
         default :
             //cout<<"######## Mis-aligned memory load #########\n";
             wb_data = -1;
+            return false;
             break;
     }
-    return wb_data;
+    return true;
 }
 
 
-uint_t load_byte(uint_t load_addr, uint_t load_data){
-    uint_t wb_data = 0;
+bool load_byte(uint_t load_addr, uint_t load_data, uint_t &wb_data){
     switch(load_addr%8){
         case 0 :
             wb_data = (load_data & 0xFF) ;
@@ -221,9 +220,10 @@ uint_t load_byte(uint_t load_addr, uint_t load_data){
         default :
             //cout<<"######## Mis-aligned memory load #########\n";
             wb_data = -1;
+            return false;
             break;
     }
-    return wb_data;
+    return true;
 }
 
 #endif
