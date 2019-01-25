@@ -555,7 +555,7 @@ void csr_write(uint_t csr_addr, uint_t val){
         	break;
         case MTVEC :
             mtvec.write_reg(val);
-            //cout << "mtvev : "<<hex<<val<<endl;
+            cout << "mtvev : "<<hex<<val<<endl;
             break;
         case STVEC :
             stvec.write_reg(val);
@@ -721,14 +721,19 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         new_PC = stvec.base; 
     }
     else if (handling_mode == MMODE){
+        cout << "excep MMODE : " << mtvec.base << endl;
     	mstatus.mpie = mstatus.mie;
         mstatus.mie  = 0;
         mcause.interrupt = 0;
         mcause.ecode = ecode;
         mepc = PC-4;
         mstatus.mpp = 0b11; // setting to MMODE
-
-        new_PC = mtvec.base; 
+        //if (ecode == 2){
+        //    new_PC = 0x3ac0;
+        //}
+        //else{
+            new_PC = mtvec.base; 
+        //}
     }
     else 
     	cout << "Unrecognized mode for excep_function" <<endl;

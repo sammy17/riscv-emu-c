@@ -216,10 +216,10 @@ int main(){
 
     while (PC < ((1llu)<<MEM_SIZE)){
 
-        //#ifdef DEBUG
+        #ifdef DEBUG
             //sleep_for(milliseconds(500));
             cout << "PC : "<< hex << PC << endl;
-        //#endif
+        #endif
         //sleep_for(milliseconds(10));
 
         PC_phy = translate(PC, INST, cp);
@@ -229,6 +229,8 @@ int main(){
         }
 
         instruction = getINST(PC_phy/4,&memory);
+
+        mstatus.fs = 1;
 
         reg_file[0] = 0;
 
@@ -1244,6 +1246,48 @@ int main(){
                 }
                 break;
 
+            case fd1 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                break;
+
+            case fd2 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                break;
+
+            case fd3 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                break;
+
+            case fd4 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                break;
+
+            case fd5 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                break;
+
+            case fd6 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                break;
+
+            case fd7 :
+                cout << "FD Instructions"<<endl;
+                mtval = PC-4;
+                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp); 
+                break;
+
             default :
                 printf("default\n");
                 bitset<32> ins1(instruction);
@@ -1255,6 +1299,13 @@ int main(){
 
         cycle  = cycle_count ;
         instret  = cycle ;
+
+        if (mstatus.fs==3){
+            mstatus.sd = 1;
+        }
+        else {
+            mstatus.sd = 0;
+        }
 
         if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
             mtval = PC;

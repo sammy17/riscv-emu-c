@@ -64,7 +64,14 @@ enum opcode_t {
                 rops64 = 0b0111011,
                 amo    = 0b0101111,
                 fence  = 0b0001111,
-                systm = 0b1110011
+                systm  = 0b1110011,
+                fd1    = 0b0000111,
+                fd2    = 0b0100111,
+                fd3    = 0b1000011,
+                fd4    = 0b1000111,
+                fd5    = 0b1001011,
+                fd6    = 0b1001111,
+                fd7    = 0b1010011
             };
 
 enum plevel_t {
