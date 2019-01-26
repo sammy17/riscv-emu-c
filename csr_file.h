@@ -316,13 +316,13 @@ struct mtvec_t{
     	base = 0;
     }
     uint_t read_reg(){
-        return ((mode & 0b11)+(base<<2));
+        return ((mode & 0b11)+(base & (MASK64-0b11)));
     }
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
     	//base = (val & (MASK64 - 0b11));  
-        base = (val>>2);  
+        base = ( val & (MASK64-0b11) );  
     }
 } mtvec;
 

@@ -212,7 +212,7 @@ int main(){
         printf("Mem load successful\n");
     #endif
 
-
+    mstatus.fs = 1;
 
     while (PC < ((1llu)<<MEM_SIZE)){
 
@@ -230,7 +230,7 @@ int main(){
 
         instruction = getINST(PC_phy/4,&memory);
 
-        mstatus.fs = 1;
+        
 
         reg_file[0] = 0;
 
@@ -1248,43 +1248,43 @@ int main(){
 
             case fd1 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                 break;
 
             case fd2 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                 break;
 
             case fd3 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                 break;
 
             case fd4 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                 break;
 
             case fd5 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                 break;
 
             case fd6 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                 break;
 
             case fd7 :
                 cout << "FD Instructions"<<endl;
-                mtval = PC-4;
+                mtval = instruction;
                 PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp); 
                 break;
 
