@@ -88,19 +88,19 @@ DECLARE_EMULATION_FUNC(emulate_fsub)
 DECLARE_EMULATION_FUNC(emulate_fmul)
 {
   // while(1);
-  printm("EMU F\n");
+  //printm("EMU F\n");
   if (GET_PRECISION(insn) == PRECISION_S) {
     uint32_t rs1 = GET_F32_RS1(insn, regs);
     uint32_t rs2 = GET_F32_RS2(insn, regs);
-    printm("Result : %f",f32_mul(f32(rs1), f32(rs2)));
+    //printm("Result : %f",f32_mul(f32(rs1), f32(rs2)));
     SET_F32_RD(insn, regs, f32_mul(f32(rs1), f32(rs2)).v);
-    printm("EMU F32 %d, %d \n",rs1,rs2);
-    printm("RESULT : %x\n",f32_mul(f32(rs1), f32(rs2)).v);
+    //printm("EMU F32 %d, %d \n",rs1,rs2);
+    //printm("RESULT : %x\n",f32_mul(f32(rs1), f32(rs2)).v);
   } else if (GET_PRECISION(insn) == PRECISION_D) {
     uint64_t rs1 = GET_F64_RS1(insn, regs);
     uint64_t rs2 = GET_F64_RS2(insn, regs);
     SET_F64_RD(insn, regs, f64_mul(f64(rs1), f64(rs2)).v);
-    printm("EMU F64\n");
+    //printm("EMU F64\n");
   } else {
     return truly_illegal_insn(regs, mcause, mepc, mstatus, insn);
   }

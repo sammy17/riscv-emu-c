@@ -26,7 +26,7 @@ DECLARE_EMULATION_FUNC(emulate_float_load)
     case MATCH_FLW & MASK_FUNCT3:
       punt_to_misaligned_handler(4, misaligned_load_trap);
       SET_F32_RD(insn, regs, load_int32_t((void *)addr, mepc));
-       printm("hie %x\n",load_int32_t((void *)addr, mepc));
+      //printm("hie %x\n",load_int32_t((void *)addr, mepc));
       break;
 
     case MATCH_FLD & MASK_FUNCT3:
@@ -52,7 +52,7 @@ DECLARE_EMULATION_FUNC(emulate_float_store)
     case MATCH_FSW & MASK_FUNCT3:
       punt_to_misaligned_handler(4, misaligned_store_trap);
       store_uint32_t((void *)addr, GET_F32_RS2(insn, regs), mepc);
-      printm("store %x\n",GET_F32_RS2(insn, regs));
+      //printm("store %x\n",GET_F32_RS2(insn, regs));
       break;
 
     case MATCH_FSD & MASK_FUNCT3:

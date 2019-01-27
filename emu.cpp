@@ -135,7 +135,6 @@ uint_t getINST(uint_t PC,vector<uint_t> * memory){
 }
 
 
-
 int main(){
 
     vector<uint_t> memory(1<<MEM_SIZE); // main memory
@@ -214,6 +213,9 @@ int main(){
 
     mstatus.fs = 1;
 
+    uint_t testval_pre;
+    uint_t testval_pos;
+
     while (PC < ((1llu)<<MEM_SIZE)){
 
         #ifdef DEBUG
@@ -230,7 +232,27 @@ int main(){
 
         instruction = getINST(PC_phy/4,&memory);
 
-        
+        testval_pre = (memory[0xcd6c/8]>>32);
+
+        if (PC == 0x5008){
+
+            cout << "float sw instruction" <<endl;
+        }
+
+        if (PC == 0x20001c){
+
+            cout << "fsw ins" << endl;
+        }
+
+        if (PC == 0x3aec){
+
+            cout << "print done, illegal ins trap" << endl;
+        }
+
+        if (PC == 0x200020){
+
+            cout << "load again start" << endl;
+        }
 
         reg_file[0] = 0;
 
@@ -1299,6 +1321,14 @@ int main(){
 
         cycle  = cycle_count ;
         instret  = cycle ;
+
+        testval_pos = (memory[0xcd6c/8]>>32);
+
+        if ( (testval_pre == 0x41a0cccd) & (testval_pos==0)){
+
+            cout << "Failing point" << hex << PC-4<<endl;
+
+        }
 
         if (mstatus.fs==3){
             mstatus.sd = 1;

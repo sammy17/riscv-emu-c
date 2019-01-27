@@ -5,13 +5,13 @@ void hprintf(const char *format, ...);
 
 int main()
 {		
-	//float y,z;
-	float z;
+	float y,z;
+	//float z;
 		int x;
-		//y=10;
+		y=1.12;
 		z=20.1;
 		//x = 21310;
-		x= z*100;
+		x= z*y*1000;
 
 		hprintf("hello_world  %d\n",x);
 

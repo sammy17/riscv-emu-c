@@ -70,7 +70,7 @@ static DECLARE_EMULATION_FUNC(emulate_rvc)
 
 void illegal_insn_trap(uintptr_t* regs, uintptr_t mcause, uintptr_t mepc)
 {
-  printm("emulating \n");
+  //printm("emulating \n");
   // while(1);
   asm (".pushsection .rodata\n"
        "illegal_insn_trap_table:\n"
