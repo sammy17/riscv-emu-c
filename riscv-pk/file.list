@@ -1,0 +1,23 @@
+/build/Makefile 
+Add following
+DTB           := ../bbl/shakti.dts
+-DDTB=\"dtb\"
+
+bbl bbl.mk.in
+
+dtb: $(DTB)
+  dtc -O dtb -o dtb -b 0 < $<
+  
+payload.o:dtb bbl_payload
+
+
+machine minit.c initi_first_hart
+
+extern char _dtb;
+  dtb=(uintptr_t) &_dtb;
+
+machine mentry.S
+
+  .globl _dtb
+_dtb:
+  .incbin DTB
