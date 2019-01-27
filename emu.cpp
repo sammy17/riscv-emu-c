@@ -188,7 +188,7 @@ int main(){
     uint_t amo_reserve_addr64 = 0;
 
     //initializing reg file
-    reg_file[2]  = 0x400000 ; //SP
+    reg_file[2]  = 0x40000 ; //SP
     reg_file[11] = 0x10000 ;
 
     bool ls_success = false;
