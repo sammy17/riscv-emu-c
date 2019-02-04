@@ -47,7 +47,7 @@ all: RISCV_Test_Benchmark.elf secondary-outputs
 RISCV_Test_Benchmark.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: RISC-V GCC/Newlib C Linker'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -T"../src/link.ld" -nostartfiles -Wl,-Map,RISCV_Test_Benchmark.map -o "RISCV_Test_Benchmark.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -fPIC -T"../src/link.ld" -nostartfiles -Wl,-Map,RISCV_Test_Benchmark.map -o "RISCV_Test_Benchmark.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 

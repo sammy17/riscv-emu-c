@@ -14,13 +14,23 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
+#ifdef __MACHINE_MODE
+  #define sscratch mscratch
+  #define sstatus mstatus
+  #define scause mcause
+  #define sepc mepc
+  #define sret mret
+  #define stvec mtvec
+  #define stvec_handler1 mtvec_handler1
+#endif
+
 RVTEST_RV64M
 RVTEST_CODE_BEGIN
 
 setup_mtvec5:
   lui t0,%hi(mtvec_handler5)
   addi t0,t0,%lo(mtvec_handler5)
-  csrw mtvec, t0;
+  csrw stvec, t0;
 
   .align 2
 
@@ -64,11 +74,11 @@ mtvec_handler5:
 2:
   bne t2, t3, fail
 
-  csrr t2, mcause
+  csrr t2, scause
   bne t2, t1, fail
 
-  csrw mepc, t3
-  mret
+  csrw sepc, t3
+  sret
 
 RVTEST_CODE_END
 

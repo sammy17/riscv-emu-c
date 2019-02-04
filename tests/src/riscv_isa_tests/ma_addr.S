@@ -119,16 +119,16 @@ setup_mtvec:
   .align 3
   .global mtvec_handler3
 mtvec_handler3:
-  csrr t0, mcause
+  csrr t0, scause
   bne t0, s1, fail
 
-  csrr t0, mbadaddr
+  csrr t0, sbadaddr
   bne t0, t1, fail
 
   lb t0, (t0)
   beqz t0, fail
 
-  csrw mepc, t2
+  csrw sepc, t2
   sret
 
 RVTEST_CODE_END

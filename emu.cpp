@@ -232,27 +232,6 @@ int main(){
 
         instruction = getINST(PC_phy/4,&memory);
 
-        testval_pre = (memory[0xcd6c/8]>>32);
-
-        if (PC == 0x5008){
-
-            cout << "float sw instruction" <<endl;
-        }
-
-        if (PC == 0x20001c){
-
-            cout << "fsw ins" << endl;
-        }
-
-        if (PC == 0x3aec){
-
-            cout << "print done, illegal ins trap" << endl;
-        }
-
-        if (PC == 0x200020){
-
-            cout << "load again start" << endl;
-        }
 
         reg_file[0] = 0;
 
@@ -280,8 +259,6 @@ int main(){
 
         amo_op   = ((instruction) >> 27) & 0b11111 ;
 
-        //mstatus.mpp = 0b11;
-        //printf("IMJ %d\n",imm_j);
         if ((PC%4)!=0){
             cout << "PC mis aligned "<<hex<<PC <<endl;
         }
@@ -510,7 +487,7 @@ int main(){
                             break;
                         }
                         if (!ls_success){
-                            cout << "Mis-aligned store exception"<<endl;
+                            //cout << "Mis-aligned store exception"<<endl;
                             PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                             mtval = store_addr;
                         }else {
@@ -866,7 +843,7 @@ int main(){
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = ((wb_data & MASK32) ^ (reg_file[rs2] & MASK32)) & MASK32;
-                                store_data = store_word(load_addr,load_data,wb_data, store_data);
+                                ls_success = store_word(load_addr,load_data,wb_data, store_data);
                                 memory.at(load_addr/8) = store_data;
                             }
                             break;
@@ -1205,28 +1182,10 @@ int main(){
                     case 0b000 : 
                         switch(imm11_0){
                             case 0 : //ecall
-                                /*
-                                mstatus.mpie = mstatus.mie;
-                                mstatus.mie  = 0;
-                                mstatus.mpp = 0b11;
-                                mcause.interrupt = 0;
-                                mcause.ecode = ECODE_M_ECALL;
-                                mepc = PC-4;
-                                PC = mtvec.base;
-                                break;
-                                */
                                 PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
                                 break;
 
                             case 1 : //ebreak
-                            /*
-                                mstatus.mpie = mstatus.mie;
-                                mstatus.mie  = 0;
-                                mstatus.mpp = 0b11;
-                                mcause.interrupt = 0;
-                                mcause.ecode = 3;
-                                mepc = PC-4;
-                                PC = mtvec.base;*/
                                 PC = excep_function(PC,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,cp);
                                 break;
 
@@ -1321,14 +1280,6 @@ int main(){
 
         cycle  = cycle_count ;
         instret  = cycle ;
-
-        testval_pos = (memory[0xcd6c/8]>>32);
-
-        if ( (testval_pre == 0x41a0cccd) & (testval_pos==0)){
-
-            cout << "Failing point" << hex << PC-4<<endl;
-
-        }
 
         if (mstatus.fs==3){
             mstatus.sd = 1;

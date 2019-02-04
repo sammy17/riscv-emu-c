@@ -32,7 +32,7 @@ C_DEPS += \
 src/coremark/%.o: ../src/coremark/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: RISC-V GCC/Newlib C Compiler'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -DTIME -DUSE_MYSTDLIB -DRISCV -O2 -Wall -ffreestanding -nostdlib  -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -fPIC -DTIME -DUSE_MYSTDLIB -DRISCV -O2 -Wall -ffreestanding -nostdlib  -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

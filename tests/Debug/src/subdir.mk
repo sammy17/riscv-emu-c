@@ -27,14 +27,14 @@ C_DEPS += \
 src/%.o: ../src/%.c
 	@echo 'Building file: $<'
 	@echo 'Invoking: RISC-V GCC/Newlib C Compiler'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -DTIME -DUSE_MYSTDLIB -DRISCV -O2 -Wall -ffreestanding -nostdlib  -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<" -I /home/dean/Linux-ext/newenu/tests/src
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -fPIC -DTIME -DUSE_MYSTDLIB -DRISCV -O2 -Wall -ffreestanding -nostdlib  -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<" -I /home/dean/Linux-ext/newenu/tests/src
 	@echo 'Finished building: $<'
 	@echo ' '
 
 src/%.o: ../src/%.S
 	@echo 'Building file: $<'
 	@echo 'Invoking: RISC-V GCC/Newlib Assembler'
-	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -x assembler-with-cpp -Wall -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -Wa,-march=rv64ima -o "$@" "$<" -I /home/dean/Linux-ext/newenu/tests/src
+	riscv64-unknown-elf-gcc -mabi=lp64 -march=rv64ima -x assembler-with-cpp -fPIC -Wall -c -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -Wa,-march=rv64ima -o "$@" "$<" -I /home/dean/Linux-ext/newenu/tests/src
 	@echo 'Finished building: $<'
 	@echo ' '
 

@@ -54,8 +54,8 @@ endif
 # default is. The -with-abi is not necessary for this project. Unconditionally
 # compile it with a no-float ABI. i.e., ilp32 for 32-bit and lp64 for 64-bit.
 
-ifneq (,)
-  march := -march=
+ifneq (rv64im,)
+  march := -march=rv64im
   is_32bit := $(findstring 32,$(march))
   mabi := -mabi=$(if $(is_32bit),ilp32,lp64)
 endif

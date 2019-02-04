@@ -226,7 +226,7 @@ struct mstatus_t{
         uie = 0; sie = 0; mie = 0;
         upie = 0; spie = 0; mpie = 0; 
         spp = 0; mpp = 0b11; 
-        fs = 0; xs = 0; mprv = 0; sum = 0; mxr = 0; tvm = 0; tw = 0; tsr = 0; uxl = 0; sxl = 0; sd = 0; 
+        fs = 0; xs = 0; mprv = 0; sum = 0; mxr = 0; tvm = 0; tw = 0; tsr = 0; uxl = 2; sxl = 0; sd = 0; 
     }
     uint_t read_reg(){
         return (((uint_t)sd<<63)+((uint_t)sxl<<34)+((uint_t)uxl<<32)+(tsr<<22)+(tw<<21)+(tvm<<20)+(mxr<<19)+(sum<<18)+(mprv<<17)+(xs<<15)+(fs<<13)+(mpp<<11)+(spp<<8)+(mpie<<7)+(spie<<5)+(upie<<4)+(mie<<3)+(sie<<1)+uie);
@@ -281,6 +281,7 @@ struct ustatus_t{
 } ustatus;
 
 uint_t mscratch=0;
+uint_t sscratch=0;
 
 uint_t medeleg = -1;
 uint_t sedeleg = -1;
@@ -305,8 +306,8 @@ uint_t marchid = 0;
 uint_t mimpid = 0;
 
 uint_t mtval = 0;
-uint_t stval = 0;
-uint_t utval = 0;
+uint_t &stval = mtval;
+uint_t &utval = mtval;
 
 struct mtvec_t{
     uint8_t mode;
@@ -334,13 +335,13 @@ struct stvec_t{
     	base = 0;
     }
     uint_t read_reg(){
-        return (mode+(base<<2));
+        return ((mode & 0b11)+(base & (MASK64-0b11)));
     }
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
     	//base = (val & (MASK64 - 0b11)); 
-        base = (val>>2);    
+        base = ( val & (MASK64-0b11) );    
     }
 } stvec;
 
@@ -352,13 +353,13 @@ struct utvec_t{
     	base = 0;
     }
     uint_t read_reg(){
-        return (mode+(base<<2));
+        return ((mode & 0b11)+(base & (MASK64-0b11)));
     }
 
     void write_reg(uint_t val){
     	mode = val & 0b11;
     	//base = (val & (MASK64 - 0b11));  
-        base = (val>>2);   
+        base = ( val & (MASK64-0b11) );   
     }
 } utvec;
 
@@ -445,6 +446,9 @@ uint_t csr_read(uint_t csr_addr){
         case MSCRATCH :
         	return mscratch;
         	break;
+        case SSCRATCH :
+            return sscratch;
+            break;
         case MISA :
         	return misa;
         	break;
@@ -539,8 +543,10 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         case MSCRATCH :
         	mscratch = val;
-            //cout << "mscratch : "<<hex<<val<<endl;
         	break;
+        case SSCRATCH :
+            sscratch = val;
+            break;
         case MISA :
         	misa = val;
         	break;
@@ -555,10 +561,10 @@ void csr_write(uint_t csr_addr, uint_t val){
         	break;
         case MTVEC :
             mtvec.write_reg(val);
-            cout << "mtvev : "<<hex<<val<<endl;
             break;
         case STVEC :
             stvec.write_reg(val);
+            //cout << "Writing stvec" << hex <<val<<endl;
             break;
         case UTVEC :
             utvec.write_reg(val);
@@ -584,8 +590,9 @@ void csr_write(uint_t csr_addr, uint_t val){
         case SIDELEG :
         	sideleg = val;
         	break;
-        case CYCLE :
-            cycle = val;
+        case CYCLE : //this should be an exception
+            cout << "Exception : Writing to cycle CSR"<<endl;
+            //cycle = val;
             break;
         case TIME :
             time_csr = val;
@@ -717,11 +724,12 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
 
         mstatus.mpp = 0b01; // setting both to SMODE
         mstatus.spp = 0b1;
+        //cout << "handling in smode "<<ecode<<endl;
 
         new_PC = stvec.base; 
     }
     else if (handling_mode == MMODE){
-        cout << "excep MMODE : " << mtvec.base << endl;
+        //cout << "excep MMODE : " << mtvec.base << endl;
     	mstatus.mpie = mstatus.mie;
         mstatus.mie  = 0;
         mcause.interrupt = 0;

@@ -153,16 +153,16 @@ static void wake_harts()
 void init_first_hart(uintptr_t hartid, uintptr_t dtb)
 {
   //#ifdef PK_ENABLE_DTS
-  printm("DTB pointer value : %x",dtb);
+  //printm("DTB pointer value : %x",dtb);
   extern char _dtb;
   dtb=(uintptr_t) &_dtb;
-  printm("DTB pointer value : %x",dtb);
+  //printm("DTB pointer value : %x",dtb);
   //#endif
   // Confirm console as early as possible
   query_uart(dtb);
   query_uart16550(dtb);
   //query_htif(dtb);
-  printm("bbl loader\r\n");
+  //printm("bbl loader\r\n");
 
   hart_init();
   hls_init(0); // this might get called again from parse_config_string
@@ -171,7 +171,7 @@ void init_first_hart(uintptr_t hartid, uintptr_t dtb)
   query_finisher(dtb);
 
   query_mem(dtb);
-  printm("Memory done\n");
+  //printm("Memory done\n");
   /*query_harts(dtb);
   query_clint(dtb);
   query_plic(dtb);

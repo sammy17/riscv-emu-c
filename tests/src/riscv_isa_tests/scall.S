@@ -9,6 +9,8 @@
 
 ## #define __MACHINE_MODE 1
 
+#undef __MACHINE_MODE
+
 #define TEST_FUNC_NAME ecall
 #define TEST_FUNC_TXT "ecall \t"
 #define TEST_FUNC_RET ebreak

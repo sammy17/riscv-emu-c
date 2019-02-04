@@ -161,8 +161,8 @@ static void mem_prop(const struct fdt_scan_prop *prop, void *extra)
   } else if (!strcmp(prop->name, "reg")) {
     scan->reg_value = prop->value;
     scan->reg_len = prop->len;
-    printm("mem_done value1 : %x \n",scan->reg_value);
-    printm("mem_done value1 : %x \n",scan->reg_len);
+    //printm("mem_done value1 : %x \n",scan->reg_value);
+    //printm("mem_done value1 : %x \n",scan->reg_len);
   }
 }
 
@@ -171,8 +171,8 @@ static void mem_done(const struct fdt_scan_node *node, void *extra)
   struct mem_scan *scan = (struct mem_scan *)extra;
   const uint32_t *value = scan->reg_value;
   const uint32_t *end = value + scan->reg_len/4;
-  printm("mem_done value : %x \n",value);
-  printm("mem_done end : %x \n",end);
+  //printm("mem_done value : %x \n",value);
+  //printm("mem_done end : %x \n",end);
   uintptr_t self = (uintptr_t)mem_done;
 
   if (!scan->memory) return;
@@ -201,7 +201,7 @@ void query_mem(uintptr_t fdt)
 
   mem_size = 0;
   fdt_scan(fdt, &cb);
-  printm("mem_size= %x\n",mem_size);
+  //printm("mem_size= %x\n",mem_size);
   assert (mem_size > 0);
 }
 

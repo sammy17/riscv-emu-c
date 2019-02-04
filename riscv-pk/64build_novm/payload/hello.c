@@ -1,5 +1,11 @@
 #include <stdint.h>
 #include <stdarg.h>
+//#include <stdio.h>
+
+extern void printm();
+
+#define printf printm
+
 char* hscanf();
 void hprintf(const char *format, ...);
 
@@ -13,7 +19,7 @@ int main()
 		//x = 21310;
 		x= z*y*1000;
 
-		hprintf("hello_world  %d\n",x);
+		printf("hello_world  %d\n",x);
 
 		while (1);
 }

@@ -1,3 +1,0 @@
-../configure --prefix=/home/dean/Desktop/new/riscv-tool-old/riscv-gnu-toolchain/newbuild/install/bin --host=riscv64-unknown-elf --with-payload=./hello_new --enable-logo --enable-32bit --enable-boot-machine --with-arch=rv32im --with-abi=ilp32 --enable-dts --enable-print-device-tree
-
-../configure --prefix=/home/dean/Desktop/new/riscv-tool-old/riscv-gnu-toolchain/newbuild/install/bin --host=riscv64-unknown-elf --with-payload=./hello_new --enable-logo --enable-boot-machine --with-arch=rv64im --with-abi=lp64 --enable-dts --enable-print-device-tree

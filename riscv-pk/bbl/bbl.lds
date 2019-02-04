@@ -107,6 +107,7 @@ SECTIONS
   .payload :
   {
     *(.payload)
+    *(.payload.*)
   }
 
   _end = .;

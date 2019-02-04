@@ -69,18 +69,18 @@ void boot_loader(uintptr_t dtb)
 {
   filter_dtb(dtb);
 #ifdef PK_ENABLE_LOGO
-  // print_logo();
+  print_logo();
 #endif
 //#ifdef PK_PRINT_DEVICE_TREE
-  printm("START\n");
-  fdt_print(dtb_output());
-  printm("END\n");
+  //printm("START\n");
+  //fdt_print(dtb_output());
+  //printm("END\n");
 //#endif
   mb();
-  printm("START1\n");
+  //printm("START1\n");
   /* Use optional FDT preloaded external payload if present */
   entry_point = kernel_start ? kernel_start : &_payload_start;
-  printm("START2 %x\n",entry_point);
+  //printm("START2 %x\n",entry_point);
   boot_other_hart(0);
-  printm("STAR3\n");
+  //printm("STAR3\n");
 }

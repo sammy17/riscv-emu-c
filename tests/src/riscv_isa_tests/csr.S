@@ -15,7 +15,9 @@
 #include "test_macros.h"
 
 
-#define __MACHINE_MODE 1
+## #define __MACHINE_MODE 1
+
+#undef define __MACHINE_MODE
 
 RVTEST_RV64S
 RVTEST_CODE_BEGIN
