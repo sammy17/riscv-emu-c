@@ -19,6 +19,7 @@ RVTEST_CODE_BEGIN
 
 # get a unique core id
 la a0, coreid
+sw x0, 0(a0)
 li a1, 1
 amoadd.w a2, a1, (a0)
 

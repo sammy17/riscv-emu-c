@@ -179,6 +179,11 @@ int main(){
     uint_t imm_s    = 0;
     uint_t csr_data = 0;
     plevel_t cp     = (plevel_t)MMODE;
+    plevel_t LR_cp;
+    uint_t LR_count = 0;
+
+    plevel_t LR_cp64;
+    uint_t LR_count64 = 0;
 
     uint_t amo_op   = 0;
     bool amo_reserve_valid = false;
@@ -258,6 +263,39 @@ int main(){
         imm_s    = ((((instruction)>>25) & 0b1111111)<<5) + (((instruction)>>7) & 0b11111) ;
 
         amo_op   = ((instruction) >> 27) & 0b11111 ;
+
+
+        if (amo_reserve_valid64){
+            LR_count64 +=1;
+            if ( (opcode==jump) | (opcode==jumpr) | (opcode==cjump) | (opcode==load) | (opcode==store) | (opcode==fence) | (opcode==systm) ){
+                cout << "Illegal instruction in between LR/SC 64 : " << (uint_t)opcode << endl;
+                amo_reserve_valid64 = false;
+                amo_reserve_addr64 = 0;
+                LR_count64 = 0;
+            }
+            else if (LR_cp64 != cp){
+                cout << "Privilege changed in between LR/SC 64 : " << endl;
+                amo_reserve_valid64 = false;
+                amo_reserve_addr64 = 0;
+                LR_count64 = 0;
+            }
+        }
+
+        if (amo_reserve_valid){
+            LR_count +=1;
+            if ( (opcode==jump) | (opcode==jumpr) | (opcode==cjump) | (opcode==load) | (opcode==store) | (opcode==fence) | (opcode==systm) ){
+                cout << "Illegal instruction in between LR/SC : " << (uint_t)opcode << endl;
+                amo_reserve_valid = false;
+                amo_reserve_addr = 0;
+                LR_count = 0;
+            }
+            else if (LR_cp != cp){
+                cout << "Privilege changed in between LR/SC : " << endl;
+                amo_reserve_valid = false;
+                amo_reserve_addr = 0;
+                LR_count = 0;
+            }
+        }
 
         if ((PC%4)!=0){
             cout << "PC mis aligned "<<hex<<PC <<endl;
@@ -774,6 +812,8 @@ int main(){
                                 ret_data = sign_extend<uint_t>(wb_data & MASK32,32);
                                 amo_reserve_valid = true;
                                 amo_reserve_addr = load_addr;
+                                LR_count = 0;
+                                LR_cp = cp;
                             }
                             break;
 
@@ -787,6 +827,7 @@ int main(){
                                 if (!ls_success){
                                     cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                     PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                    ret_data = 1;
                                 }
                                 else {
                                     memory.at(store_addr/8) = wb_data;
@@ -796,6 +837,7 @@ int main(){
                             else {
                                 ret_data = 1;
                             }
+                            LR_count = 0;
                             amo_reserve_addr = 0;
                             amo_reserve_valid = false;
                             break;
@@ -968,6 +1010,8 @@ int main(){
                                 ret_data = wb_data;
                                 amo_reserve_valid64 = true;
                                 amo_reserve_addr64 = reg_file[rs1];
+                                LR_count64 = 0;
+                                LR_cp64 = cp;
                             }
                             break;
 

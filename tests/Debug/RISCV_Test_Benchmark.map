@@ -308,20 +308,19 @@ LOAD /home/dean/Linux-ext/riscv-tools/build/lib/gcc/riscv64-unknown-elf/7.1.1/li
                 0x000000000001fe14                amoxor_d
  .text          0x000000000001ff00      0x100 ./src/riscv_isa_tests/amoxor_w.o
                 0x000000000001ff0c                amoxor_w
- .text          0x0000000000020000      0x19c ./src/riscv_isa_tests/lrsc.o
+ .text          0x0000000000020000      0x1a0 ./src/riscv_isa_tests/lrsc.o
                 0x0000000000020008                lrsc
- .text          0x000000000002019c      0x204 ./src/riscv_isa_tests/csr.o
-                0x00000000000201a4                csr
-                0x0000000000020340                stvec_handler
- .text          0x00000000000203a0       0xe4 ./src/riscv_isa_tests/scall.o
-                0x00000000000203a8                ecall
-                0x0000000000020468                stvec_handler2
- .text          0x0000000000020484       0xcc ./src/riscv_isa_tests/sbreak.o
-                0x0000000000020490                ebreak
-                0x0000000000020530                stvec_handler1
- .text          0x0000000000020550       0xcc ./src/riscv_isa_tests/mcsr.o
-                0x0000000000020558                mcsr
- *fill*         0x000000000002061c        0x4 
+ .text          0x00000000000201a0      0x204 ./src/riscv_isa_tests/csr.o
+                0x00000000000201a8                csr
+                0x0000000000020344                stvec_handler
+ .text          0x00000000000203a4       0xe4 ./src/riscv_isa_tests/scall.o
+                0x00000000000203ac                ecall
+                0x000000000002046c                stvec_handler2
+ .text          0x0000000000020488       0xcc ./src/riscv_isa_tests/sbreak.o
+                0x0000000000020494                ebreak
+                0x0000000000020534                stvec_handler1
+ .text          0x0000000000020554       0xcc ./src/riscv_isa_tests/mcsr.o
+                0x000000000002055c                mcsr
  .text          0x0000000000020620      0x5a0 ./src/riscv_isa_tests/ma_addr.o
                 0x000000000002062c                ma_addr
                 0x0000000000020ba0                mtvec_handler3
