@@ -2,9 +2,9 @@
 #include <stdarg.h>
 //#include <stdio.h>
 
-extern void printm();
+//extern void printm();
 
-#define printf printm
+//#define printf printm
 
 char* hscanf();
 void hprintf(const char *format, ...);
@@ -19,7 +19,7 @@ int main()
 		//x = 21310;
 		x= z*y*1000;
 
-		printf("hello_world  %d\n",x);
+		hprintf("hello_world  %d\n",x);
 
 		while (1);
 }
