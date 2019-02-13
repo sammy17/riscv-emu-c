@@ -62,13 +62,12 @@ initReg:
 	ret
 
 isaTest:
-	jal ra,risvISATestStartMsg
 	jal ra,initReg
 	jal ra,add
 
 isaTestEnd:
 	jal ra,initReg
-	jal ra,init
+	ret //jal ra,init
 
 dhrystoneBenchmark:
 	jal ra,risvDhrystoneStartMsg
