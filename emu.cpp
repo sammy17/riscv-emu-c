@@ -221,6 +221,11 @@ int main(){
     uint_t testval_pre;
     uint_t testval_pos;
 
+    if ( (memory.at(MTIME_ADDR)!=0) | (memory.at(MTIME_ADDR)!=0) ){
+        cout << "MTime regs are not 0" <<endl;
+    }
+    
+
     while (PC < ((1llu)<<MEM_SIZE)){
 
         #ifdef DEBUG

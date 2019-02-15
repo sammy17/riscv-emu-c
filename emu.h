@@ -28,6 +28,9 @@ typedef uint64_t data_t;
 #define MASK64 0xFFFFFFFFFFFFFFFFllu
 #define MASK32 0xFFFFFFFFllu
 
+#define MTIME_ADDR 0x2000000
+#define MTIMECMP_ADDR 0x21000000
+
 
 #define CAUSE_MISALIGNED_FETCH 0x0
 #define CAUSE_FETCH_ACCESS 0x1
