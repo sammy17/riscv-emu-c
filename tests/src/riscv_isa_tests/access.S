@@ -9,7 +9,7 @@
 
 #define TEST_FUNC_NAME access
 #define TEST_FUNC_TXT "access \t"
-#define TEST_FUNC_RET isaTestEnd
+#define TEST_FUNC_RET interrupt
 
 #include "riscv_test.h"
 #include "test_macros.h"

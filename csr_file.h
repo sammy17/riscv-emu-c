@@ -223,7 +223,7 @@
 struct mstatus_t{
     uint8_t uie, sie, mie, upie, spie, mpie, spp, mpp, fs, xs, mprv, sum, mxr, tvm, tw, tsr, uxl, sxl, sd;
     mstatus_t() {
-        uie = 0; sie = 0; mie = 0;
+        uie = 1; sie = 1; mie = 1;
         upie = 0; spie = 0; mpie = 0; 
         spp = 0; mpp = 0b11; 
         fs = 0; xs = 0; mprv = 0; sum = 0; mxr = 0; tvm = 0; tw = 0; tsr = 0; uxl = 2; sxl = 0; sd = 0; 
@@ -432,6 +432,49 @@ struct satp_t{
     }
 } satp;
 
+struct mip_t{
+    uint8_t MEIP; uint8_t SEIP; uint8_t UEIP; uint8_t MTIP; uint8_t STIP; uint8_t UTIP; uint8_t MSIP; uint8_t SSIP; uint8_t USIP;
+    mip_t(){
+        MEIP = 0; SEIP = 0; UEIP = 0; MTIP = 0; STIP = 0; UTIP = 0; MSIP = 0; SSIP = 0; USIP = 0;
+    }
+    uint_t read_reg(){
+        return  (((MEIP & 0b1)<<11)+((SEIP & 0b1)<<9)+((UEIP & 0b1)<<8)+((MTIP & 0b1)<<7)+((STIP & 0b1)<<5)+((UTIP & 0b1)<<4)+((MSIP & 0b1)<<3)+((SSIP & 0b1)<<1)+(USIP & 0b1));
+    }
+
+    void write_reg(uint_t val){
+        MEIP = (val>>11) & 0b1;
+        SEIP = (val>> 9) & 0b1;
+        UEIP = (val>> 8) & 0b1;
+        MTIP = (val>> 7) & 0b1;
+        STIP = (val>> 5) & 0b1;
+        UTIP = (val>> 4) & 0b1;
+        MSIP = (val>> 3) & 0b1;
+        SSIP = (val>> 1) & 0b1;
+        USIP = val& 0b1;
+    }
+} mip;
+
+struct mie_t{
+    uint8_t MEIE; uint8_t SEIE; uint8_t UEIE; uint8_t MTIE; uint8_t STIE; uint8_t UTIE; uint8_t MSIE; uint8_t SSIE; uint8_t USIE;
+    mie_t(){
+        MEIE = 0; SEIE = 0; UEIE = 0; MTIE = 0; STIE = 0; UTIE = 0; MSIE = 0; SSIE = 0; USIE = 0;
+    }
+    uint_t read_reg(){
+        return  (((MEIE & 0b1)<<11)+((SEIE & 0b1)<<9)+((UEIE & 0b1)<<8)+((MTIE & 0b1)<<7)+((STIE & 0b1)<<5)+((UTIE & 0b1)<<4)+((MSIE & 0b1)<<3)+((SSIE & 0b1)<<1)+(USIE & 0b1));
+    }
+    void write_reg(uint_t val){
+        MEIE = (val>>11) & 0b1;
+        SEIE = (val>> 9) & 0b1;
+        UEIE = (val>> 8) & 0b1;
+        MTIE = (val>> 7) & 0b1;
+        STIE = (val>> 5) & 0b1;
+        UTIE = (val>> 4) & 0b1;
+        MSIE = (val>> 3) & 0b1;
+        SSIE = (val>> 1) & 0b1;
+        USIE = val& 0b1;
+    }
+} mie;
+
 uint_t csr_read(uint_t csr_addr){
     switch(csr_addr){
         case MSTATUS :
@@ -523,6 +566,12 @@ uint_t csr_read(uint_t csr_addr){
             break;
         case UTVAL :
             return utval;
+            break;
+        case MIP :
+            return mip.read_reg();
+            break;
+        case MIE :
+            return mie.read_reg();
             break;
         default:
             cout << "CSR not implemented : " << hex << csr_addr << endl;
@@ -623,6 +672,12 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         case UTVAL :
             utval = val;
+            break;
+        case MIP :
+            mip.write_reg(val);
+            break;
+        case MIE :
+            mie.write_reg(val);
             break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
@@ -750,6 +805,88 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
     return new_PC;
 }
 
+uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, plevel_t current_privilage){
+
+    uint_t ecode = 0;
+    uint_t new_PC = 0;
+
+    if (current_privilage == UMODE)
+        ecode = uecode;
+    else if (current_privilage == SMODE)
+        ecode = secode;
+    else if (current_privilage == MMODE)
+        ecode = mecode;
+
+    plevel_t handling_mode = trap_mode_select(ecode, true, current_privilage);
+    //plevel_t handling_mode = current_privilage;
+
+    cout << "handling mode : "<<(uint_t)handling_mode<<endl;
+    cout << "sie : "<<(uint_t)mstatus.sie<<endl;
+
+    mstatus.sie = 1;
+
+    if (handling_mode == UMODE)
+        ecode = uecode;
+    else if (handling_mode == SMODE)
+        ecode = secode;
+    else if (handling_mode == MMODE)
+        ecode = mecode;
+
+    if ((handling_mode == UMODE) & (mstatus.uie==1)){
+        ustatus.upie = ustatus.uie;
+        ustatus.uie  = 0;
+        ucause.interrupt = 1;
+        ucause.ecode = ecode;
+        uepc = PC-4;
+
+        mstatus.mpp = 0b0; // setting both to UMODE
+        mstatus.spp = 0b0;
+        if (utvec.mode ==0b1)
+            new_PC = utvec.base + 4*ecode;
+        else if (utvec.mode ==0b0)
+            new_PC = utvec.base ;
+
+    }
+    else if ((handling_mode == SMODE) & (mstatus.sie==1)){
+        sstatus.spie = sstatus.sie;
+        sstatus.sie  = 0;
+        scause.interrupt = 1;
+        scause.ecode = ecode;
+        sepc = PC-4;
+
+        mstatus.mpp = 0b01; // setting both to SMODE
+        mstatus.spp = 0b1;
+        //cout << "handling in smode "<<ecode<<endl;
+
+        if (stvec.mode ==0b1)
+            new_PC = stvec.base + 4*ecode;
+        else if (stvec.mode ==0b0)
+            new_PC = stvec.base ;
+    }
+    else if ((handling_mode == MMODE) & (mstatus.mie==1)){
+        //cout << "excep MMODE : " << mtvec.base << endl;
+        mstatus.mpie = mstatus.mie;
+        mstatus.mie  = 0;
+        mcause.interrupt = 1;
+        mcause.ecode = ecode;
+        mepc = PC-4;
+        mstatus.mpp = 0b11; // setting to MMODE
+
+        if (mtvec.mode ==0b1)
+            new_PC = mtvec.base + 4*ecode;
+        else if (mtvec.mode ==0b0)
+            new_PC = mtvec.base ;
+
+    }
+    else {
+        cout << "Unrecognized mode for interrupt_function" <<endl;
+        return PC;
+    }
+
+
+    return new_PC;
+}
+
 enum ttype_t{
     INST = 0b00,
     LOAD = 0b01,
@@ -850,6 +987,10 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 physical_addr = virtual_addr;
                 return physical_addr;
             }
+            else if ( (mstatus.mprv == 1) & (mstatus.mpp ==3)){
+                physical_addr = virtual_addr;
+                return physical_addr;
+            }
 
             vir_addr.write_reg(virtual_addr);
 
@@ -857,7 +998,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
 
             pte_addr = a + vir_addr.VPN2 * PTESIZE;
             
-            pte2.write_reg(memory[pte_addr/4]);
+            pte2.write_reg(memory.at(pte_addr/8));
             if ( (pte2.V==0) | ( (pte2.R==0) & (pte2.W==1) ) ){ //page fault -validity check failed
                 return -1;
             }
@@ -873,7 +1014,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 a = pte2.PPN * PAGESIZE;
                 pte_addr = a + vir_addr.VPN1 * PTESIZE;
 
-                pte1.write_reg(memory[pte_addr/4]);
+                pte1.write_reg(memory.at(pte_addr/8));
                 if ( (pte1.V==0) | ( (pte1.R==0) & (pte1.W==1) ) ){ //page fault -validity check failed
                     return -1;
                 }
@@ -889,7 +1030,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                     a = pte1.PPN * PAGESIZE;
                     pte_addr = a + vir_addr.VPN0 * PTESIZE;
 
-                    pte0.write_reg(memory[pte_addr/4]);
+                    pte0.write_reg(memory.at(pte_addr/8));
                     if ( (pte0.V==0) | ( (pte0.R==0) & (pte0.W==1) ) ){ //page fault -validity check failed
                         return -1;
                     }
@@ -906,10 +1047,13 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 }
             }
 
-            if ( (pte_final.A==0) | ( (translation_type==STOR) & (pte_final.D==0) ) ){ // page fault according to spec - point 7
+            if ( (translation_type==STOR) & ((pte_final.A==0) |  (pte_final.D==0) ) ){ // page fault according to spec - point 7
+                return -1;
+            } else if ((translation_type==INST) & (pte_final.A==0)){
                 return -1;
             }
-
+            return phy_addr.read_reg();
+/*
             switch(translation_type){
                 case INST : 
                     if (pte_final.X==0) // fetch page is not executable
@@ -928,6 +1072,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                     break;
 
                 case LOAD :
+                
                     if (pte_final.R==0) // leaf page is not readable
                         return -1;
 
@@ -942,7 +1087,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
 
                     if ( (pte_final.X==1) & (sstatus.mxr==0) ) //load from executable pages are not enabled
                         return -1;
-
+                    
                     return phy_addr.read_reg();
                     break;
 
@@ -953,7 +1098,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                     return phy_addr.read_reg();
                     break;
             }
-
+*/
             break;
         case 9 : //Sv48
             cout << "Sv48 mode not implemented"<<endl;

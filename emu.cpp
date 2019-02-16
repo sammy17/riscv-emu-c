@@ -221,11 +221,12 @@ int main(){
     uint_t testval_pre;
     uint_t testval_pos;
 
-    if ( (memory.at(MTIME_ADDR)!=0) | (memory.at(MTIME_ADDR)!=0) ){
-        cout << "MTime regs are not 0" <<endl;
-    }
-    
+    uint_t &mtime = memory.at(MTIME_ADDR/8);
+    uint_t &mtimecmp = memory.at(MTIMECMP_ADDR/8);
 
+    memory.at(MTIME_ADDR/8) = 0;
+    memory.at(MTIMECMP_ADDR/8) = 0;
+    
     while (PC < ((1llu)<<MEM_SIZE)){
 
         #ifdef DEBUG
@@ -251,6 +252,9 @@ int main(){
         #endif
 
         opcode = static_cast<opcode_t>((instruction) & 0b1111111);
+
+        //cout << "mtimecmp : "<< mtimecmp<<endl;
+        //cout << "mtime    : "<< mtime<<endl;
 
         wb_data = 0;
 
@@ -388,6 +392,10 @@ int main(){
                             continue;
                         }
                         load_data = memory.at(load_addr_phy/8);
+                        if (PC==(0x20fbc+4)){
+                            cout << "ld : "<<load_data<<endl;
+                            cout << "ld addr : "<<load_addr<<endl;
+                        }
                         switch(func3){
                             case 0b000 : 
                                 if (!load_byte(load_addr_phy,load_data, wb_data)){
@@ -457,6 +465,10 @@ int main(){
                                 if ((load_addr_phy%8)==0){
                                     wb_data = load_data ; 
                                     reg_file[rd] = wb_data;
+                                    if (PC==(0x20fbc+4)){
+                                        cout << "rd : "<<rd<<endl;
+                                        cout << "rd val : "<<reg_file[rd]<<endl;
+                                    }
                                 } else {
                                     PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
                                     mtval = load_addr;
@@ -485,7 +497,7 @@ int main(){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
-                if (store_addr != FIFO_ADDR_TX){
+                if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
                     if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         cout << "Mem access exception"<<endl;
                         mtval = store_addr;
@@ -499,6 +511,8 @@ int main(){
                             continue;
                         }
                         store_data = memory.at(store_addr_phy/8);
+
+
                         switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
                             case 0b000 :
                                 val = reg_file[rs2] & 0xFF;
@@ -535,10 +549,24 @@ int main(){
                             mtval = store_addr;
                         }else {
                             memory.at(store_addr_phy/8) = wb_data;
+                            if (PC==(0x20fcc+4)){
+                            cout << "sd : "<<wb_data<<endl;
+                            cout << "sd addr : "<<store_addr<<endl;
+                            cout << "a0 : "<<reg_file.at(10)<<endl;
+                        }
                         }
                     }
 
-                } else {
+                } /*
+                else if(store_addr == MTIME_ADDR){
+                    val = reg_file[rs2] ;
+                    mtime = val ;
+                }
+                else if(store_addr == MTIMECMP_ADDR){
+                    val = reg_file[rs2] ;
+                    mtimecmp = val ;
+                }*/
+                else if(store_addr == FIFO_ADDR_TX){
                     #ifdef DEBUG
                         printf("STORE2\n");
                     #endif
@@ -553,6 +581,12 @@ int main(){
                 switch(func3){
                     case 0b000 :
                         wb_data = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12); //ADDI
+                        if (PC==(0x20fc0+4)){
+                            cout << "reg_file[rs1] : "<<reg_file[rs1]<<endl;
+                            cout << "imm11_0 : "<<imm11_0<<endl;
+                            cout << "wb_data : "<<wb_data<<endl;
+                            cout << "rd : "<<rd<<endl;
+                        }
                         break;
 
                     case 0b010 :
@@ -1329,6 +1363,7 @@ int main(){
 
         cycle  = cycle_count ;
         instret  = cycle ;
+        mtime += 1;
 
         if (mstatus.fs==3){
             mstatus.sd = 1;
@@ -1342,11 +1377,21 @@ int main(){
             PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
         }
 
-        if (lPC==PC){
+        /*if (lPC==PC){
             //infinite loop
             cout << "Infinite loop!"<<endl;
             break;
+        }*/
+        if (mtime >= mtimecmp){ //timer interrupt
+            //cout << "mie.MTIE : "<< (uint_t)mie.MTIE <<endl;
+            //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
+            if ((mie.MTIE == 0b1) & (mstatus.mie==0b1)){
+                cout << "Timer interrupt fired" <<endl;
+                //mtime = 0;
+                PC = interrupt_function(PC, 7, 5, 4, cp);
+            }
         }
+
     }
 
     return 0;

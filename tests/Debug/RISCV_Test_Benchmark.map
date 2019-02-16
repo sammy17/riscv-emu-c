@@ -117,6 +117,7 @@ LOAD ./src/riscv_isa_tests/ma_addr.o
 LOAD ./src/riscv_isa_tests/ma_fetch.o
 LOAD ./src/riscv_isa_tests/access.o
 LOAD ./src/riscv_isa_tests/wfi.o
+LOAD ./src/riscv_isa_tests/interrupt.o
 LOAD ./src/dhrystone/dhry_1.o
 LOAD ./src/dhrystone/dhry_2.o
 LOAD ./src/coremark/core_list_join.o
@@ -137,7 +138,7 @@ END GROUP
 LOAD /home/dean/Linux-ext/riscv-tools/build/lib/gcc/riscv64-unknown-elf/7.1.1/libgcc.a
                 0x0000000000000000                . = 0x0
 
-.text           0x0000000000000000    0x24728
+.text           0x0000000000000000    0x247ac
  *(.text.boot)
  .text.boot     0x0000000000000000       0xb4 ./src/start.o
                 0x0000000000000000                _start
@@ -331,396 +332,400 @@ LOAD /home/dean/Linux-ext/riscv-tools/build/lib/gcc/riscv64-unknown-elf/7.1.1/li
                 0x0000000000020e98                mtvec_handler5
  .text          0x0000000000020ec0       0xc8 ./src/riscv_isa_tests/wfi.o
                 0x0000000000020ec8                wfi
- .text          0x0000000000020f88      0x990 ./src/dhrystone/dhry_1.o
-                0x0000000000020f88                Proc_2
-                0x0000000000020fc0                Proc_3
-                0x0000000000020ff4                Proc_1
-                0x0000000000021110                Proc_4
-                0x000000000002114c                Proc_5
-                0x000000000002116c                DHRYSTONE
- .text          0x0000000000021918      0x1e0 ./src/dhrystone/dhry_2.o
-                0x0000000000021918                Proc_7
-                0x0000000000021928                Proc_8
-                0x0000000000021998                Func_1
-                0x00000000000219c0                Func_2
-                0x0000000000021a2c                Func_3
-                0x0000000000021a38                Proc_6
- .text          0x0000000000021af8      0x8e4 ./src/coremark/core_list_join.o
-                0x0000000000021af8                cmp_idx
-                0x0000000000021b3c                calc_func
-                0x0000000000021c4c                cmp_complex
-                0x0000000000021c9c                copy_info
-                0x0000000000021cb0                core_list_insert_new
-                0x0000000000021d28                core_list_remove
-                0x0000000000021d54                core_list_undo_remove
-                0x0000000000021d74                core_list_find
-                0x0000000000021de4                core_list_reverse
-                0x0000000000021e08                core_list_mergesort
-                0x0000000000021f50                core_bench_list
-                0x00000000000221c8                core_list_init
- .text          0x00000000000223dc      0xb20 ./src/coremark/core_main.o
-                0x00000000000223dc                iterate
-                0x0000000000022464                COREMARK
- .text          0x0000000000022efc      0x804 ./src/coremark/core_matrix.o
-                0x0000000000022efc                printmat
-                0x0000000000022fdc                printmatC
-                0x00000000000230bc                core_init_matrix
-                0x0000000000023214                matrix_sum
-                0x00000000000232b4                matrix_mul_const
-                0x0000000000023304                matrix_add_const
-                0x000000000002334c                matrix_mul_vect
-                0x00000000000233b0                matrix_mul_matrix
-                0x0000000000023454                matrix_mul_matrix_bitextract
-                0x000000000002350c                matrix_test
-                0x00000000000236c4                core_bench_matrix
- .text          0x0000000000023700       0xa4 ./src/coremark/core_portme.o
-                0x0000000000023700                start_time
-                0x0000000000023720                stop_time
-                0x0000000000023740                get_time
-                0x0000000000023758                time_in_secs
-                0x0000000000023768                portable_init
-                0x000000000002379c                portable_fini
- .text          0x00000000000237a4      0x758 ./src/coremark/core_state.o
-                0x00000000000237a4                core_init_state
-                0x000000000002395c                core_state_transition
-                0x0000000000023ca0                core_bench_state
- .text          0x0000000000023efc      0x180 ./src/coremark/core_util.o
-                0x0000000000023efc                get_seed_32
-                0x0000000000023f94                crcu8
-                0x0000000000023fd4                crcu16
-                0x0000000000024004                crc16
-                0x0000000000024010                crcu32
-                0x000000000002404c                check_data_types
- .text          0x000000000002407c       0x38 ./src/init.o
-                0x000000000002407c                risvISATestStartMsg
-                0x0000000000024088                risvDhrystoneStartMsg
-                0x0000000000024094                risvCoremarkStartMsg
-                0x00000000000240a0                init
- .text          0x00000000000240b4        0x8 ./src/start.o
- .text          0x00000000000240bc      0x66c ./src/stdlib.o
-                0x00000000000240bc                time
-                0x00000000000240c4                insn
-                0x00000000000240cc                enableIntr
-                0x00000000000240d4                enableExternalIntr
-                0x00000000000240e8                enableTimerIntr
-                0x00000000000240f8                disableIntr
-                0x0000000000024100                disableExternalIntr
-                0x0000000000024110                disableTimerIntr
-                0x000000000002411c                readMtime
-                0x0000000000024128                readMtimeCmp
-                0x0000000000024134                writeMtimeCmp
-                0x0000000000024140                malloc
-                0x0000000000024170                printf_c
-                0x000000000002419c                printf_s
-                0x00000000000241d4                printf_d
-                0x0000000000024254                printf_h
-                0x00000000000242b4                printf
-                0x0000000000024478                scanf_c
-                0x00000000000244c4                scanf
-                0x0000000000024500                memcpy
-                0x0000000000024524                strcpy
-                0x00000000000245f8                strcmp
+ .text          0x0000000000020f88       0x84 ./src/riscv_isa_tests/interrupt.o
+                0x0000000000020f94                interrupt
+ .text          0x000000000002100c      0x990 ./src/dhrystone/dhry_1.o
+                0x000000000002100c                Proc_2
+                0x0000000000021044                Proc_3
+                0x0000000000021078                Proc_1
+                0x0000000000021194                Proc_4
+                0x00000000000211d0                Proc_5
+                0x00000000000211f0                DHRYSTONE
+ .text          0x000000000002199c      0x1e0 ./src/dhrystone/dhry_2.o
+                0x000000000002199c                Proc_7
+                0x00000000000219ac                Proc_8
+                0x0000000000021a1c                Func_1
+                0x0000000000021a44                Func_2
+                0x0000000000021ab0                Func_3
+                0x0000000000021abc                Proc_6
+ .text          0x0000000000021b7c      0x8e4 ./src/coremark/core_list_join.o
+                0x0000000000021b7c                cmp_idx
+                0x0000000000021bc0                calc_func
+                0x0000000000021cd0                cmp_complex
+                0x0000000000021d20                copy_info
+                0x0000000000021d34                core_list_insert_new
+                0x0000000000021dac                core_list_remove
+                0x0000000000021dd8                core_list_undo_remove
+                0x0000000000021df8                core_list_find
+                0x0000000000021e68                core_list_reverse
+                0x0000000000021e8c                core_list_mergesort
+                0x0000000000021fd4                core_bench_list
+                0x000000000002224c                core_list_init
+ .text          0x0000000000022460      0xb20 ./src/coremark/core_main.o
+                0x0000000000022460                iterate
+                0x00000000000224e8                COREMARK
+ .text          0x0000000000022f80      0x804 ./src/coremark/core_matrix.o
+                0x0000000000022f80                printmat
+                0x0000000000023060                printmatC
+                0x0000000000023140                core_init_matrix
+                0x0000000000023298                matrix_sum
+                0x0000000000023338                matrix_mul_const
+                0x0000000000023388                matrix_add_const
+                0x00000000000233d0                matrix_mul_vect
+                0x0000000000023434                matrix_mul_matrix
+                0x00000000000234d8                matrix_mul_matrix_bitextract
+                0x0000000000023590                matrix_test
+                0x0000000000023748                core_bench_matrix
+ .text          0x0000000000023784       0xa4 ./src/coremark/core_portme.o
+                0x0000000000023784                start_time
+                0x00000000000237a4                stop_time
+                0x00000000000237c4                get_time
+                0x00000000000237dc                time_in_secs
+                0x00000000000237ec                portable_init
+                0x0000000000023820                portable_fini
+ .text          0x0000000000023828      0x758 ./src/coremark/core_state.o
+                0x0000000000023828                core_init_state
+                0x00000000000239e0                core_state_transition
+                0x0000000000023d24                core_bench_state
+ .text          0x0000000000023f80      0x180 ./src/coremark/core_util.o
+                0x0000000000023f80                get_seed_32
+                0x0000000000024018                crcu8
+                0x0000000000024058                crcu16
+                0x0000000000024088                crc16
+                0x0000000000024094                crcu32
+                0x00000000000240d0                check_data_types
+ .text          0x0000000000024100       0x38 ./src/init.o
+                0x0000000000024100                risvISATestStartMsg
+                0x000000000002410c                risvDhrystoneStartMsg
+                0x0000000000024118                risvCoremarkStartMsg
+                0x0000000000024124                init
+ .text          0x0000000000024138        0x8 ./src/start.o
+ .text          0x0000000000024140      0x66c ./src/stdlib.o
+                0x0000000000024140                time
+                0x0000000000024148                insn
+                0x0000000000024150                enableIntr
+                0x0000000000024158                enableExternalIntr
+                0x000000000002416c                enableTimerIntr
+                0x000000000002417c                disableIntr
+                0x0000000000024184                disableExternalIntr
+                0x0000000000024194                disableTimerIntr
+                0x00000000000241a0                readMtime
+                0x00000000000241ac                readMtimeCmp
+                0x00000000000241b8                writeMtimeCmp
+                0x00000000000241c4                malloc
+                0x00000000000241f4                printf_c
+                0x0000000000024220                printf_s
+                0x0000000000024258                printf_d
+                0x00000000000242d8                printf_h
+                0x0000000000024338                printf
+                0x00000000000244fc                scanf_c
+                0x0000000000024548                scanf
+                0x0000000000024584                memcpy
+                0x00000000000245a8                strcpy
+                0x000000000002467c                strcmp
 
-.rodata         0x0000000000024728       0x58
+.rodata         0x00000000000247b0       0x58
  *(.rodata)
- .rodata        0x0000000000024728       0x2a ./src/coremark/core_main.o
- *fill*         0x0000000000024752        0x2 
- .rodata        0x0000000000024754       0x14 ./src/coremark/core_state.o
- .rodata        0x0000000000024768       0x18 ./src/coremark/core_util.o
+ .rodata        0x00000000000247b0       0x2a ./src/coremark/core_main.o
+ *fill*         0x00000000000247da        0x2 
+ .rodata        0x00000000000247dc       0x14 ./src/coremark/core_state.o
+ .rodata        0x00000000000247f0       0x18 ./src/coremark/core_util.o
 
-.rodata.str1.8  0x0000000000024780      0xef8
+.rodata.str1.8  0x0000000000024808      0xef8
  .rodata.str1.8
-                0x0000000000024780      0x642 ./src/dhrystone/dhry_1.o
+                0x0000000000024808      0x642 ./src/dhrystone/dhry_1.o
                                         0x64a (size before relaxing)
- *fill*         0x0000000000024dc2        0x6 
+ *fill*         0x0000000000024e4a        0x6 
  .rodata.str1.8
-                0x0000000000024dc8       0x74 ./src/coremark/core_list_join.o
+                0x0000000000024e50       0x74 ./src/coremark/core_list_join.o
                                          0x7a (size before relaxing)
- *fill*         0x0000000000024e3c        0x4 
+ *fill*         0x0000000000024ec4        0x4 
  .rodata.str1.8
-                0x0000000000024e40      0x48e ./src/coremark/core_main.o
+                0x0000000000024ec8      0x48e ./src/coremark/core_main.o
                                         0x496 (size before relaxing)
- *fill*         0x00000000000252ce        0x2 
+ *fill*         0x0000000000025356        0x2 
  .rodata.str1.8
-                0x00000000000252d0       0xad ./src/coremark/core_matrix.o
+                0x0000000000025358       0xad ./src/coremark/core_matrix.o
                                          0xb5 (size before relaxing)
- *fill*         0x000000000002537d        0x3 
+ *fill*         0x0000000000025405        0x3 
  .rodata.str1.8
-                0x0000000000025380       0x41 ./src/coremark/core_portme.o
- *fill*         0x00000000000253c1        0x7 
+                0x0000000000025408       0x41 ./src/coremark/core_portme.o
+ *fill*         0x0000000000025449        0x7 
  .rodata.str1.8
-                0x00000000000253c8      0x12d ./src/coremark/core_state.o
+                0x0000000000025450      0x12d ./src/coremark/core_state.o
                                         0x135 (size before relaxing)
- *fill*         0x00000000000254f5        0x3 
+ *fill*         0x000000000002557d        0x3 
  .rodata.str1.8
-                0x00000000000254f8       0x76 ./src/coremark/core_util.o
- *fill*         0x000000000002556e        0x2 
+                0x0000000000025580       0x76 ./src/coremark/core_util.o
+ *fill*         0x00000000000255f6        0x2 
  .rodata.str1.8
-                0x0000000000025570       0xef ./src/init.o
- *fill*         0x000000000002565f        0x1 
+                0x00000000000255f8       0xef ./src/init.o
+ *fill*         0x00000000000256e7        0x1 
  .rodata.str1.8
-                0x0000000000025660       0x18 ./src/stdlib.o
+                0x00000000000256e8       0x18 ./src/stdlib.o
                                          0x19 (size before relaxing)
 
-.rela.dyn       0x0000000000025678        0x0
- .rela.text     0x0000000000025678        0x0 ./src/riscv_isa_tests/add.o
- .rela.got      0x0000000000025678        0x0 ./src/riscv_isa_tests/add.o
+.rela.dyn       0x0000000000025700        0x0
+ .rela.text     0x0000000000025700        0x0 ./src/riscv_isa_tests/add.o
+ .rela.got      0x0000000000025700        0x0 ./src/riscv_isa_tests/add.o
 
-.data           0x0000000000025678      0x630
+.data           0x0000000000025700      0x630
  *(.data)
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/add.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/addw.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/addi.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/addiw.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/and.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/andi.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/auipc.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/beq.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/bge.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/bgeu.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/blt.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/bltu.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/bne.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/jal.o
- .data          0x0000000000025678        0x0 ./src/riscv_isa_tests/jalr.o
- .data          0x0000000000025678        0x4 ./src/riscv_isa_tests/lb.o
- .data          0x000000000002567c        0x4 ./src/riscv_isa_tests/lbu.o
- .data          0x0000000000025680        0x8 ./src/riscv_isa_tests/lh.o
- .data          0x0000000000025688        0x8 ./src/riscv_isa_tests/lhu.o
- .data          0x0000000000025690        0x0 ./src/riscv_isa_tests/lui.o
- .data          0x0000000000025690       0x10 ./src/riscv_isa_tests/lw.o
- .data          0x00000000000256a0       0x10 ./src/riscv_isa_tests/lwu.o
- .data          0x00000000000256b0       0x20 ./src/riscv_isa_tests/ld.o
- .data          0x00000000000256d0        0x0 ./src/riscv_isa_tests/or.o
- .data          0x00000000000256d0        0x0 ./src/riscv_isa_tests/ori.o
- .data          0x00000000000256d0        0xa ./src/riscv_isa_tests/sb.o
- *fill*         0x00000000000256da        0x2 
- .data          0x00000000000256dc       0x14 ./src/riscv_isa_tests/sh.o
- .data          0x00000000000256f0       0x28 ./src/riscv_isa_tests/sw.o
- .data          0x0000000000025718       0x50 ./src/riscv_isa_tests/sd.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sll.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/slli.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/slliw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sllw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/slt.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sltu.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/slti.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sltiu.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sra.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sraw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/srai.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sraiw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/srl.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/srlw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/srli.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/srliw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/sub.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/subw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/xor.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/xori.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/div.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/divu.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/divw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/divuw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/mul.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/mulh.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/mulhsu.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/mulhu.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/mulw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/rem.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/remu.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/remw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/remuw.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoadd_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoadd_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoand_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoand_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amomax_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amomaxu_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amomaxu_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amomax_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amomin_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amominu_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amominu_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amomin_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoor_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoor_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoswap_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoswap_w.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoxor_d.o
- .data          0x0000000000025768        0x0 ./src/riscv_isa_tests/amoxor_w.o
- .data          0x0000000000025768      0x410 ./src/riscv_isa_tests/lrsc.o
- .data          0x0000000000025b78        0x4 ./src/riscv_isa_tests/csr.o
- .data          0x0000000000025b7c       0x10 ./src/riscv_isa_tests/scall.o
- .data          0x0000000000025b8c        0x0 ./src/riscv_isa_tests/sbreak.o
- .data          0x0000000000025b8c        0x0 ./src/riscv_isa_tests/mcsr.o
- *fill*         0x0000000000025b8c        0x4 
- .data          0x0000000000025b90      0x10f ./src/riscv_isa_tests/ma_addr.o
- *fill*         0x0000000000025c9f        0x1 
- .data          0x0000000000025ca0        0x0 ./src/riscv_isa_tests/ma_fetch.o
- .data          0x0000000000025ca0        0x0 ./src/riscv_isa_tests/access.o
- .data          0x0000000000025ca0        0x0 ./src/riscv_isa_tests/wfi.o
- .data          0x0000000000025ca0        0x0 ./src/dhrystone/dhry_1.o
- .data          0x0000000000025ca0        0x0 ./src/dhrystone/dhry_2.o
- .data          0x0000000000025ca0        0x0 ./src/coremark/core_list_join.o
- .data          0x0000000000025ca0        0x0 ./src/coremark/core_main.o
- .data          0x0000000000025ca0        0x0 ./src/coremark/core_matrix.o
- .data          0x0000000000025ca0        0x8 ./src/coremark/core_portme.o
-                0x0000000000025ca0                default_num_contexts
-                0x0000000000025ca4                seed3_volatile
- .data          0x0000000000025ca8        0x0 ./src/coremark/core_state.o
- .data          0x0000000000025ca8        0x0 ./src/coremark/core_util.o
- .data          0x0000000000025ca8        0x0 ./src/init.o
- .data          0x0000000000025ca8        0x0 ./src/start.o
- .data          0x0000000000025ca8        0x0 ./src/stdlib.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/add.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/addw.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/addi.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/addiw.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/and.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/andi.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/auipc.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/beq.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/bge.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/bgeu.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/blt.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/bltu.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/bne.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/jal.o
+ .data          0x0000000000025700        0x0 ./src/riscv_isa_tests/jalr.o
+ .data          0x0000000000025700        0x4 ./src/riscv_isa_tests/lb.o
+ .data          0x0000000000025704        0x4 ./src/riscv_isa_tests/lbu.o
+ .data          0x0000000000025708        0x8 ./src/riscv_isa_tests/lh.o
+ .data          0x0000000000025710        0x8 ./src/riscv_isa_tests/lhu.o
+ .data          0x0000000000025718        0x0 ./src/riscv_isa_tests/lui.o
+ .data          0x0000000000025718       0x10 ./src/riscv_isa_tests/lw.o
+ .data          0x0000000000025728       0x10 ./src/riscv_isa_tests/lwu.o
+ .data          0x0000000000025738       0x20 ./src/riscv_isa_tests/ld.o
+ .data          0x0000000000025758        0x0 ./src/riscv_isa_tests/or.o
+ .data          0x0000000000025758        0x0 ./src/riscv_isa_tests/ori.o
+ .data          0x0000000000025758        0xa ./src/riscv_isa_tests/sb.o
+ *fill*         0x0000000000025762        0x2 
+ .data          0x0000000000025764       0x14 ./src/riscv_isa_tests/sh.o
+ .data          0x0000000000025778       0x28 ./src/riscv_isa_tests/sw.o
+ .data          0x00000000000257a0       0x50 ./src/riscv_isa_tests/sd.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sll.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/slli.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/slliw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sllw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/slt.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sltu.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/slti.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sltiu.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sra.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sraw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/srai.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sraiw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/srl.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/srlw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/srli.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/srliw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/sub.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/subw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/xor.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/xori.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/div.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/divu.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/divw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/divuw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/mul.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/mulh.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/mulhsu.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/mulhu.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/mulw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/rem.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/remu.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/remw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/remuw.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoadd_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoadd_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoand_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoand_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amomax_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amomaxu_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amomaxu_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amomax_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amomin_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amominu_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amominu_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amomin_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoor_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoor_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoswap_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoswap_w.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoxor_d.o
+ .data          0x00000000000257f0        0x0 ./src/riscv_isa_tests/amoxor_w.o
+ .data          0x00000000000257f0      0x410 ./src/riscv_isa_tests/lrsc.o
+ .data          0x0000000000025c00        0x4 ./src/riscv_isa_tests/csr.o
+ .data          0x0000000000025c04       0x10 ./src/riscv_isa_tests/scall.o
+ .data          0x0000000000025c14        0x0 ./src/riscv_isa_tests/sbreak.o
+ .data          0x0000000000025c14        0x0 ./src/riscv_isa_tests/mcsr.o
+ *fill*         0x0000000000025c14        0x4 
+ .data          0x0000000000025c18      0x10f ./src/riscv_isa_tests/ma_addr.o
+ *fill*         0x0000000000025d27        0x1 
+ .data          0x0000000000025d28        0x0 ./src/riscv_isa_tests/ma_fetch.o
+ .data          0x0000000000025d28        0x0 ./src/riscv_isa_tests/access.o
+ .data          0x0000000000025d28        0x0 ./src/riscv_isa_tests/wfi.o
+ .data          0x0000000000025d28        0x0 ./src/riscv_isa_tests/interrupt.o
+ .data          0x0000000000025d28        0x0 ./src/dhrystone/dhry_1.o
+ .data          0x0000000000025d28        0x0 ./src/dhrystone/dhry_2.o
+ .data          0x0000000000025d28        0x0 ./src/coremark/core_list_join.o
+ .data          0x0000000000025d28        0x0 ./src/coremark/core_main.o
+ .data          0x0000000000025d28        0x0 ./src/coremark/core_matrix.o
+ .data          0x0000000000025d28        0x8 ./src/coremark/core_portme.o
+                0x0000000000025d28                default_num_contexts
+                0x0000000000025d2c                seed3_volatile
+ .data          0x0000000000025d30        0x0 ./src/coremark/core_state.o
+ .data          0x0000000000025d30        0x0 ./src/coremark/core_util.o
+ .data          0x0000000000025d30        0x0 ./src/init.o
+ .data          0x0000000000025d30        0x0 ./src/start.o
+ .data          0x0000000000025d30        0x0 ./src/stdlib.o
 
-.got            0x0000000000025ca8      0x490
- .got           0x0000000000025ca8      0x490 ./src/riscv_isa_tests/add.o
-                0x0000000000025ca8                _GLOBAL_OFFSET_TABLE_
+.got            0x0000000000025d30      0x490
+ .got           0x0000000000025d30      0x490 ./src/riscv_isa_tests/add.o
+                0x0000000000025d30                _GLOBAL_OFFSET_TABLE_
 
-.got.plt        0x0000000000026138       0x10
- .got.plt       0x0000000000026138       0x10 ./src/riscv_isa_tests/add.o
+.got.plt        0x00000000000261c0       0x10
+ .got.plt       0x00000000000261c0       0x10 ./src/riscv_isa_tests/add.o
 
 .data.rel.local
-                0x0000000000026148       0x18
+                0x00000000000261d0       0x18
  .data.rel.local
-                0x0000000000026148       0x18 ./src/coremark/core_main.o
-                0x0000000000026148                mem_name
+                0x00000000000261d0       0x18 ./src/coremark/core_main.o
+                0x00000000000261d0                mem_name
 
 .data.rel.ro.local
-                0x0000000000026160       0x80
+                0x00000000000261e8       0x80
  .data.rel.ro.local
-                0x0000000000026160       0x80 ./src/coremark/core_state.o
+                0x00000000000261e8       0x80 ./src/coremark/core_state.o
 
-.bss            0x00000000000261e0     0x2cf0
+.bss            0x0000000000026268     0x2cf0
  *(.bss)
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/add.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/addw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/addi.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/addiw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/and.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/andi.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/auipc.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/beq.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/bge.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/bgeu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/blt.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/bltu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/bne.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/jal.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/jalr.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lb.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lbu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lh.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lhu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lui.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/lwu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/ld.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/or.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/ori.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sb.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sh.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sd.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sll.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/slli.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/slliw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sllw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/slt.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sltu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/slti.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sltiu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sra.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sraw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/srai.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sraiw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/srl.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/srlw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/srli.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/srliw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/sub.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/subw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/xor.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/xori.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/div.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/divu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/divw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/divuw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/mul.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/mulh.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/mulhsu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/mulhu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/mulw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/rem.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/remu.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/remw.o
- .bss           0x00000000000261e0        0x0 ./src/riscv_isa_tests/remuw.o
- .bss           0x00000000000261e0        0x8 ./src/riscv_isa_tests/amoadd_d.o
- .bss           0x00000000000261e8        0x8 ./src/riscv_isa_tests/amoadd_w.o
- .bss           0x00000000000261f0        0x8 ./src/riscv_isa_tests/amoand_d.o
- .bss           0x00000000000261f8        0x8 ./src/riscv_isa_tests/amoand_w.o
- .bss           0x0000000000026200        0x8 ./src/riscv_isa_tests/amomax_d.o
- .bss           0x0000000000026208        0x8 ./src/riscv_isa_tests/amomaxu_d.o
- .bss           0x0000000000026210        0x8 ./src/riscv_isa_tests/amomaxu_w.o
- .bss           0x0000000000026218        0x8 ./src/riscv_isa_tests/amomax_w.o
- .bss           0x0000000000026220        0x8 ./src/riscv_isa_tests/amomin_d.o
- .bss           0x0000000000026228        0x8 ./src/riscv_isa_tests/amominu_d.o
- .bss           0x0000000000026230        0x8 ./src/riscv_isa_tests/amominu_w.o
- .bss           0x0000000000026238        0x8 ./src/riscv_isa_tests/amomin_w.o
- .bss           0x0000000000026240        0x8 ./src/riscv_isa_tests/amoor_d.o
- .bss           0x0000000000026248        0x8 ./src/riscv_isa_tests/amoor_w.o
- .bss           0x0000000000026250        0x8 ./src/riscv_isa_tests/amoswap_d.o
- .bss           0x0000000000026258        0x8 ./src/riscv_isa_tests/amoswap_w.o
- .bss           0x0000000000026260        0x8 ./src/riscv_isa_tests/amoxor_d.o
- .bss           0x0000000000026268        0x8 ./src/riscv_isa_tests/amoxor_w.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/lrsc.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/csr.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/scall.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/sbreak.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/mcsr.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/ma_addr.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/ma_fetch.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/access.o
- .bss           0x0000000000026270        0x0 ./src/riscv_isa_tests/wfi.o
- .bss           0x0000000000026270        0x4 ./src/dhrystone/dhry_1.o
-                0x0000000000026270                Reg
- .bss           0x0000000000026274        0x0 ./src/dhrystone/dhry_2.o
- .bss           0x0000000000026274        0x0 ./src/coremark/core_list_join.o
- .bss           0x0000000000026274        0x0 ./src/coremark/core_main.o
- .bss           0x0000000000026274        0x0 ./src/coremark/core_matrix.o
- *fill*         0x0000000000026274        0x4 
- .bss           0x0000000000026278       0x20 ./src/coremark/core_portme.o
-                0x0000000000026288                seed5_volatile
-                0x000000000002628c                seed4_volatile
-                0x0000000000026290                seed2_volatile
-                0x0000000000026294                seed1_volatile
- .bss           0x0000000000026298        0x0 ./src/coremark/core_state.o
- .bss           0x0000000000026298        0x0 ./src/coremark/core_util.o
- .bss           0x0000000000026298        0x0 ./src/init.o
- .bss           0x0000000000026298        0x0 ./src/start.o
- .bss           0x0000000000026298        0x4 ./src/stdlib.o
-                0x0000000000026298                heap_memory_used
- *fill*         0x000000000002629c        0x4 
- COMMON         0x00000000000262a0     0x2830 ./src/dhrystone/dhry_1.o
-                0x00000000000262a0                Microseconds
-                0x00000000000262a4                Dhrystones_Per_Second
-                0x00000000000262a8                User_Insn
-                0x00000000000262b0                User_Time
-                0x00000000000262b8                Begin_Time
-                0x00000000000262c0                Arr_2_Glob
-                0x00000000000289d0                End_Time
-                0x00000000000289d8                Next_Ptr_Glob
-                0x00000000000289e0                Int_Glob
-                0x00000000000289e4                Ch_1_Glob
-                0x00000000000289e5                Ch_2_Glob
-                0x00000000000289e8                Ptr_Glob
-                0x00000000000289f0                Begin_Insn
-                0x00000000000289f8                Arr_1_Glob
-                0x0000000000028ac0                Bool_Glob
-                0x0000000000028ac8                End_Insn
- COMMON         0x0000000000028ad0      0x400 ./src/stdlib.o
-                0x0000000000028ad0                heap_memory
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/add.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/addw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/addi.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/addiw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/and.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/andi.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/auipc.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/beq.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/bge.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/bgeu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/blt.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/bltu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/bne.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/jal.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/jalr.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lb.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lbu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lh.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lhu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lui.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/lwu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/ld.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/or.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/ori.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sb.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sh.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sd.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sll.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/slli.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/slliw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sllw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/slt.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sltu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/slti.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sltiu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sra.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sraw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/srai.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sraiw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/srl.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/srlw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/srli.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/srliw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/sub.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/subw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/xor.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/xori.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/div.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/divu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/divw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/divuw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/mul.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/mulh.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/mulhsu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/mulhu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/mulw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/rem.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/remu.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/remw.o
+ .bss           0x0000000000026268        0x0 ./src/riscv_isa_tests/remuw.o
+ .bss           0x0000000000026268        0x8 ./src/riscv_isa_tests/amoadd_d.o
+ .bss           0x0000000000026270        0x8 ./src/riscv_isa_tests/amoadd_w.o
+ .bss           0x0000000000026278        0x8 ./src/riscv_isa_tests/amoand_d.o
+ .bss           0x0000000000026280        0x8 ./src/riscv_isa_tests/amoand_w.o
+ .bss           0x0000000000026288        0x8 ./src/riscv_isa_tests/amomax_d.o
+ .bss           0x0000000000026290        0x8 ./src/riscv_isa_tests/amomaxu_d.o
+ .bss           0x0000000000026298        0x8 ./src/riscv_isa_tests/amomaxu_w.o
+ .bss           0x00000000000262a0        0x8 ./src/riscv_isa_tests/amomax_w.o
+ .bss           0x00000000000262a8        0x8 ./src/riscv_isa_tests/amomin_d.o
+ .bss           0x00000000000262b0        0x8 ./src/riscv_isa_tests/amominu_d.o
+ .bss           0x00000000000262b8        0x8 ./src/riscv_isa_tests/amominu_w.o
+ .bss           0x00000000000262c0        0x8 ./src/riscv_isa_tests/amomin_w.o
+ .bss           0x00000000000262c8        0x8 ./src/riscv_isa_tests/amoor_d.o
+ .bss           0x00000000000262d0        0x8 ./src/riscv_isa_tests/amoor_w.o
+ .bss           0x00000000000262d8        0x8 ./src/riscv_isa_tests/amoswap_d.o
+ .bss           0x00000000000262e0        0x8 ./src/riscv_isa_tests/amoswap_w.o
+ .bss           0x00000000000262e8        0x8 ./src/riscv_isa_tests/amoxor_d.o
+ .bss           0x00000000000262f0        0x8 ./src/riscv_isa_tests/amoxor_w.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/lrsc.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/csr.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/scall.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/sbreak.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/mcsr.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/ma_addr.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/ma_fetch.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/access.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/wfi.o
+ .bss           0x00000000000262f8        0x0 ./src/riscv_isa_tests/interrupt.o
+ .bss           0x00000000000262f8        0x4 ./src/dhrystone/dhry_1.o
+                0x00000000000262f8                Reg
+ .bss           0x00000000000262fc        0x0 ./src/dhrystone/dhry_2.o
+ .bss           0x00000000000262fc        0x0 ./src/coremark/core_list_join.o
+ .bss           0x00000000000262fc        0x0 ./src/coremark/core_main.o
+ .bss           0x00000000000262fc        0x0 ./src/coremark/core_matrix.o
+ *fill*         0x00000000000262fc        0x4 
+ .bss           0x0000000000026300       0x20 ./src/coremark/core_portme.o
+                0x0000000000026310                seed5_volatile
+                0x0000000000026314                seed4_volatile
+                0x0000000000026318                seed2_volatile
+                0x000000000002631c                seed1_volatile
+ .bss           0x0000000000026320        0x0 ./src/coremark/core_state.o
+ .bss           0x0000000000026320        0x0 ./src/coremark/core_util.o
+ .bss           0x0000000000026320        0x0 ./src/init.o
+ .bss           0x0000000000026320        0x0 ./src/start.o
+ .bss           0x0000000000026320        0x4 ./src/stdlib.o
+                0x0000000000026320                heap_memory_used
+ *fill*         0x0000000000026324        0x4 
+ COMMON         0x0000000000026328     0x2830 ./src/dhrystone/dhry_1.o
+                0x0000000000026328                Microseconds
+                0x000000000002632c                Dhrystones_Per_Second
+                0x0000000000026330                User_Insn
+                0x0000000000026338                User_Time
+                0x0000000000026340                Begin_Time
+                0x0000000000026348                Arr_2_Glob
+                0x0000000000028a58                End_Time
+                0x0000000000028a60                Next_Ptr_Glob
+                0x0000000000028a68                Int_Glob
+                0x0000000000028a6c                Ch_1_Glob
+                0x0000000000028a6d                Ch_2_Glob
+                0x0000000000028a70                Ptr_Glob
+                0x0000000000028a78                Begin_Insn
+                0x0000000000028a80                Arr_1_Glob
+                0x0000000000028b48                Bool_Glob
+                0x0000000000028b50                End_Insn
+ COMMON         0x0000000000028b58      0x400 ./src/stdlib.o
+                0x0000000000028b58                heap_memory
 OUTPUT(RISCV_Test_Benchmark.elf elf64-littleriscv)
 
 .comment        0x0000000000000000       0x1a
