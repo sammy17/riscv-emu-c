@@ -700,8 +700,8 @@ plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privila
 			else 
 				mtrap_deleg_reg = medeleg;
 
-            if (mtrap_deleg_reg == -1)
-                return current_privilage;
+            //if (mtrap_deleg_reg == -1)
+            //    return current_privilage;
 
 			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1)
 				return SMODE;
@@ -719,8 +719,8 @@ plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privila
 				strap_deleg_reg = sedeleg;
 			}
 
-            if (mtrap_deleg_reg == -1)
-                return current_privilage;
+            //if (mtrap_deleg_reg == -1)
+            //    return current_privilage;
 
 			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1){     		//delegating to smode
             	if (((strap_deleg_reg>>cause) & 0b1 ) == 1)      //delegating to umode
@@ -820,10 +820,10 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
     plevel_t handling_mode = trap_mode_select(ecode, true, current_privilage);
     //plevel_t handling_mode = current_privilage;
 
-    cout << "handling mode : "<<(uint_t)handling_mode<<endl;
-    cout << "sie : "<<(uint_t)mstatus.sie<<endl;
+    //cout << "handling mode : "<<(uint_t)handling_mode<<endl;
+    //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
 
-    mstatus.sie = 1;
+    //mstatus.sie = 1;
 
     if (handling_mode == UMODE)
         ecode = uecode;
@@ -858,10 +858,14 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
         mstatus.spp = 0b1;
         //cout << "handling in smode "<<ecode<<endl;
 
-        if (stvec.mode ==0b1)
+        if (stvec.mode ==0b1){
             new_PC = stvec.base + 4*ecode;
-        else if (stvec.mode ==0b0)
+            //cout << "stvec mode 1" << endl;
+        }
+        else if (stvec.mode ==0b0){
             new_PC = stvec.base ;
+            //cout << "stvec mode 2"<<hex<< new_PC<< endl;
+        }
     }
     else if ((handling_mode == MMODE) & (mstatus.mie==1)){
         //cout << "excep MMODE : " << mtvec.base << endl;

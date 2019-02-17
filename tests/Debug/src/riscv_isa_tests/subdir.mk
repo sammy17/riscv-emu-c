@@ -93,7 +93,7 @@ S_UPPER_SRCS += \
 ../src/riscv_isa_tests/ma_fetch.S \
 ../src/riscv_isa_tests/access.S \
 ../src/riscv_isa_tests/wfi.S \
-../src/riscv_isa_tests/interrupt.S \
+
 
 
 OBJS += \
@@ -186,7 +186,7 @@ OBJS += \
 ./src/riscv_isa_tests/ma_fetch.o \
 ./src/riscv_isa_tests/access.o \
 ./src/riscv_isa_tests/wfi.o \
-./src/riscv_isa_tests/interrupt.o \
+
 
 S_UPPER_DEPS += \
 ./src/riscv_isa_tests/add.d \
@@ -278,7 +278,7 @@ S_UPPER_DEPS += \
 ./src/riscv_isa_tests/ma_fetch.d \
 ./src/riscv_isa_tests/access.d \
 ./src/riscv_isa_tests/wfi.d \
-./src/riscv_isa_tests/interrupt.d \
+
 
 # Each subdirectory must supply rules for building sources it contributes
 src/riscv_isa_tests/%.o: ../src/riscv_isa_tests/%.S

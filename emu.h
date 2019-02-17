@@ -20,7 +20,7 @@ using namespace std;
 typedef uint64_t uint_t;
 typedef uint64_t data_t;
 
-#define MEM_SIZE 25
+#define MEM_SIZE 26
 #define XLEN     64
 #define FIFO_ADDR_RX 0xe000102c
 #define FIFO_ADDR_TX 0xe0001030

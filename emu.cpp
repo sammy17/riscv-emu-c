@@ -192,7 +192,7 @@ int main(){
     uint_t amo_reserve_addr64 = 0;
 
     //initializing reg file
-    reg_file[2]  = 0x00400000 ; //SP
+    reg_file[2]  = 0x00040000 ; //SP
     reg_file[11] = 0x00010000 ;
 
     bool ls_success = false;
@@ -234,6 +234,8 @@ int main(){
             cout << "PC : "<< hex << PC << endl;
         #endif
         //sleep_for(milliseconds(10));
+
+        //cout << "sp : "<<reg_file.at(2)<<endl;
 
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
@@ -499,7 +501,7 @@ int main(){
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
                     if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
-                        cout << "Mem access exception"<<endl;
+                        cout << "Mem access exception"<<hex<<store_addr<<endl;
                         mtval = store_addr;
                         PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   
                     }
@@ -1377,18 +1379,44 @@ int main(){
             PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
         }
 
-        /*if (lPC==PC){
+        if (lPC==PC){
             //infinite loop
             cout << "Infinite loop!"<<endl;
             break;
-        }*/
+        }
+        //cout << "mtime    : "<<mtime<<endl;
+        //cout << "mtimecmp : "<<mtimecmp<<endl;
+        //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
         if (mtime >= mtimecmp){ //timer interrupt
-            //cout << "mie.MTIE : "<< (uint_t)mie.MTIE <<endl;
-            //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
-            if ((mie.MTIE == 0b1) & (mstatus.mie==0b1)){
-                cout << "Timer interrupt fired" <<endl;
-                //mtime = 0;
-                PC = interrupt_function(PC, 7, 5, 4, cp);
+            //cout << "cp : "<< (uint_t)cp <<endl;
+            //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
+            switch(cp) {
+                case MMODE : 
+                    if ((mie.MTIE == 0b1) & (mstatus.mie==0b1)){
+                        cout << "M : Timer interrupt fired" <<endl;
+                        //print_reg_file(reg_file);
+                        PC = interrupt_function(PC, 7, 5, 4, cp);
+                        //mstatus.mie = 0b0;
+                    }
+                    break;
+                case SMODE : 
+                    if ((mie.STIE == 0b1) & (mstatus.sie==0b1)){
+                        cout << "S : Timer interrupt fired" <<endl;
+                        PC = interrupt_function(PC, 7, 5, 4, cp);
+                        //mstatus.sie = 0b0;
+                    }
+                    //cout << "S : not set" <<endl;
+                    break;
+                case UMODE : 
+                    if ((mie.UTIE == 0b1) & (mstatus.uie==0b1)){
+                        cout << "U : Timer interrupt fired" <<endl;
+                        PC = interrupt_function(PC, 7, 5, 4, cp);
+                        //mstatus.uie = 0b0;
+                    }
+                    break;
+                default : 
+                    cout << "illegel mode for timer intterupt"<<endl;
+                    break;
             }
         }
 

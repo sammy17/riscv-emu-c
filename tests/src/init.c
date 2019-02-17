@@ -11,6 +11,7 @@ extern void isaTest();
 extern void dhrystoneBenchmark();
 extern void coremarkBenchmark();
 
+
 void risvISATestStartMsg(void){
 	printf("\n\n------------------------ RISC-V ISA Test's Begins ------------------------\n");
 }
@@ -22,6 +23,7 @@ void risvDhrystoneStartMsg(void){
 void risvCoremarkStartMsg(void){
 	printf("\n\n------------------------ Coremark Benchmark Begins ------------------------\n");
 }
+
 
 
 void init(void){
