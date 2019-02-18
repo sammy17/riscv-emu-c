@@ -501,7 +501,7 @@ int main(){
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
                     if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
-                        cout << "Mem access exception"<<hex<<store_addr<<endl;
+                        cout << "Mem access exception : "<<hex<<store_addr<<endl;
                         mtval = store_addr;
                         PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   
                     }
@@ -1393,7 +1393,7 @@ int main(){
             switch(cp) {
                 case MMODE : 
                     if ((mie.MTIE == 0b1) & (mstatus.mie==0b1)){
-                        cout << "M : Timer interrupt fired" <<endl;
+                        //cout << "\nM : Timer interrupt fired" <<endl;
                         //print_reg_file(reg_file);
                         PC = interrupt_function(PC, 7, 5, 4, cp);
                         //mstatus.mie = 0b0;
@@ -1401,7 +1401,7 @@ int main(){
                     break;
                 case SMODE : 
                     if ((mie.STIE == 0b1) & (mstatus.sie==0b1)){
-                        cout << "S : Timer interrupt fired" <<endl;
+                        //cout << "\nS : Timer interrupt fired" <<endl;
                         PC = interrupt_function(PC, 7, 5, 4, cp);
                         //mstatus.sie = 0b0;
                     }
@@ -1409,7 +1409,7 @@ int main(){
                     break;
                 case UMODE : 
                     if ((mie.UTIE == 0b1) & (mstatus.uie==0b1)){
-                        cout << "U : Timer interrupt fired" <<endl;
+                        //cout << "\nU : Timer interrupt fired" <<endl;
                         PC = interrupt_function(PC, 7, 5, 4, cp);
                         //mstatus.uie = 0b0;
                     }

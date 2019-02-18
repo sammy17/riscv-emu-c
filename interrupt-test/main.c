@@ -1,49 +1,25 @@
 #include <stdint.h>
 #include <stdarg.h>
-#include "encoding.h"
 //#include <stdio.h>
 
 //extern void printm();
 
 //#define printf printm
 
-
-#define MTIME_ADDR 0x800000
-#define MTIMECMP_ADDR 0x800008
-
-#define FIFO_ADDR_TX 0xe0001030
-
-#define TIMER_INTERVAL 1000
-#define SIE_MASK (1<<1)
-#define MIE_MASK (1<<3)
-
-#define __MACHINE_MODE_IRQ
-
-
-#ifdef __MACHINE_MODE_IRQ
-	#undef SIE_MASK
-	#define SIE_MASK MIE_MASK
-	#define stvec mtvec
-	#define status mstatus
-	#undef MIP_STIP
-	#define MIP_STIP MIP_MTIP
-#endif
+void interrupt_init();
 
 char* hscanf();
 void hprintf(const char *format, ...);
 
+
 int main()
 {		
+	interrupt_init();
 
-	
-
-		for (int i=0;i<1000;i++){
-			hprintf("hello_world  %d\n",i);
-		}
-
-		
-
-		while (1);
+	for (int i=0;i<100;i++){
+		hprintf("hello_world  %d\n",i);
+	}
+	while (1);
 }
 
 

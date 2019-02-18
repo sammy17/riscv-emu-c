@@ -837,7 +837,7 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
         ustatus.uie  = 0;
         ucause.interrupt = 1;
         ucause.ecode = ecode;
-        uepc = PC-4;
+        uepc = PC;
 
         mstatus.mpp = 0b0; // setting both to UMODE
         mstatus.spp = 0b0;
@@ -852,7 +852,7 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
         sstatus.sie  = 0;
         scause.interrupt = 1;
         scause.ecode = ecode;
-        sepc = PC-4;
+        sepc = PC;
 
         mstatus.mpp = 0b01; // setting both to SMODE
         mstatus.spp = 0b1;
@@ -873,7 +873,7 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
         mstatus.mie  = 0;
         mcause.interrupt = 1;
         mcause.ecode = ecode;
-        mepc = PC-4;
+        mepc = PC;
         mstatus.mpp = 0b11; // setting to MMODE
 
         if (mtvec.mode ==0b1)
