@@ -237,6 +237,8 @@ int main(){
 
         //cout << "sp : "<<reg_file.at(2)<<endl;
 
+        //cout << "PRIV : "<< (uint_t)cp<<endl;
+
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
             PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
