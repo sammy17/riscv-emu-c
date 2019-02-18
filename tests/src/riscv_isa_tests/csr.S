@@ -29,14 +29,18 @@ RVTEST_CODE_BEGIN
   #define sepc mepc
   #define sret mret
   #define stvec_handler mtvec_handler
+  #define stvec mtvec
   #undef SSTATUS_SPP
   #define SSTATUS_SPP MSTATUS_MPP
 #endif
-
+setup_stvec:
+  lui t0,%hi(stvec_handler)
+  addi t0,t0,%lo(stvec_handler)
+  csrw stvec, t0    
   # For RV64, make sure UXL encodes RV64.  (UXL does not exist for RV32.)
 #if __riscv_xlen == 64
   # If running in M mode, use mstatus.MPP to check existence of U mode.
-  # Otherwise, if in S mode, then U mode must exist and we don't need to check.
+  # Otherwise, if in S mode, then U mode must exist and we don't need to check. PC : 201b8
 #ifdef __MACHINE_MODE
   li t0, MSTATUS_MPP
   csrc mstatus, t0

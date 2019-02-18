@@ -235,7 +235,7 @@ struct mstatus_t{
     void write_reg(uint_t val){
         uie = (val & 0b1); sie = ((val>>1)& 0b1); mie = ((val>>3)& 0b1);
         upie= ((val>>5)& 0b1); spie= ((val>>6)& 0b1); mpie= ((val>>7)& 0b1); 
-        spp= ((val>>8)& 0b1); mpp = 0b11;//((val>>11)& 0b11); hard wire to 11 for now
+        spp= ((val>>8)& 0b1); mpp = ((val>>11)& 0b11); //0b11; removed hard wire to 11 
         fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); mprv= ((val>>17)& 0b1); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); tvm= ((val>>20)& 0b1); tw= ((val>>21)& 0b1); tsr= ((val>>22)& 0b1); uxl= ((val>>32)& 0b11); sxl= ((val>>34)& 0b11); sd= ((val>>63)& 0b1); 
     }
 } mstatus;
@@ -579,7 +579,7 @@ uint_t csr_read(uint_t csr_addr){
     }
 }
 
-void csr_write(uint_t csr_addr, uint_t val){
+bool csr_write(uint_t csr_addr, uint_t val){
     switch(csr_addr){
         case MSTATUS :
             mstatus.write_reg(val);
@@ -640,8 +640,8 @@ void csr_write(uint_t csr_addr, uint_t val){
         	sideleg = val;
         	break;
         case CYCLE : //this should be an exception
-            cout << "Exception : Writing to cycle CSR"<<endl;
-            //cycle = val;
+            cout << "Exception : Writing to cycle CSR"<<endl; 
+            return false;
             break;
         case TIME :
             time_csr = val;
@@ -681,8 +681,10 @@ void csr_write(uint_t csr_addr, uint_t val){
             break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
+            return false;
             break;
     }
+    return true;
 }
 
 
