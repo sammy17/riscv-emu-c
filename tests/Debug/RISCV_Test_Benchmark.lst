@@ -20729,7 +20729,7 @@ Disassembly of section .text:
    20450:	51c28293          	addi	t0,t0,1308 # 2051c <mtvec_handler2>
    20454:	30529073          	csrw	mtvec,t0
    20458:	00200f93          	li	t6,2
-   2045c:	00900313          	li	t1,9
+   2045c:	00800313          	li	t1,8
    20460:	000022b7          	lui	t0,0x2
    20464:	8002829b          	addiw	t0,t0,-2048
    20468:	3002b073          	csrc	mstatus,t0

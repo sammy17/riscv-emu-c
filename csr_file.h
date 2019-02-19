@@ -780,6 +780,7 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         ecode = mecode;
 
     if (handling_mode == UMODE){
+        cp = UMODE;
     	ustatus.upie = ustatus.uie;
         ustatus.uie  = 0;
         ucause.interrupt = 0;
@@ -792,26 +793,30 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         new_PC = utvec.base;   
     }
     else if (handling_mode == SMODE){
+        mstatus.mpp = (uint_t)cp; // setting both to SMODE
+        mstatus.spp = (uint_t)cp;
+        cp = SMODE;
     	sstatus.spie = sstatus.sie;
         sstatus.sie  = 0;
         scause.interrupt = 0;
         scause.ecode = ecode;
         sepc = PC-4;
 
-        mstatus.mpp = 0b01; // setting both to SMODE
-        mstatus.spp = 0b1;
+
         //cout << "handling in smode "<<ecode<<endl;
 
         new_PC = stvec.base; 
     }
     else if (handling_mode == MMODE){
         //cout << "excep MMODE : " << mtvec.base << endl;
+        mstatus.mpp = (uint_t)cp;
+        cp = MMODE;
     	mstatus.mpie = mstatus.mie;
         mstatus.mie  = 0;
         mcause.interrupt = 0;
         mcause.ecode = ecode;
         mepc = PC-4;
-        mstatus.mpp = 0b11; // setting to MMODE
+        //mstatus.mpp = 0b11; // setting to MMODE
         //if (ecode == 2){
         //    new_PC = 0x3ac0;
         //}

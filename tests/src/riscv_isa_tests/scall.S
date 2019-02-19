@@ -37,14 +37,12 @@ RVTEST_CODE_BEGIN
 setup_stvec:
   lui t0,%hi(stvec_handler2)
   addi t0,t0,%lo(stvec_handler2)
-  csrw stvec, t0                              
+  csrw stvec, t0 ;                             
                                                       
 1: 
-
   li TESTNUM, 2
-
   # This is the expected trap code.
-  li t1, CAUSE_SUPERVISOR_ECALL
+  li t1, CAUSE_USER_ECALL
 
 #ifdef __MACHINE_MODE
   # If running in M mode, use mstatus.MPP to check existence of U mode.
