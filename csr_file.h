@@ -483,9 +483,11 @@ uint_t csr_read(uint_t csr_addr){
         case MSTATUS :
         if (cp==MMODE){
             csr_read_success = true;
+            //cout << "read mstatus : "<<hex<<mstatus.read_reg()<<endl;
             return mstatus.read_reg();
         }
         else{
+            cout << "writing to mstatus only allowed in MMODE"<<endl;
             csr_read_success = false;
             return 1;
         }
@@ -496,6 +498,7 @@ uint_t csr_read(uint_t csr_addr){
                 csr_read_success = true;
                 return sstatus.read_reg();
             }else{
+                cout << "writing to sstatus only allowed in MMODE and SMODE"<<endl;
                 csr_read_success = false;
                 return 1;
             }
@@ -599,6 +602,7 @@ uint_t csr_read(uint_t csr_addr){
 bool csr_write(uint_t csr_addr, uint_t val){
     switch(csr_addr){
         case MSTATUS :
+            //cout << "write mstatus : "<<hex<<val<<endl;
             mstatus.write_reg(val);
             break;
         case SSTATUS :
@@ -771,14 +775,14 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
     plevel_t handling_mode = trap_mode_select(ecode, false, current_privilage);
     //plevel_t handling_mode = current_privilage;
     //cout << "handling mode : "<< (uint_t)handling_mode<<endl;
-
+/*
     if (handling_mode == UMODE)
         ecode = uecode;
-    else if (handling_mode == SMODE)
+    else if (handling_mode == SMODE)                          ### ecode should not depend on handling mode
         ecode = secode;
     else if (handling_mode == MMODE)
         ecode = mecode;
-
+*/
     if (handling_mode == UMODE){
         cp = UMODE;
     	ustatus.upie = ustatus.uie;
@@ -850,15 +854,16 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
     //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
 
     //mstatus.sie = 1;
-
+/*
     if (handling_mode == UMODE)
-        ecode = uecode;
+        ecode = uecode;                         ### ecode should not depend on handling mode
     else if (handling_mode == SMODE)
         ecode = secode;
     else if (handling_mode == MMODE)
         ecode = mecode;
-
+*/
     if ((handling_mode == UMODE) & (mstatus.uie==1)){
+        cp = UMODE;
         ustatus.upie = ustatus.uie;
         ustatus.uie  = 0;
         ucause.interrupt = 1;
@@ -874,14 +879,15 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
 
     }
     else if ((handling_mode == SMODE) & (mstatus.sie==1)){
+        mstatus.mpp = (uint_t)cp; // setting both to SMODE
+        mstatus.spp = (uint_t)cp;
+        cp = SMODE;
         sstatus.spie = sstatus.sie;
         sstatus.sie  = 0;
         scause.interrupt = 1;
         scause.ecode = ecode;
         sepc = PC;
 
-        mstatus.mpp = 0b01; // setting both to SMODE
-        mstatus.spp = 0b1;
         //cout << "handling in smode "<<ecode<<endl;
 
         if (stvec.mode ==0b1){
@@ -895,12 +901,13 @@ uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecod
     }
     else if ((handling_mode == MMODE) & (mstatus.mie==1)){
         //cout << "excep MMODE : " << mtvec.base << endl;
+        mstatus.mpp = (uint_t)cp;
+        cp = MMODE;
         mstatus.mpie = mstatus.mie;
         mstatus.mie  = 0;
         mcause.interrupt = 1;
         mcause.ecode = ecode;
         mepc = PC;
-        mstatus.mpp = 0b11; // setting to MMODE
 
         if (mtvec.mode ==0b1)
             new_PC = mtvec.base + 4*ecode;

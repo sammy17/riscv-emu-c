@@ -235,11 +235,15 @@ int main(){
         //#endif
         //sleep_for(milliseconds(10));
 
-        //cout << "mstatus.mpp : "<<mstatus.mpp<<endl;
+        //cout << "mstatus.mpp : "<<(uint_t)mstatus.mpp<<endl;
 
         //cout << "sp : "<<reg_file.at(2)<<endl;
 
         //cout << "PRIV : "<< (uint_t)cp<<endl;
+
+        //cout << "t0 : "<<reg_file.at(5)<<endl;
+        //cout << "t1 : "<<reg_file.at(6)<<endl;
+        //cout << "t2 : "<<reg_file.at(7)<<endl;
 
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
@@ -359,7 +363,10 @@ int main(){
                     printf("CJUMP\n");
                 #endif
                 switch(func3){
-                    case 0b000 : branch = (reg_file[rs1] == reg_file[rs2]); break; //BEQ
+                    case 0b000 : 
+                        //cout << "BEQ : "<<reg_file[rs1]<<" : "<<reg_file[rs2]<<endl;
+                        branch = (reg_file[rs1] == reg_file[rs2]); 
+                        break; //BEQ
 
                     case 0b001 : branch = (reg_file[rs1] != reg_file[rs2]); break; //BNE
 
