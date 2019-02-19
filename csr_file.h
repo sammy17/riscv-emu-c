@@ -309,6 +309,26 @@ uint_t mtval = 0;
 uint_t &stval = mtval;
 uint_t &utval = mtval;
 
+uint_t mcounteren = 0;
+uint_t scounteren = 0;
+
+uint_t pmpaddr8 = 0;
+uint_t pmpaddr9 = 0;
+uint_t pmpaddr4 = 0;
+uint_t pmpaddr5 = 0;
+uint_t pmpaddr6 = 0;
+uint_t pmpaddr7 = 0;
+uint_t pmpaddr0 = 0;
+uint_t pmpaddr1 = 0;
+uint_t pmpaddr2 = 0;
+uint_t pmpaddr3 = 0;
+
+uint_t pmpcfg1 = 0;
+uint_t pmpcfg0 = 0;
+uint_t pmpcfg3 = 0;
+uint_t pmpcfg2 = 0;
+
+
 struct mtvec_t{
     uint8_t mode;
     uint_t base;
@@ -593,6 +613,54 @@ uint_t csr_read(uint_t csr_addr){
         case MIE :
             return mie.read_reg();
             break;
+        case SCOUNTEREN :
+            return scounteren;
+            break;
+        case MCOUNTEREN :
+            return mcounteren;
+            break;
+        case PMPADDR8 : 
+            return pmpaddr8; 
+            break;
+        case PMPADDR9 : 
+            return pmpaddr9; 
+            break;
+        case PMPADDR4 : 
+            return pmpaddr4; 
+            break;
+        case PMPADDR5 : 
+            return pmpaddr5; 
+            break;
+        case PMPADDR6 : 
+            return pmpaddr6; 
+            break;
+        case PMPADDR7 : 
+            return pmpaddr7; 
+            break;
+        case PMPADDR0 : 
+            return pmpaddr0; 
+            break;
+        case PMPADDR1 : 
+            return pmpaddr1; 
+            break;
+        case PMPADDR2 : 
+            return pmpaddr2; 
+            break;
+        case PMPADDR3 : 
+            return pmpaddr3; 
+            break;
+        case PMPCFG1 : 
+            return pmpcfg1; 
+            break;
+        case PMPCFG0 : 
+            return pmpcfg0; 
+            break;
+        case PMPCFG3 : 
+            return pmpcfg3; 
+            break;
+        case PMPCFG2 : 
+            return pmpcfg2; 
+            break;
         default:
             cout << "CSR not implemented : " << hex << csr_addr << endl;
             break;
@@ -700,9 +768,57 @@ bool csr_write(uint_t csr_addr, uint_t val){
         case MIE :
             mie.write_reg(val);
             break;
+        case SCOUNTEREN :
+            scounteren = val;
+            break;
+        case MCOUNTEREN :
+            mcounteren = val;
+            break;
+        case PMPADDR8 : 
+            pmpaddr8 = val; 
+            break;
+        case PMPADDR9 : 
+            pmpaddr9 = val; 
+            break;
+        case PMPADDR4 : 
+            pmpaddr4 = val; 
+            break;
+        case PMPADDR5 : 
+            pmpaddr5 = val; 
+            break;
+        case PMPADDR6 : 
+            pmpaddr6 = val; 
+            break;
+        case PMPADDR7 : 
+            pmpaddr7 = val; 
+            break;
+        case PMPADDR0 : 
+            pmpaddr0 = val; 
+            break;
+        case PMPADDR1 : 
+            pmpaddr1 = val; 
+            break;
+        case PMPADDR2 : 
+            pmpaddr2 = val; 
+            break;
+        case PMPADDR3 : 
+            pmpaddr3 = val; 
+            break;
+        case PMPCFG1 : 
+            pmpcfg1 = val; 
+            break;
+        case PMPCFG0 : 
+            pmpcfg0 = val; 
+            break;
+        case PMPCFG3 : 
+            pmpcfg3 = val; 
+            break;
+        case PMPCFG2 : 
+            pmpcfg2 = val; 
+            break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
-            //return false;
+            return false;
             break;
     }
     return true;
