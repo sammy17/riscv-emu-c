@@ -21279,7 +21279,7 @@ Disassembly of section .text:
    20c14:	00a00513          	li	a0,10
    20c18:	00040137          	lui	sp,0x40
    20c1c:	604030ef          	jal	ra,24220 <printf_c>
-   20c20:	2480006f          	j	20e68 <access>
+   20c20:	d88ff06f          	j	201a8 <csr>
 
 0000000000020c24 <pass>:
    20c24:	04f00513          	li	a0,79
@@ -21291,7 +21291,7 @@ Disassembly of section .text:
    20c3c:	00a00513          	li	a0,10
    20c40:	00040137          	lui	sp,0x40
    20c44:	5dc030ef          	jal	ra,24220 <printf_c>
-   20c48:	2200006f          	j	20e68 <access>
+   20c48:	d60ff06f          	j	201a8 <csr>
    20c4c:	00000013          	nop
 
 0000000000020c50 <mtvec_handler3>:

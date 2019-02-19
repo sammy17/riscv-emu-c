@@ -9,7 +9,7 @@
 
 #define TEST_FUNC_NAME ma_addr
 #define TEST_FUNC_TXT "ma_addr \t"
-#define TEST_FUNC_RET access
+#define TEST_FUNC_RET csr
 
 #include "riscv_test.h"
 #include "test_macros.h"

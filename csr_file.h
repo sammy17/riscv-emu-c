@@ -702,7 +702,7 @@ bool csr_write(uint_t csr_addr, uint_t val){
             break;
         default:
             cout << "CSR not implemented : " << hex <<csr_addr << endl;
-            return false;
+            //return false;
             break;
     }
     return true;
