@@ -48,9 +48,22 @@ typedef uint64_t data_t;
 #define CAUSE_LOAD_PAGE_FAULT 0xd
 #define CAUSE_STORE_PAGE_FAULT 0xf
 
+
+enum plevel_t {
+    MMODE = 0b11,
+    HMODE = 0b10,
+    SMODE = 0b01,
+    UMODE = 0b00
+};
+
+
 vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
 vector<uint_t> reg_file(32);       // register file
+
+plevel_t cp     = (plevel_t)MMODE;
+
+bool csr_read_success = false;
 
 // type defs
 enum opcode_t {
@@ -76,17 +89,6 @@ enum opcode_t {
                 fd6    = 0b1001111,
                 fd7    = 0b1010011
             };
-
-enum plevel_t {
-    MMODE = 0b11,
-    HMODE = 0b10,
-    SMODE = 0b01,
-    UMODE = 0b00
-};
-
-
-
-
 
 
 

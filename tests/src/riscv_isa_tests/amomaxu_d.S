@@ -9,8 +9,8 @@
 
 #define TEST_FUNC_NAME amomaxu_d
 #define TEST_FUNC_TXT "amomaxu_d \t"
-## #define TEST_FUNC_RET ecall
-#define TEST_FUNC_RET csr
+#define TEST_FUNC_RET ecall
+## #define TEST_FUNC_RET csr
 
 #include "riscv_test.h"
 #include "test_macros.h"

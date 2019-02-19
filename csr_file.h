@@ -225,7 +225,7 @@ struct mstatus_t{
     mstatus_t() {
         uie = 1; sie = 1; mie = 1;
         upie = 0; spie = 0; mpie = 0; 
-        spp = 0; mpp = 0b11; 
+        spp = 0; mpp = 0b0; 
         fs = 0; xs = 0; mprv = 0; sum = 0; mxr = 0; tvm = 0; tw = 0; tsr = 0; uxl = 2; sxl = 0; sd = 0; 
     }
     uint_t read_reg(){
@@ -283,11 +283,11 @@ struct ustatus_t{
 uint_t mscratch=0;
 uint_t sscratch=0;
 
-uint_t medeleg = -1;
-uint_t sedeleg = -1;
+uint_t medeleg = 0;
+uint_t sedeleg = 0;
 
-uint_t mideleg = -1;
-uint_t sideleg = -1;
+uint_t mideleg = 0;
+uint_t sideleg = 0;
 
 uint_t misa = 0;
 
@@ -475,13 +475,30 @@ struct mie_t{
     }
 } mie;
 
+
+
 uint_t csr_read(uint_t csr_addr){
+    csr_read_success = true;
     switch(csr_addr){
         case MSTATUS :
+        if (cp==MMODE){
+            csr_read_success = true;
             return mstatus.read_reg();
+        }
+        else{
+            csr_read_success = false;
+            return 1;
+        }
             break;
+
         case SSTATUS :
-            return sstatus.read_reg();
+            if ((cp==MMODE) | (cp==SMODE)){
+                csr_read_success = true;
+                return sstatus.read_reg();
+            }else{
+                csr_read_success = false;
+                return 1;
+            }
             break;
         case USTATUS :
             return ustatus.read_reg();
@@ -725,8 +742,9 @@ plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privila
             //    return current_privilage;
 
 			if (((mtrap_deleg_reg>>cause) & 0b1 ) == 1){     		//delegating to smode
-            	if (((strap_deleg_reg>>cause) & 0b1 ) == 1)      //delegating to umode
-                	return UMODE;
+            	if (((strap_deleg_reg>>cause) & 0b1 ) == 1){      //delegating to umode
+                    return UMODE;
+                }
             	else
                 	return SMODE;
             }
@@ -752,6 +770,7 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
 
     plevel_t handling_mode = trap_mode_select(ecode, false, current_privilage);
     //plevel_t handling_mode = current_privilage;
+    //cout << "handling mode : "<< (uint_t)handling_mode<<endl;
 
     if (handling_mode == UMODE)
         ecode = uecode;

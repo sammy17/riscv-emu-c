@@ -9,7 +9,7 @@
 
 #define TEST_FUNC_NAME csr
 #define TEST_FUNC_TXT "csr \t"
-#define TEST_FUNC_RET ecall
+#define TEST_FUNC_RET isaTestEnd
 
 #include "riscv_test.h"
 #include "test_macros.h"
@@ -105,12 +105,14 @@ setup_stvec:
 
   # Make sure writing the cycle counter causes an exception.
   # Don't run in supervisor, as we don't delegate illegal instruction traps.
+    # return reg should not be written when illegal ins excep occust writing to csr
 #ifdef __MACHINE_MODE
   TEST_CASE(11, a0, 255, li a0, 255; csrrw a0, cycle, x0);
 #endif
 
   # Make sure reading status in user mode causes an exception.
-  # Don't run in supervisor, as we don't delegate illegal instruction traps.
+  # Don't run in supervisor, as we don't delegate illegal instruction traps. 
+
 #ifdef __MACHINE_MODE
   TEST_CASE(12, a0, 255, li a0, 255; csrr a0, sstatus)
 #else

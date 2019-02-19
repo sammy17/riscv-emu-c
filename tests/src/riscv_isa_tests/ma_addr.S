@@ -14,6 +14,8 @@
 #include "riscv_test.h"
 #include "test_macros.h"
 
+#define __MACHINE_MODE
+
 #ifdef __MACHINE_MODE
   #define sscratch mscratch
   #define sstatus mstatus
@@ -21,7 +23,8 @@
   #define sepc mepc
   #define sret mret
   #define stvec mtvec
-  #define stvec_handler1 mtvec_handler1
+  #define stvec_handler3 mtvec_handler3
+  #deine sbadaddr mbadaddr
 #endif
 
 RVTEST_RV64M

@@ -7,9 +7,9 @@
 # Test syscall trap.
 #
 
-## #define __MACHINE_MODE 1
+#define __MACHINE_MODE 1
 
-#undef __MACHINE_MODE
+## #undef __MACHINE_MODE
 
 #define TEST_FUNC_NAME ecall
 #define TEST_FUNC_TXT "ecall \t"

@@ -178,7 +178,6 @@ int main(){
     uint_t imm_b    = 0;
     uint_t imm_s    = 0;
     uint_t csr_data = 0;
-    plevel_t cp     = (plevel_t)MMODE;
     plevel_t LR_cp;
     uint_t LR_count = 0;
     bool csr_bool = false;
@@ -230,10 +229,10 @@ int main(){
     
     while (PC < ((1llu)<<MEM_SIZE)){
 
-        #ifdef DEBUG
+        //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-            cout << "PC : "<< hex << PC << endl;
-        #endif
+        //    cout << "PC : "<< hex << PC << endl;
+        //#endif
         //sleep_for(milliseconds(10));
 
         //cout << "mstatus.mpp : "<<mstatus.mpp<<endl;
@@ -1215,82 +1214,112 @@ int main(){
                     case 0b001 : // CSRRW
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        store_data = reg_file[rs1];
-                        //csr_file[imm11_0] = store_data;
-                        csr_bool = csr_write(imm11_0,store_data);
-                        if(!csr_bool){
+                        if (csr_read_success){
+                            store_data = reg_file[rs1];
+                            //csr_file[imm11_0] = store_data;
+                            csr_bool = csr_write(imm11_0,store_data);
+                            if(!csr_bool){
+                                mtval = instruction;
+                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            }
+                            else if (rd!=0)
+                                reg_file[rd] = csr_data;
+                        } else{
                             mtval = instruction;
                             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                         }
-                        if (rd!=0)
-                            reg_file[rd] = csr_data;
                         break;
 
                     case 0b010 : // CSRRS
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        store_data = reg_file[rs1];
-                        store_data = (store_data | csr_data);
-                        //csr_file[imm11_0] = store_data;
-                        csr_bool = csr_write(imm11_0,store_data);
-                        if(!csr_bool){
+                        if (csr_read_success){
+                            store_data = reg_file[rs1];
+                            store_data = (store_data | csr_data);
+                            //csr_file[imm11_0] = store_data;
+                            csr_bool = csr_write(imm11_0,store_data);
+                            if(!csr_bool){
+                                mtval = instruction;
+                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            } else 
+                                reg_file[rd] = csr_data;
+                        } else{
                             mtval = instruction;
                             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                         }
-                        reg_file[rd] = csr_data;
                         break;
 
                     case 0b011 : // CSRRC
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        store_data = reg_file[rs1];
-                        store_data = (csr_data & (MASK64 - store_data));
-                        //csr_file[imm11_0] = store_data;
-                        csr_bool = csr_write(imm11_0,store_data);
-                        if(!csr_bool){
+                        if (csr_read_success){
+                            store_data = reg_file[rs1];
+                            store_data = (csr_data & (MASK64 - store_data));
+                            //csr_file[imm11_0] = store_data;
+                            csr_bool = csr_write(imm11_0,store_data);
+                            if(!csr_bool){
+                                mtval = instruction;
+                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            } else 
+                                reg_file[rd] = csr_data;
+                        } else{
                             mtval = instruction;
                             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                         }
-                        reg_file[rd] = csr_data;
                         break;
 
                     case 0b101 : // CSRRWI
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        //csr_file[imm11_0] = rs1;
-                        csr_bool = csr_write(imm11_0,rs1);
-                        if(!csr_bool){
+                        if (csr_read_success){
+                            //csr_file[imm11_0] = rs1;
+                            csr_bool = csr_write(imm11_0,rs1);
+                            if(!csr_bool){
+                                mtval = instruction;
+                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            }
+                            else if (rd!=0)
+                                reg_file[rd] = csr_data;
+                        } else{
                             mtval = instruction;
                             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                         }
-                        if (rd!=0)
-                            reg_file[rd] = csr_data;
                         break;
 
                     case 0b110 : // CSRRSI
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        store_data = (rs1 | csr_data);
-                        //csr_file[imm11_0] = store_data;
-                        csr_bool = csr_write(imm11_0,store_data);
-                        if(!csr_bool){
+                        if (csr_read_success){
+                            store_data = (rs1 | csr_data);
+                            //csr_file[imm11_0] = store_data;
+                            csr_bool = csr_write(imm11_0,store_data);
+                            if(!csr_bool){
+                                mtval = instruction;
+                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            } else 
+                                reg_file[rd] = csr_data;
+                        } else{
                             mtval = instruction;
                             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                         }
-                        reg_file[rd] = csr_data;
                         break;
 
                     case 0b111 : // CSRRCI
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        store_data = (csr_data & (MASK64 - rs1));
-                        //csr_file[imm11_0] = store_data;
-                        csr_bool = csr_write(imm11_0,store_data);
-                        if(!csr_bool){
+                        if (csr_read_success){
+                            store_data = (csr_data & (MASK64 - rs1));
+                            //csr_file[imm11_0] = store_data;
+                            csr_bool = csr_write(imm11_0,store_data);
+                            if(!csr_bool){
+                                mtval = instruction;
+                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            } else 
+                                reg_file[rd] = csr_data;
+                        } else{
                             mtval = instruction;
                             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
                         }
-                        reg_file[rd] = csr_data;
                         break;
 
                     case 0b000 : 
@@ -1305,7 +1334,7 @@ int main(){
 
                             case 770 : //mret
                                 PC = mepc;
-                                cp = (plevel_t)MMODE;
+                                cp = (plevel_t)mstatus.mpp;
                                 mstatus.mpp = 0b00; //setting to umode
                                 mstatus.mie = mstatus.mpie;
                                 mstatus.mpie = 1;
@@ -1313,7 +1342,7 @@ int main(){
 
                             case 258 : //sret
                                 PC = sepc;
-                                cp = (plevel_t)SMODE;
+                                cp = (plevel_t)mstatus.spp;
                                 mstatus.mpp = 0b00; //setting to umode
                                 mstatus.spp = 0b0;
                                 sstatus.sie = sstatus.spie;

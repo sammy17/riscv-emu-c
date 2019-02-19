@@ -7,7 +7,7 @@
 # Test syscall trap.
 #
 
-## #define __MACHINE_MODE 1
+
 
 #define TEST_FUNC_NAME ebreak
 #define TEST_FUNC_TXT "ebreak \t"
@@ -18,6 +18,8 @@
 
 RVTEST_RV64S
 RVTEST_CODE_BEGIN
+
+#define __MACHINE_MODE 1
 
 #ifdef __MACHINE_MODE
   #define sscratch mscratch
