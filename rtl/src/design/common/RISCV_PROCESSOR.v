@@ -26,9 +26,11 @@ module RISCV_PROCESSOR#(
     parameter address_width  = 64                                           ,
     parameter block_size     = 4                                           ,
     parameter cache_depth    = 256                                          ,
+    parameter block_size_dat = 2,
     parameter l2_delay_read  = 10                                           ,
     localparam line_width    = $clog2(cache_depth)                          ,
     localparam offset_width  = $clog2(data_width*block_size/8 )               ,
+    localparam offset_width_dat  = $clog2(64*block_size_dat/8 )               ,
     localparam tag_width     = address_width - line_width -  offset_width   ,
     localparam cache_width   = block_size*data_width                        ,
     parameter  C_M00_AXI_TARGET_SLAVE_BASE_ADDR    = 32'h00000000,
@@ -298,12 +300,12 @@ module RISCV_PROCESSOR#(
         wire                      data_from_l2_valid              ;        
 
         wire [address_width-5-1:0]     addr_to_l2_dat       ;
-        wire  [block_size*64-1:0]   data_from_l2_dat                    ;
+        wire  [block_size_dat*64-1:0]   data_from_l2_dat                    ;
         wire                      data_from_l2_valid_dat              ;
               wire                      data_to_l2_valid              ;
         wire  [address_width-5-1:0] waddr_to_l2      ;
         wire                      write_done;
-        wire  [block_size*64-1:0]   data_to_l2                    ;
+        wire  [block_size_dat*64-1:0]   data_to_l2                    ;
         wire addr_to_l2_valid_dat;
         reg DATA_FROM_AXIM_VALID;
         reg [31:0] VIRT_ADDR,DATA_FROM_AXIM;
@@ -553,7 +555,7 @@ myip_v1_0_M00_AXI # (
     );
 myip_v1_0_M00_AXI # ( 
         .C_M_TARGET_SLAVE_BASE_ADDR(C_M00_AXI_TARGET_SLAVE_BASE_ADDR),
-        .C_M_AXI_BURST_LEN(8),
+        .C_M_AXI_BURST_LEN(block_size_dat*2),
         .C_M_AXI_ID_WIDTH(C_M00_AXI_ID_WIDTH),
         .C_M_AXI_ADDR_WIDTH(C_M00_AXI_ADDR_WIDTH),
         .C_M_AXI_DATA_WIDTH(C_M00_AXI_DATA_WIDTH),
@@ -562,7 +564,7 @@ myip_v1_0_M00_AXI # (
         .C_M_AXI_WUSER_WIDTH(C_M00_AXI_WUSER_WIDTH),
         .C_M_AXI_RUSER_WIDTH(C_M00_AXI_RUSER_WIDTH),
         .C_M_AXI_BUSER_WIDTH(C_M00_AXI_BUSER_WIDTH),
-        .cache_width(block_size*64)
+        .cache_width(block_size_dat*64)
     ) myip_v1_0_M01_AXI_inst (
         .RSTN(RSTN),
         .INIT_AXI_TXN(m01_axi_init_axi_txn),
@@ -615,11 +617,11 @@ myip_v1_0_M00_AXI # (
         // user defined ports
         .data_from_l2(data_from_l2_dat)         ,
         .addr_to_l2_valid(addr_to_l2_valid_dat) ,
-        .addr_to_l2({addr_to_l2_dat,{5{1'b0}}})              ,
+        .addr_to_l2({addr_to_l2_dat,{offset_width_dat{1'b0}}})              ,
 
         .data_from_l2_valid(data_from_l2_valid_dat),
         
-        .waddr_to_l2({waddr_to_l2,{5{1'b0}}}),
+        .waddr_to_l2({waddr_to_l2,{offset_width_dat{1'b0}}}),
         .data_to_l2(data_to_l2),
         .data_to_l2_valid(data_to_l2_valid),
         .data_written(write_done)
@@ -658,7 +660,7 @@ myip_v1_0_M00_AXI # (
     #(
         .data_width     (64)                                        ,
         .address_width  (address_width)                                     ,
-        .block_size     (block_size)                                        ,
+        .block_size     (block_size_dat)                                        ,
         .cache_depth    ( cache_depth)                                      
         
         )
