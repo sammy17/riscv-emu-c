@@ -10,10 +10,11 @@ module Itlb
 	parameter   PAGE_OFFSET_WIDTH = 12				, 
 	parameter   TLB_DEPTH         = 256				,
 	parameter   PTESIZE           = 4				,
-	parameter   virt_addr_init    = 32'h0001_0000                     	                                
+	parameter   virt_addr_init    = 32'h0001_0000       ,
+    parameter   init_op=3             	                                
     ) (
-        input                           CLK                             ,
-        input 				RST				,
+    input                           CLK                             ,
+    input 				RST				,
 	input 				TLB_FLUSH			,
 	/*output reg 			PAGE_FAULT_EXCEPTION		,
 	output reg [ADDR_WIDTH-1 : 0]   PAGE_FAULT_ADDR			,*/
@@ -30,11 +31,20 @@ module Itlb
 	output     [ADDR_WIDTH-1 : 0]	ADDR_TO_AXIM			,
 	input  				DATA_FROM_AXIM_VALID		,
 	input      [DATA_WIDTH-1 : 0]	DATA_FROM_AXIM,
-	input              CACHE_READY				
-			
+	input              CACHE_READY,
+    input [1:0] OP_TYPE	,
+    output reg PAGE_FAULT,
+    output reg ACCESS_FAULT,
+    output reg [1:0] FAULT_TYPE,
+    input [63:0] SATP,
+    input [1:0] MPP,
+    input MPRV,
+    input CURR_PREV
+
     );
     localparam TLB_ADDR_WIDTH = logb2(TLB_DEPTH);
     localparam PTESIZE_WIDTH  = logb2(PTESIZE);
+    reg [1:0] op_type_d1;
 	
     /*reg  [DATA_WIDTH-1:	0]	SATP = {1'b1,9'd00,22'd1000};
     wire [MODE_LEN-1:0] satp_mode;
@@ -129,10 +139,12 @@ module Itlb
 
     always @(posedge CLK) begin
         if (RST) begin
-            virt_addr <=   virt_addr_init;
+            virt_addr       <=   virt_addr_init;
+            op_type_d1      <=init_op;
         end
         else if (tlb_addr_valid & VIRT_ADDR_VALID &  CACHE_READY) begin
-	    virt_addr <=   VIRT_ADDR; 
+	       virt_addr <=   VIRT_ADDR; 
+             op_type_d1 <=OP_TYPE;
         end    
     end
 
@@ -143,6 +155,10 @@ module Itlb
             addr_to_axim_valid  <=0;
             addr_to_axim        <=0;
             flag                <=0;
+            PAGE_FAULT          <=0;
+            ACCESS_FAULT        <=0;
+            FAULT_TYPE          <=0;
+
         end
         else if (~tlb_addr_valid & ~valid_wren )   //check whether cache ready and make sure flag goes 0 one cycle before data get written
         begin
@@ -192,7 +208,7 @@ module Itlb
     assign tag_mem_raddr= virt_addr[PAGE_OFFSET_WIDTH+:TLB_ADDR_WIDTH];
     assign valid_raddr  = virt_addr[PAGE_OFFSET_WIDTH+:TLB_ADDR_WIDTH];
     assign CURR_ADDR = virt_addr;
-    assign tlb_addr_valid =  (tag_mem_data_out == virt_addr[DATA_WIDTH-1:PAGE_OFFSET_WIDTH+TLB_ADDR_WIDTH]) & valid_out;
+    assign tlb_addr_valid =  ((tag_mem_data_out == virt_addr[DATA_WIDTH-1:PAGE_OFFSET_WIDTH+TLB_ADDR_WIDTH]) & valid_out) | (op_type_d1==2'b0);
 
     assign ADDR_TO_AXIM_VALID     = addr_to_axim_valid;
     assign ADDR_TO_AXIM           = addr_to_axim;

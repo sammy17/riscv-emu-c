@@ -215,6 +215,17 @@ module RISCV_PROCESSOR#(
         
         
     );
+    wire      [1:0]   MPP;
+    wire              MPRV;
+    wire              CURR_PREV;
+    wire   [63:0]     SATP;
+    wire page_fault_ins;
+    wire page_fault_dat;
+    wire access_fault_dat;
+    wire access_fault_ins;
+    wire [1:0] fault_type;
+    wire page_fault_to_proc_ins;
+    wire access_fault_to_proc_ins;
     wire [ADDR_WIDTH      - 1 : 0]  RD_ADDR_TO_PERI;
     wire                            RD_ADDR_TO_PERI_VALID;
     wire                            RD_ADDR_TO_PERI_READY;
@@ -274,7 +285,7 @@ module RISCV_PROCESSOR#(
      wire   [DATA_WIDTH - 1 : 0]        data_to_proc_dat;
      
      /////////////////////////////////////////////////////////
-     //ijaz maathu
+ 
      wire predicted;
      wire [31:0] pc;
      wire [31:0] ex_pc;
@@ -307,10 +318,11 @@ module RISCV_PROCESSOR#(
         wire                      write_done;
         wire  [block_size_dat*64-1:0]   data_to_l2                    ;
         wire addr_to_l2_valid_dat;
-        reg DATA_FROM_AXIM_VALID;
-        reg [31:0] VIRT_ADDR,DATA_FROM_AXIM;
-        wire [31:0] PHY_ADDR,ADDR_TO_AXIM;
-        wire PHY_ADDR_VALID,ADDR_TO_AXIM_VALID;
+        reg DATA_FROM_AXIM_VALID,DATA_FROM_AXIM_VALID_DAT;
+        reg [55:0] DATA_FROM_AXIM,DATA_FROM_AXIM_DAT;
+        wire [55:0] PHY_ADDR,ADDR_TO_AXIM,ADDR_TO_AXIM_DAT;
+        wire itlb_ready,ADDR_TO_AXIM_VALID,ADDR_TO_AXIM_VALID_DAT;
+
         wire [3:0] WSTRB_OUT;
      //reg [63:0]     mtime;
      //reg [63:0]     mtimecmp;
@@ -332,7 +344,7 @@ module RISCV_PROCESSOR#(
     .CLK(CLK),
     .RST(~RSTN),
     // Towards instruction cache
-    .CACHE_READY(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & PHY_ADDR_VALID & tlb_ready_d3),
+    .CACHE_READY(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & itlb_ready & tlb_ready_d3),
     .PIPELINE_STALL(proc_ready_ins),
     .BRANCH_TAKEN(branch_taken),
     .BYTE_ENB_TO_CACHE( byte_enb_proc),
@@ -344,7 +356,7 @@ module RISCV_PROCESSOR#(
     .ADDR_TO_DATA_CACHE(addr_from_proc_dat),
     .DATA_TO_DATA_CACHE(data_from_proc_dat),
     .DATA_TO_PROC((p_flag)? data_from_peri: data_to_proc_dat),
-    .CACHE_READY_DATA(cache_ready_dat & !stop_dat_cache),
+    .CACHE_READY_DATA(cache_ready_dat & !stop_dat_cache & dtlb_ready),
     .EX_PC(ex_pc),
     .BRANCH(branch),
     .FLUSH(flush_w),
@@ -358,7 +370,16 @@ module RISCV_PROCESSOR#(
     .MTIP(MTIP),
     .FENCE(fence),
     .AMO_TO_CACHE(amo_op),
-    .OP_32_out(op32)
+    .OP_32_out(op32),
+    .PAGE_FAULT_DAT(page_fault_dat),
+    .PAGE_FAULT_INS(page_fault_to_proc_ins),
+    .FAULT_TYPE(fault_type),
+    .ACCESS_FAULT_INS(access_fault_to_proc_ins),
+    .ACCESS_FAULT_DAT(access_fault_dat),
+           .MPRV(MPRV),
+        .SATP(SATP),
+        .CURR_PREV(CURR_PREV),
+        .MPP(MPP)
     );
     
 
@@ -375,8 +396,8 @@ module RISCV_PROCESSOR#(
     .PRD_VALID (prd_valid)                 ,
     .PRD_ADDR  (prd_addr)                  ,
     .FLUSH(flush_w)                          ,
-    .CACHE_READY(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & PHY_ADDR_VALID & tlb_ready_d3)          ,
-    .CACHE_READY_DATA(cache_ready_dat & !stop_dat_cache),
+    .CACHE_READY(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & itlb_ready & tlb_ready_d3)          ,
+    .CACHE_READY_DATA(cache_ready_dat & !stop_dat_cache & dtlb_ready),
     .RETURN_ADDR(return_addr),
     .RETURN(return_w),
     .PREDICTED(predicted)
@@ -404,7 +425,7 @@ module RISCV_PROCESSOR#(
     .DATA_FROM_PERI_READY(DATA_FROM_PERI_READY),
     .DATA_FROM_PERI_VALID(DATA_FROM_PERI_VALID),
     .TRANSACTION_COMPLETE_PERI(TRANSACTION_COMPLETE_PERI),
-    .CACHE_READY_DAT(cache_ready_dat),
+    .CACHE_READY_DAT(cache_ready_dat &dtlb_ready),
     .WSTRB_OUT(WSTRB_OUT)
     );
     
@@ -429,7 +450,7 @@ module RISCV_PROCESSOR#(
 
             
         end
-        else if  (addr_from_proc_dat >= PERIPHERAL_BASE_ADDR &&  control_from_proc_dat != 0 && !stop_dat_cache && cache_ready_ins && cache_ready_dat && counter==0 )
+        else if  (addr_from_proc_dat >= PERIPHERAL_BASE_ADDR &&  control_from_proc_dat != 0 && !stop_dat_cache && cache_ready_ins && cache_ready_dat & dtlb_ready && counter==0 )
         begin
             data_to_peri <= data_from_proc_dat;
             addr_to_peri <= addr_from_proc_dat;
@@ -440,7 +461,7 @@ module RISCV_PROCESSOR#(
             counter <= counter +1;
             peri_done <= 0;
         end
-        else if (cache_ready_dat && counter>0)
+        else if (cache_ready_dat & dtlb_ready && counter>0)
         begin
             if(peri_complete)
             begin
@@ -471,7 +492,7 @@ module RISCV_PROCESSOR#(
         begin
             peri_start <=0;
         end
-        if (p_flag & cache_ready_dat & !stop_dat_cache)
+        if (p_flag & cache_ready_dat & dtlb_ready & !stop_dat_cache)
         begin
             p_flag <= 0;
         end
@@ -643,7 +664,7 @@ myip_v1_0_M00_AXI # (
         .FLUSH(fence)                               ,
         .ADDR(PHY_ADDR)                                 ,
         .ADDR_vir(pc)                             ,
-        .ADDR_VALID(PHY_ADDR_VALID& proc_ready_ins & !exstage_stalled  & !stop_ins_cache)                     ,
+        .ADDR_VALID(itlb_ready& proc_ready_ins & !exstage_stalled  & !stop_ins_cache)                     ,
         .DATA (data_to_proc_ins)                                ,
         .CACHE_READY(cache_ready_ins )                   ,
         .ADDR_TO_L2_VALID(addr_to_l2_valid)         ,
@@ -651,15 +672,50 @@ myip_v1_0_M00_AXI # (
         .DATA_FROM_L2 (data_from_l2)                ,
         .DATA_FROM_L2_VALID (data_from_l2_valid)     ,
 //        .CURR_ADDR(pc)        ,
-        .ADDR_OUT(pc_to_proc_ins)
+        .ADDR_OUT(pc_to_proc_ins),
+        .ACCESS_FAULT(access_fault_ins),
+        .PAGE_FAULT(page_fault_ins),
+        .PAGE_FAULT_OUT(page_fault_to_proc_ins),
+        .ACCESS_FAULT_OUT(access_fault_to_proc_ins)
         
 
     ); 
-   
+    wire dtlb_ready;
+    wire [55:0] addr_to_dat_cache_from_tlb; 
+    // wire [63:0] data_to_dat_cache_from_tlb;
+    // wire [1:0] control_to_data_cache_from_tlb;
+    // wire flush_to_data_cache_from_tlb;
+    Itlb
+    #(.virt_addr_init(32'h0000_0000),
+        .init_op(0))                                                      
+    dtlb (
+        .CLK(CLK),
+        .RST(~RSTN),
+    .TLB_FLUSH(0),
+    .VIRT_ADDR(addr_from_proc_dat),
+    .VIRT_ADDR_VALID(1),
+    // .CURR_ADDR(pc),
+    .PHY_ADDR_VALID(dtlb_ready),
+    .PHY_ADDR(addr_to_dat_cache_from_tlb),
+    .ADDR_TO_AXIM_VALID(ADDR_TO_AXIM_VALID_DAT),
+    .ADDR_TO_AXIM(ADDR_TO_AXIM_DAT),
+    .DATA_FROM_AXIM_VALID(DATA_FROM_AXIM_VALID_DAT),
+    .DATA_FROM_AXIM(DATA_FROM_AXIM_DAT),
+    .CACHE_READY(cache_ready_dat),
+    .OP_TYPE(control_from_proc_dat),
+    .FAULT_TYPE(fault_type),
+    .PAGE_FAULT(page_fault_dat),
+    .ACCESS_FAULT(access_fault_dat),
+           .MPRV(MPRV),
+        .SATP(SATP),
+        .CURR_PREV(CURR_PREV),
+        .MPP(MPP)            
+            
+    );
    Dcache
     #(
         .data_width     (64)                                        ,
-        .address_width  (address_width)                                     ,
+        .address_width  (56)                                     ,
         .block_size     (block_size_dat)                                        ,
         .cache_depth    ( cache_depth)                                      
         
@@ -668,15 +724,15 @@ myip_v1_0_M00_AXI # (
            .CLK(CLK)                                   ,
         .RST(~RSTN)                                   ,
         .FLUSH(fence)                               ,
-        .ADDR(addr_from_proc_dat)                                 ,
-        .ADDR_VALID(1)                     ,
+        .ADDR(addr_to_dat_cache_from_tlb)                                 ,
+        .ADDR_VALID(dtlb_ready)                     ,
         .DATA (data_to_proc_dat)                                ,
         .CACHE_READY(cache_ready_dat)                   ,
         .ADDR_TO_L2_VALID(addr_to_l2_valid_dat)         ,
         .ADDR_TO_L2 (addr_to_l2_dat)                    ,
         .DATA_FROM_L2 (data_from_l2_dat)                ,
         .DATA_FROM_L2_VALID (data_from_l2_valid_dat)    ,
-         .CONTROL ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat < PERIPHERAL_BASE_ADDR & cache_ready_ins & PHY_ADDR_VALID & tlb_ready_d3)? control_from_proc_dat : 2'b0)                         ,   
+         .CONTROL ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat < PERIPHERAL_BASE_ADDR & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)                         ,   
         .WSTRB (byte_enb_proc)                           ,
         .DATA_in(data_from_proc_dat),
         .DATA_TO_L2_VALID(data_to_l2_valid)                ,
@@ -684,28 +740,39 @@ myip_v1_0_M00_AXI # (
         .WRITE_DONE(write_done),
         .DATA_TO_L2(data_to_l2),
         .AMO(amo_op),
-        .OP32(op32)
+        .OP32(op32),
+        .PAGE_FAULT(page_fault_dat),
+        .ACCESS_FAULT(access_fault_dat)
 
     );
     Itlb
-    #(.virt_addr_init(32'h0000_0000) )                                                      
-    dut (
+    #(.virt_addr_init(32'h0000_0000) ,
+        .init_op(3))                                                      
+   itlb (
         .CLK(CLK),
         .RST(~RSTN),
     .TLB_FLUSH(0),
     .VIRT_ADDR(prd_addr),
     .VIRT_ADDR_VALID(proc_ready_ins & !exstage_stalled  & !stop_ins_cache),
     .CURR_ADDR(pc),
-    .PHY_ADDR_VALID(PHY_ADDR_VALID),
+    .PHY_ADDR_VALID(itlb_ready),
     .PHY_ADDR(PHY_ADDR),
     .ADDR_TO_AXIM_VALID(ADDR_TO_AXIM_VALID),
     .ADDR_TO_AXIM(ADDR_TO_AXIM),
     .DATA_FROM_AXIM_VALID(DATA_FROM_AXIM_VALID),
     .DATA_FROM_AXIM(DATA_FROM_AXIM),
-    .CACHE_READY(cache_ready_ins)
+    .CACHE_READY(cache_ready_ins),
+    .OP_TYPE(2'b11),
+    .PAGE_FAULT(page_fault_ins),
+    .ACCESS_FAULT(access_fault_ins),
+           .MPRV(MPRV),
+        .SATP(SATP),
+        .CURR_PREV(CURR_PREV),
+        .MPP(MPP)
             
             
     );
+
       PERIPHERAL_INTERFACE # ( 
 
        ) peripheral_interface (
@@ -756,7 +823,7 @@ myip_v1_0_M00_AXI # (
             tlb_ready_d2    <=0;
             tlb_ready_d3    <=0;
         end
-        else if(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & PHY_ADDR_VALID )
+        else if(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & itlb_ready )
         begin
             tlb_ready_d1  <=1;
             tlb_ready_d2  <= tlb_ready_d1;
@@ -766,7 +833,20 @@ myip_v1_0_M00_AXI # (
     always @(posedge CLK) begin
         if (~RSTN)
         begin
-            DATA_FROM_AXIM_VALID <=0;
+            DATA_FROM_AXIM_VALID_DAT     <=0;
+            DATA_FROM_AXIM_DAT<=0;
+        end
+        else if(ADDR_TO_AXIM_VALID_DAT)begin
+            DATA_FROM_AXIM_VALID_DAT <= 1;
+            DATA_FROM_AXIM_DAT       <= (ADDR_TO_AXIM_DAT) >> 2;
+        end
+        else DATA_FROM_AXIM_VALID_DAT <= 0;
+    end   
+
+    always @(posedge CLK) begin
+        if (~RSTN)
+        begin
+            DATA_FROM_AXIM_VALID     <=0;
             DATA_FROM_AXIM<=0;
         end
         else if(ADDR_TO_AXIM_VALID)begin
@@ -775,4 +855,5 @@ myip_v1_0_M00_AXI # (
         end
         else DATA_FROM_AXIM_VALID <= 0;
     end
+
 endmodule

@@ -1,6 +1,6 @@
 # This makefile handles running vcs simulation, compiling isa/benchmark tests, and running python emulator on the compiled c codes
 vcs: 
-	vcs -full64 -f flist.f -sverilog +incdir+./src/design/common +incdir+./src/design/newcache  -j20 -debug_access+all +vcs+fsdbon+mda -kdb -lca -l vcs.log; ./simv -l run.log
+	vcs -q -full64 -f flist.f -sverilog +incdir+./src/design/common +incdir+./src/design/newcache  -j20 -debug_access+all +vcs+fsdbon+mda -kdb -lca -l vcs.log; ./simv -l run.log
 nodebug:	
 	vcs -full64 -f flist.f -sverilog +incdir+./src/design/common +incdir+./src/design/newcache -fgp -j20; ./simv  
 

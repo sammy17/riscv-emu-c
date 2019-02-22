@@ -65,6 +65,11 @@ module PIPELINE #(
     output              [ADDR_WIDTH - 1 : 0]        EX_PC                           ,
     output                                          BRANCH                          ,     
     input                                           CACHE_READY_DATA                ,
+    input                                           PAGE_FAULT_INS                   ,
+    input                                           PAGE_FAULT_DAT                   ,
+    input               [1:0]                       FAULT_TYPE,
+    input                                           ACCESS_FAULT_INS,
+    input                                           ACCESS_FAULT_DAT,
     output                                          FLUSH                           ,
     output              [ADDR_WIDTH - 1 : 0]        PC_ID_FB                        ,
     output                                          PREDICTED                       ,
@@ -77,7 +82,12 @@ module PIPELINE #(
     input                                           MSIP                             ,   //machine software interupt pending, from external hart
     output                                          FENCE                           ,
     output            [4:0]                        AMO_TO_CACHE                    ,
-    output OP_32_out
+
+    output OP_32_out,
+    output      [1:0]   MPP,
+    output              MPRV,
+    output              CURR_PREV,
+    output   [63:0]     SATP
     );
     
     `include "PipelineParams.vh"
@@ -137,7 +147,8 @@ module PIPELINE #(
     reg op_32_fb_ex;
     wire op_32_wire;
     assign ins_if_id = INS_IF_ID            ;
-   
+   reg page_fault_id_fb,page_fault_fb_ex;
+   reg access_fault_id_fb,access_fault_fb_ex;
     DECODE_UNIT decode_unit(
         .CLK                (CLK)                           ,
         .TYPE_MEM3_WB       (type_mem3_wb)                  ,
@@ -226,7 +237,17 @@ module PIPELINE #(
         .INS_FB_EX(ins_fb_ex),
         .ILEGAL(ilegal_fb_ex),
         .OPS_32(op_32_fb_ex),
-        .OP_32_out(OP_32_out)
+        .OP_32_out(OP_32_out),
+        .PAGE_FAULT_INS(page_fault_fb_ex),
+        .PAGE_FAULT_DAT(PAGE_FAULT_DAT),
+        .ACCESS_FAULT_INS(access_fault_fb_ex),
+        .ACCESS_FAULT_DAT(ACCESS_FAULT_DAT),
+        .FAULT_TYPE(FAULT_TYPE),
+        .MPRV(MPRV),
+        .SATP(SATP),
+        .CURR_PREV(CURR_PREV),
+        .MPP(MPP),
+        .PC_EX_MEM1(pc_ex_mem1)
         );
    
     Multiplexer #(
@@ -508,6 +529,10 @@ module PIPELINE #(
                 
                 op_32_id_fb<=0;
                 op_32_fb_ex<=0;
+                access_fault_fb_ex<=0;
+                access_fault_id_fb<=0;
+                page_fault_id_fb<=0;
+                page_fault_fb_ex<=0;
 
 
 
@@ -582,6 +607,13 @@ module PIPELINE #(
                 ilegal_fb_ex             <=ilegal_id_fb;     
                 op_32_id_fb              <=op_32_wire;
                 op_32_fb_ex             <=op_32_id_fb;
+
+                page_fault_id_fb       <=PAGE_FAULT_INS;
+                page_fault_fb_ex        <= page_fault_id_fb;
+
+                access_fault_id_fb      <= ACCESS_FAULT_INS ;
+                access_fault_fb_ex       <= access_fault_id_fb;
+
             end  
             else
             begin     
@@ -639,6 +671,13 @@ module PIPELINE #(
                 ilegal_fb_ex <=0;
                 op_32_id_fb<=0;
                 op_32_fb_ex<=0;
+               
+                page_fault_id_fb <=0;
+                page_fault_fb_ex <=0;
+
+                access_fault_fb_ex <=0;
+                access_fault_id_fb<=0;
+
             end
             
             rd_fb_ex                 <=    rd_id_fb                 ;                      
@@ -706,18 +745,20 @@ module PIPELINE #(
                 alu_ex_mem1              <=      alu_out_wire           ;
                 op_type_ex_mem1          <=      op_type_ex_ex2         ;         
             end
-           
-            type_mem1_mem2           <=      type_ex_mem1               ;
-            type_mem2_mem3           <=      type_mem1_mem2             ;
+            
+             type_mem2_mem3           <=      type_mem1_mem2               ;
             type_mem3_wb             <=      type_mem2_mem3             ;
+            if(PAGE_FAULT_DAT| ACCESS_FAULT_DAT) begin
+                type_mem1_mem2 <= 0;
+            end
+            else begin
+                type_mem1_mem2  <= type_ex_mem1;
+            end
             alu_mem1_mem2            <=      alu_ex_mem1                ;
             alu_mem2_mem3            <=      alu_mem1_mem2              ;
             alu_mem3_wb              <=      alu_mem2_mem3              ;
             
-            if (rd_mem3_wb==1 & type_mem3_wb!=idle)
-            begin
-                return_addr          <=      wb_data_final              ;
-            end  
+      
             
             alu_written_back         <=       wb_data_final             ;           
             rd_mem1_mem2             <=       rd_ex_mem1                ;    

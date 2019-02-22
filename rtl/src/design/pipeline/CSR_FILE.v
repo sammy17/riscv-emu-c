@@ -20,7 +20,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 // `define CSR_DEBUG
-// `define PC_PRINT
+`define PC_PRINT
 module CSR_FILE (
     input               CLK             ,
     input               RST             ,
@@ -70,7 +70,14 @@ module CSR_FILE (
     
     output reg          TSR             ,
     output reg          TVM             ,
-    output reg          TW              
+    output reg          TW              ,
+    output      [1:0]   MPP,
+    output              MPRV,
+    output              CURR_PREV,
+    output   [63:0]     SATP,
+    input [63:0]   PC_EX_MEM1,
+    input [63:0]   JUMP_ADD,
+    input [31:0] INS_FB_EX
                       
     );  
     
@@ -190,6 +197,7 @@ module CSR_FILE (
     //Create final write data
      reg illegal_access;
     reg csr_op;
+    reg [63:0] err_addr;
     `ifdef CSR_DEBUG
    
     always@(posedge CLK) 
@@ -363,7 +371,30 @@ module CSR_FILE (
         
         
         //exception/interupt finding combo
-        if( meie & MEIP) begin
+        
+        if(LD_ACC_FAULT) begin
+            ecode_reg     =   31'd5    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ; 
+        end
+        
+        else if(STORE_ACC_FAULT) begin 
+            ecode_reg     =   31'd7    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ; 
+        end
+
+        else if(LD_PAGE_FAULT) begin 
+            ecode_reg     =   31'd13    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ; 
+        end
+        else if(STORE_PAGE_FAULT) begin
+            ecode_reg     =   31'd15    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ; 
+        end
+        else if( meie & MEIP) begin
             ecode_reg     =   31'd11   ;
             interrupt     =   1'b1     ;    
             exception     =   1'b0     ;
@@ -409,6 +440,18 @@ module CSR_FILE (
             interrupt     =   1'b1     ;
             exception     =   1'b0     ; 
         end
+        
+        else if(INS_PAGE_FAULT) begin
+            ecode_reg     =   31'd12    ;
+            interrupt     =   1'b1     ; 
+        end
+        else if(INS_ACC_FAULT) begin
+            ecode_reg     =   31'd1    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ; 
+        end
+        
+        
         else if(CSR_CNT == sys_ecall  && curr_prev == mmode) begin
             ecode_reg     =   31'd11   ;
             interrupt     =   1'b0     ;
@@ -424,6 +467,11 @@ module CSR_FILE (
             interrupt     =   1'b0     ;
             exception     =   1'b1     ; 
         end
+        else if (ILL_INS|illegal_access) begin
+            ecode_reg     =   31'd2    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ;        
+        end
         else if(CSR_CNT == sys_ebreak) begin
             ecode_reg     =   31'd3    ;
             interrupt     =   1'b0     ;
@@ -434,23 +482,8 @@ module CSR_FILE (
             interrupt     =   1'b0     ;
             exception     =   1'b1     ; 
         end
-        else if(INS_ACC_FAULT) begin
-            ecode_reg     =   31'd1    ;
-            interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
-        end
-        else if (ILL_INS|illegal_access) begin
-            ecode_reg     =   31'd2    ;
-            interrupt     =   1'b0     ;
-            exception     =   1'b1     ;        
-        end
         else if (LD_ADDR_MISSALIG) begin
             ecode_reg     =   31'd4    ;
-            interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
-        end
-        else if(LD_ACC_FAULT) begin
-            ecode_reg     =   31'd5    ;
             interrupt     =   1'b0     ;
             exception     =   1'b1     ; 
         end
@@ -459,25 +492,7 @@ module CSR_FILE (
             interrupt     =   1'b0     ;
             exception     =   1'b1     ; 
         end
-        else if(STORE_ACC_FAULT) begin 
-            ecode_reg     =   31'd7    ;
-            interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
-        end
-        else if(INS_PAGE_FAULT) begin
-            ecode_reg     =   31'd12    ;
-            interrupt     =   1'b1     ; 
-        end
-        else if(LD_PAGE_FAULT) begin 
-            ecode_reg     =   31'd13    ;
-            interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
-        end
-        else if(STORE_PAGE_FAULT) begin
-            ecode_reg     =   31'd15    ;
-            interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
-        end
+
         else begin
             ecode_reg     =   31'd0     ;     //Must think of default ecode value
             interrupt     =   1'b0     ; 
@@ -709,31 +724,46 @@ module CSR_FILE (
             misa_reg<=0;
             misa_reg[63:62] <=2'b10;
             {misa_reg[0],misa_reg[8],misa_reg[13],misa_reg[12],misa_reg[18],misa_reg[20]}<=-1;
-                                                                                                                      
+             err_addr <= 0;                                                                                                         
                                                                                                                               
                                                                                                                               
 
         end
-        else if (!PROC_IDLE)
-        begin
-        `ifdef PC_PRINT
-            if(PC>=64'h206dc && PC <=64'h20720)
-            
-                $display("%h %h",PC,ERR_ADDR,$time);
-        `endif
+        else if (!PROC_IDLE) begin
+      
             //external interupts >> software interupts >> timer interupts >> synchornous traps
+            err_addr <=ERR_ADDR;
             minsret_reg <= minsret_reg + 1'b1   ;
             if(interrupt_final|exception) begin
                 if(handling_priviledge==mmode) begin
                     mpp <= curr_prev;
                     mpie <= m_ie;
-                    mepc_reg <= PC;
+                    
                     mpie <=0;
                     curr_prev <= mmode;
                     mecode_reg <= ecode_reg;
                     minterrupt <= interrupt_final;
-                    if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) 
+
+                    if(LD_ACC_FAULT|LD_PAGE_FAULT) begin
+                        mepc_reg <= PC_EX_MEM1;
+                    end
+                    else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
                         mtval_reg <= ERR_ADDR;
+                        mepc_reg <= PC;
+                    end
+                    else if(INS_ADDR_MISSALIG) begin
+                        mtval_reg <= JUMP_ADD;
+                        mepc_reg <= PC;
+                    end
+                    else if(ILL_INS|illegal_access) begin
+                        mtval_reg <=INS_FB_EX;
+                        mepc_reg <= PC;
+                    end
+                    else begin
+                        mtval_reg<=0;
+                        mepc_reg <=PC;
+                    end
+
 
                 end
                 else if (handling_priviledge==smode) begin
@@ -744,11 +774,27 @@ module CSR_FILE (
                     curr_prev <= smode;
                     secode_reg <= ecode_reg;
                     sinterrupt <= interrupt_final;
-                    if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) 
+                    if(LD_ACC_FAULT|LD_PAGE_FAULT) begin
+                        sepc_reg <= PC_EX_MEM1;
+                    end
+                    else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
                         stval_reg <= ERR_ADDR;
-
-
-                end
+                        sepc_reg <= PC;
+                    end
+                    else if(INS_ADDR_MISSALIG) begin
+                        stval_reg <= JUMP_ADD;
+                        sepc_reg <= PC;
+                    end
+                    else if(ILL_INS|illegal_access) begin
+                        stval_reg <=INS_FB_EX;
+                        sepc_reg <= PC;
+                    end
+                    else begin
+                        stval_reg<=0;
+                        sepc_reg <=PC;
+                    end
+                 
+                end   
                 else begin
                     upie <= u_ie;
                     uepc_reg <= PC;
@@ -756,9 +802,26 @@ module CSR_FILE (
                     curr_prev <= umode;
                     uecode_reg <= ecode_reg ;
                     sinterrupt <= interrupt_final;
-                    if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) 
+                    if(LD_ACC_FAULT|LD_PAGE_FAULT) begin
+                        uepc_reg <= PC_EX_MEM1;
+                        utval_reg <= err_addr;
+                    end
+                    else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
                         utval_reg <= ERR_ADDR;
-
+                        uepc_reg <= PC; 
+                    end
+                    else if(INS_ADDR_MISSALIG) begin
+                        utval_reg <= JUMP_ADD;
+                        uepc_reg <= PC;
+                    end
+                    else if(ILL_INS|illegal_access) begin
+                        utval_reg <=INS_FB_EX;
+                        uepc_reg <= PC;
+                    end
+                    else begin
+                        utval_reg<=0;
+                        uepc_reg <=PC;
+                    end
 
                 end
             end
@@ -781,8 +844,7 @@ module CSR_FILE (
                 u_ie     <= upie;
 
             end
-            else 
-            begin
+            else begin
                 case (CSR_ADDRESS)
                     ustatus         :   {upie,u_ie}         <=  {
                                                                 input_data_final[4]         ,
@@ -876,13 +938,16 @@ module CSR_FILE (
                     default        :    ; 
                 endcase
             end
-        end
+    end
         
      
     end
     
     assign  PRIV_JUMP       = exception | (CSR_CNT==sys_uret) | (CSR_CNT==sys_sret) | (CSR_CNT==sys_mret) | (interrupt_final)  ;
-        
+    assign  MPP             =mpp;
+    assign  CURR_PREV       =curr_prev;
+    assign SATP = satp_r;
+    assign MPRV = mprv;
 endmodule
 
                      

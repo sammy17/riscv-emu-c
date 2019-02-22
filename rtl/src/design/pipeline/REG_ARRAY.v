@@ -35,8 +35,8 @@ module REG_ARRAY(
    
     reg [63:0] REGISTER [1:31];
      // to check wether t1he register write back is still in pipeline
-    reg [63:0] RS1_DATAOUT_L=0;
-    reg [63:0] RS2_DATAOUT_L=0;
+    reg [63:0] RS1_DATAOUT_L;
+    reg [63:0] RS2_DATAOUT_L;
  
     integer i;
  

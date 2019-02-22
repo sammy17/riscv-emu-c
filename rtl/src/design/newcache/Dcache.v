@@ -31,7 +31,9 @@ module Dcache
         output reg  [address_width - offset_width-1:0] WADDR_TO_L2    ,
         input                         WRITE_DONE ,
         input           [4:0]         AMO,
-        input OP32
+        input OP32,
+        input PAGE_FAULT,
+        input ACCESS_FAULT
 
     );
     `include "PipelineParams.vh"
@@ -44,6 +46,15 @@ module Dcache
     reg op32_d1;
     reg op32_d2;
     reg op32_d3;
+   reg page_fault_d2;
+    reg page_fault_d3;
+    reg page_fault_d4;
+
+    reg access_fault_d2;
+    reg access_fault_d3;
+    reg access_fault_d4;
+    wire [1:0] fault_type;
+
     reg  [address_width- offset_width -1:0] addr_reg             ;
     reg  [1:0]               control_d0          ;
     reg  [1:0]               control_d1          ;
@@ -219,7 +230,7 @@ module Dcache
         end
         else if (cache_ready & ADDR_VALID) begin
             addr_d0  <= ADDR;
-            addr_d1  <= addr_d0;
+            addr_d1  <= ADDR;
             addr_d2  <= addr_d1 ;
             addr_d3  <= addr_d2 ;
             addr_d4 <= addr_d3;
@@ -253,6 +264,14 @@ module Dcache
             op32_d1 <=op32_d0;
             op32_d2 <= op32_d1;
             op32_d3 <= op32_d2;
+
+            access_fault_d2 <= ACCESS_FAULT;
+            access_fault_d3 <= access_fault_d2;
+            access_fault_d4 <= access_fault_d3;
+
+            page_fault_d2 <= PAGE_FAULT;
+            page_fault_d3 <= page_fault_d2;
+            page_fault_d4 <= page_fault_d3;
 
         end
     
@@ -322,7 +341,7 @@ module Dcache
             cache_porta_data_in     <= 0        ;
             flush_addr              <= -1        ;
         end
-        else if (cache_ready & control_d3 == 2'b10 )
+        else if (cache_ready & control_d3 == 2'b10 &ADDR_VALID & !access_fault_d4 & !page_fault_d4)
         begin
             cache_porta_wren      <= 1;
             cache_porta_data_in  <=  cache_porta_data_in_int;
@@ -635,7 +654,7 @@ module Dcache
     assign tag_porta_raddr      = cache_porta_raddr                                         ;
     assign state_raddr          = cache_porta_raddr                                         ;
     assign tag_addr             = addr_d3[address_width-1:offset_width+line_width]          ;
-    assign cache_ready          =  ((((tag_porta_data_out == tag_addr) & state  & ~writing ) | (control_d3!==2'b01 & control_d3!==2'b10) )) & (~flush_d3| ~full_state)  & ~writing  ;
+    assign cache_ready          =  (((((tag_porta_data_out == tag_addr) & state  & ~writing ) | (control_d3!==2'b01 & control_d3!==2'b10)|access_fault_d4|page_fault_d4 )) & (~flush_d3| ~full_state)  & ~writing ) ;
     assign ADDR_TO_L2_VALID     = addr_to_l2_valid                                          ;
     assign ADDR_TO_L2           = addr_to_l2                                                ;
     

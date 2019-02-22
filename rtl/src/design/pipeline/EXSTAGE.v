@@ -66,12 +66,22 @@ module EXSTAGE(
     output                  FENCE_OUT             ,
     input        [4:0]      AMO_OP_in,
     output        [4:0]      AMO_OP_out,
-    input        [63:0]     INS_FB_EX,
+    input        [31:0]     INS_FB_EX,
     input                   ILEGAL,
     input                   OPS_32,
     output                  OP_32_out,
-    input [2:0] LDST_TYPE
-    
+    input [2:0] LDST_TYPE,
+    input           PAGE_FAULT_INS,
+    input           PAGE_FAULT_DAT,
+    input           ACCESS_FAULT_INS,
+    input           ACCESS_FAULT_DAT,
+    input [1:0]     FAULT_TYPE,
+    output      [1:0]   MPP,
+    output              MPRV,
+    output              CURR_PREV,
+    output   [63:0]     SATP,
+    input [63:0] PC_EX_MEM1
+     
     );
     //     reg        comp_out;
      wire [63:0] wb_data;
@@ -100,6 +110,7 @@ module EXSTAGE(
     reg         cache_ready_fb    ;
     reg         cache_ready_ex  ;
     reg         cache_ready_ex2   ;
+    reg         cbranch             ;
     
        
     integer j;   
@@ -107,7 +118,7 @@ module EXSTAGE(
     reg         comp_out [0:7]      ;
     reg  [ 3:0] alu_cnt=alu_idle    ;
     reg  [ 2:0] fun3=no_branch      ;
-    
+    wire [63:0] jump_addr_for_non_priv_branch = (JUMP_BUS1+JUMP_BUS2);
     initial
     begin
         for (j=0; j<=15 ; j = j+1)
@@ -205,15 +216,35 @@ module EXSTAGE(
         .MSIP(MSIP)  ,
         .RST(RST)   ,
         .ILL_INS(ILEGAL)   ,
-        .INS_ADDR_MISSALIG(1'b0),
-        .INS_ACC_FAULT(1'b0),
-        .LD_ACC_FAULT(1'b0),
+        .INS_ADDR_MISSALIG((cbranch ? comp_out_w :jump_reg|jumpr_reg )? &jump_addr_for_non_priv_branch[1:0]: 0),
+
+
+        .INS_ACC_FAULT(ACCESS_FAULT_INS),
+        .INS_PAGE_FAULT(PAGE_FAULT_INS),
+
+
+
+        .LD_ACC_FAULT(ACCESS_FAULT_DAT & (FAULT_TYPE==1)),
+        .LD_PAGE_FAULT(PAGE_FAULT_DAT & (FAULT_TYPE==1)),
+
         .LD_ADDR_MISSALIG(load_mis_al),
         .STORE_ADDR_MISSALIG(store_mis_al),
-        .INS_PAGE_FAULT(1'b0),
-        .LD_PAGE_FAULT(1'b0),
-        .STORE_PAGE_FAULT(1'b0),
-        .ERR_ADDR(wb_data)
+
+
+
+
+        .STORE_PAGE_FAULT(PAGE_FAULT_DAT & (FAULT_TYPE==2)),
+        .STORE_ACC_FAULT(ACCESS_FAULT_DAT & (FAULT_TYPE==2)),
+
+
+        .ERR_ADDR(wb_data),
+        .MPRV(MPRV),
+        .SATP(SATP),
+        .CURR_PREV(CURR_PREV),
+        .MPP(MPP),
+        .PC_EX_MEM1(pc_ex_mem1),
+        .JUMP_ADD(jump_addr_for_non_priv_branch),
+        .INS_FB_EX(INS_FB_EX)
 
         );
         
@@ -247,7 +278,6 @@ rv64m
         
     wire        comp_out_w          ; 
                  
-    reg         cbranch             ;
     reg  [1:0]  data_cache_control  ;
     reg         flush_out           ;
     
