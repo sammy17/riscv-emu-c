@@ -231,13 +231,13 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-        //    cout << "PC : "<< hex << PC << endl;
+            cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
         //cout << "mstatus.mpp : "<<(uint_t)mstatus.mpp<<endl;
 
-        //cout << "sp : "<<reg_file.at(2)<<endl;
+        cout << "sp : "<<reg_file.at(2)<<endl;
 
         //cout << "PRIV : "<< (uint_t)cp<<endl;
 
@@ -511,13 +511,16 @@ int main(){
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
-                    if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
+                    /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         cout << "Mem access exception : "<<hex<<store_addr<<endl;
                         mtval = store_addr;
-                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   
+                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   //access excep should be handled by translate function
                     }
-                    else {
-                        store_addr_phy = translate(store_addr, STOR, cp);
+                    else {*/
+                    store_addr_phy = translate(store_addr, STOR, cp);
+                    if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
+                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                    }else{
                         if (store_addr_phy==-1){
                             cout << "Page fault exception"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
@@ -562,23 +565,10 @@ int main(){
                             mtval = store_addr;
                         }else {
                             memory.at(store_addr_phy/8) = wb_data;
-                            if (PC==(0x20fcc+4)){
-                            cout << "sd : "<<wb_data<<endl;
-                            cout << "sd addr : "<<store_addr<<endl;
-                            cout << "a0 : "<<reg_file.at(10)<<endl;
-                        }
                         }
                     }
 
-                } /*
-                else if(store_addr == MTIME_ADDR){
-                    val = reg_file[rs2] ;
-                    mtime = val ;
-                }
-                else if(store_addr == MTIMECMP_ADDR){
-                    val = reg_file[rs2] ;
-                    mtimecmp = val ;
-                }*/
+                } 
                 else if(store_addr == FIFO_ADDR_TX){
                     #ifdef DEBUG
                         printf("STORE2\n");
@@ -594,12 +584,6 @@ int main(){
                 switch(func3){
                     case 0b000 :
                         wb_data = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12); //ADDI
-                        if (PC==(0x20fc0+4)){
-                            cout << "reg_file[rs1] : "<<reg_file[rs1]<<endl;
-                            cout << "imm11_0 : "<<imm11_0<<endl;
-                            cout << "wb_data : "<<wb_data<<endl;
-                            cout << "rd : "<<rd<<endl;
-                        }
                         break;
 
                     case 0b010 :

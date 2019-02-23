@@ -11,16 +11,16 @@
 void trap_entry();
 void pop_tf(trapframe_t*);
 
-volatile uint64_t tohost;
-volatile uint64_t fromhost;
-
+//volatile uint64_t tohost;
+//volatile uint64_t fromhost;
+/*
 static void do_tohost(uint64_t tohost_value)
 {
   while (tohost)
     fromhost = 0;
   tohost = tohost_value;
 }
-
+*/
 #define pa2kva(pa) ((void*)(pa) - DRAM_BASE - MEGAPAGE_SIZE)
 #define uva2kva(pa) ((void*)(pa) - MEGAPAGE_SIZE)
 
@@ -32,9 +32,11 @@ static uint64_t lfsr63(uint64_t x)
   return (x >> 1) | (bit << 62);
 }
 
-static void cputchar(int x)
+static void cputchar(int x) //edited this to put our own print char function
 {
-  do_tohost(0x0101000000000000 | (unsigned char)x);
+  volatile int *c = (int *)0xe000102c;
+  while ((*c&16)==16);
+  *(int*) 0xe0001030= x;
 }
 
 static void cputstring(const char* s)
@@ -45,7 +47,7 @@ static void cputstring(const char* s)
 
 static void terminate(int code)
 {
-  do_tohost(code);
+  cputchar(code);
   while (1);
 }
 

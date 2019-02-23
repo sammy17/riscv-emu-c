@@ -14,8 +14,7 @@
 
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
-
-init:  
+ 
 	addi	sp,sp,-32
 	sd	t4,8(sp)
 	sd	t5,16(sp)
