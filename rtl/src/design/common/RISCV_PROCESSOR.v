@@ -217,7 +217,7 @@ module RISCV_PROCESSOR#(
     );
     wire      [1:0]   MPP;
     wire              MPRV;
-    wire              CURR_PREV;
+    wire   [1:0]          CURR_PREV;
     wire   [63:0]     SATP;
     wire page_fault_ins;
     wire page_fault_dat;

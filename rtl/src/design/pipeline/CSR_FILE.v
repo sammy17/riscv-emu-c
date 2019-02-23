@@ -73,7 +73,7 @@ module CSR_FILE (
     output reg          TW              ,
     output      [1:0]   MPP,
     output              MPRV,
-    output              CURR_PREV,
+    output   [1:0]           CURR_PREV,
     output   [63:0]     SATP,
     input [63:0]   PC_EX_MEM1,
     input [63:0]   JUMP_ADD,
@@ -609,8 +609,7 @@ module CSR_FILE (
             end
             
         end
-        if(interrupt_final)
-        begin
+        if(interrupt_final)  begin
             if(handling_priviledge==mmode) begin
                 if (mt_mode==2'b1) begin
                     PRIV_JUMP_ADD = {mt_base,2'b0}+4*ecode_reg;
@@ -724,7 +723,8 @@ module CSR_FILE (
             misa_reg<=0;
             misa_reg[63:62] <=2'b10;
             {misa_reg[0],misa_reg[8],misa_reg[13],misa_reg[12],misa_reg[18],misa_reg[20]}<=-1;
-             err_addr <= 0;                                                                                                         
+             err_addr <= 0;  
+             uepc_reg <=0;                                                                                                       
                                                                                                                               
                                                                                                                               
 
@@ -739,15 +739,15 @@ module CSR_FILE (
                     mpp <= curr_prev;
                     mpie <= m_ie;
                     
-                    mpie <=0;
+                    m_ie <=0;
                     curr_prev <= mmode;
                     mecode_reg <= ecode_reg;
                     minterrupt <= interrupt_final;
 
-                    if(LD_ACC_FAULT|LD_PAGE_FAULT) begin
+                    if(LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT) begin
                         mepc_reg <= PC_EX_MEM1;
                     end
-                    else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
+                    else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG ) begin
                         mtval_reg <= ERR_ADDR;
                         mepc_reg <= PC;
                     end
@@ -770,11 +770,11 @@ module CSR_FILE (
                     spp <= curr_prev;
                     spie <= s_ie;
                     sepc_reg <= PC;
-                    spie <=0;
+                    s_ie <=0;
                     curr_prev <= smode;
                     secode_reg <= ecode_reg;
                     sinterrupt <= interrupt_final;
-                    if(LD_ACC_FAULT|LD_PAGE_FAULT) begin
+                    if((LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT)) begin
                         sepc_reg <= PC_EX_MEM1;
                     end
                     else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
@@ -798,11 +798,11 @@ module CSR_FILE (
                 else begin
                     upie <= u_ie;
                     uepc_reg <= PC;
-                    upie <=0;
+                    u_ie <=0;
                     curr_prev <= umode;
                     uecode_reg <= ecode_reg ;
                     sinterrupt <= interrupt_final;
-                    if(LD_ACC_FAULT|LD_PAGE_FAULT) begin
+                    if((LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT)) begin
                         uepc_reg <= PC_EX_MEM1;
                         utval_reg <= err_addr;
                     end

@@ -78,7 +78,7 @@ module EXSTAGE(
     input [1:0]     FAULT_TYPE,
     output      [1:0]   MPP,
     output              MPRV,
-    output              CURR_PREV,
+    output     [1:0]         CURR_PREV,
     output   [63:0]     SATP,
     input [63:0] PC_EX_MEM1
      
