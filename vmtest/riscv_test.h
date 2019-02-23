@@ -10,7 +10,7 @@
 //-----------------------------------------------------------------------
 
 #undef RVTEST_FP_ENABLE
-#define RVTEST_FP_ENABLE fssr x0
+#define RVTEST_FP_ENABLE csrrw x0, fcsr, rs
 
 #undef RVTEST_CODE_BEGIN
 #define RVTEST_CODE_BEGIN                                               \

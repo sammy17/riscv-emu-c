@@ -1,9 +1,7 @@
+// See LICENSE for license details.
 
-#include "firmware.h"
-
-#ifndef _ENV_RV32_TEST_H
-#define _ENV_RV32_TEST_H
-
+#ifndef _ENV_PHYSICAL_SINGLE_CORE_H
+#define _ENV_PHYSICAL_SINGLE_CORE_H
 
 #include "encoding.h"
 
@@ -65,7 +63,7 @@
   .align 2;                                                             \
 1:
 
-#define INIT_SATP                                                       \
+#define INIT_SATP                                                      \
   la t0, 1f;                                                            \
   csrw mtvec, t0;                                                       \
   csrwi sptbr, 0;                                                       \
@@ -107,69 +105,111 @@
 
 #define INTERRUPT_HANDLER j other_exception /* No interrupts should occur */
 
+#define RVTEST_CODE_BEGIN                                               \
+        .section .text.init;                                            \
+        .align  6;                                                      \
+        .weak stvec_handler;                                            \
+        .weak mtvec_handler;                                            \
+        .globl _start;                                                  \
+_start:                                                                 \
+        /* reset vector */                                              \
+        j reset_vector;                                                 \
+        .align 2;                                                       \
+trap_vector:                                                            \
+        /* test whether the test came from pass/fail */                 \
+        csrr t5, mcause;                                                \
+        li t6, CAUSE_USER_ECALL;                                        \
+        beq t5, t6, write_tohost;                                       \
+        li t6, CAUSE_SUPERVISOR_ECALL;                                  \
+        beq t5, t6, write_tohost;                                       \
+        li t6, CAUSE_MACHINE_ECALL;                                     \
+        beq t5, t6, write_tohost;                                       \
+        /* if an mtvec_handler is defined, jump to it */                \
+        la t5, mtvec_handler;                                           \
+        beqz t5, 1f;                                                    \
+        jr t5;                                                          \
+        /* was it an interrupt or an exception? */                      \
+  1:    csrr t5, mcause;                                                \
+        bgez t5, handle_exception;                                      \
+        INTERRUPT_HANDLER;                                              \
+handle_exception:                                                       \
+        /* we don't know how to handle whatever the exception was */    \
+  other_exception:                                                      \
+        /* some unhandlable exception occurred */                       \
+  1:    ori TESTNUM, TESTNUM, 1337;                                     \
+  write_tohost:                                                         \
+        sw TESTNUM, tohost, t5;                                         \
+        j write_tohost;                                                 \
+reset_vector:                                                           \
+        RISCV_MULTICORE_DISABLE;                                        \
+        INIT_SATP;                                                     \
+        INIT_PMP;                                                       \
+        DELEGATE_NO_TRAPS;                                              \
+        li TESTNUM, 0;                                                  \
+        la t0, trap_vector;                                             \
+        csrw mtvec, t0;                                                 \
+        CHECK_XLEN;                                                     \
+        /* if an stvec_handler is defined, delegate exceptions to it */ \
+        la t0, stvec_handler;                                           \
+        beqz t0, 1f;                                                    \
+        csrw stvec, t0;                                                 \
+        li t0, (1 << CAUSE_LOAD_PAGE_FAULT) |                           \
+               (1 << CAUSE_STORE_PAGE_FAULT) |                          \
+               (1 << CAUSE_FETCH_PAGE_FAULT) |                          \
+               (1 << CAUSE_MISALIGNED_FETCH) |                          \
+               (1 << CAUSE_USER_ECALL) |                                \
+               (1 << CAUSE_BREAKPOINT);                                 \
+        csrw medeleg, t0;                                               \
+        csrr t1, medeleg;                                               \
+        bne t0, t1, other_exception;                                    \
+1:      csrwi mstatus, 0;                                               \
+        init;                                                           \
+        EXTRA_INIT;                                                     \
+        EXTRA_INIT_TIMER;                                               \
+        la t0, 1f;                                                      \
+        csrw mepc, t0;                                                  \
+        csrr a0, mhartid;                                               \
+        mret;                                                           \
+1:
+
 //-----------------------------------------------------------------------
 // End Macro
 //-----------------------------------------------------------------------
 
+#define RVTEST_CODE_END                                                 \
+        unimp
 
-#ifndef TEST_FUNC_NAME
-#  define TEST_FUNC_NAME mytest
-#  define TEST_FUNC_TXT "mytest"
-#  define TEST_FUNC_RET mytest_ret
-#endif
+//-----------------------------------------------------------------------
+// Pass/Fail Macro
+//-----------------------------------------------------------------------
 
-#define TESTNUM x31
+#define RVTEST_PASS                                                     \
+        fence;                                                          \
+        li TESTNUM, 1;                                                  \
+        ecall
 
-#define RVTEST_CODE_BEGIN   \
-  .text;        \
-  .global TEST_FUNC_NAME;   \
-  .global TEST_FUNC_RET;    \
-TEST_FUNC_NAME:       \
-  lui a0,%hi(.test_name); \
-  addi  a0,a0,%lo(.test_name);  \
-.prname_next:       \
-  li sp, STACK_POINTER; \
-  jal ra, printf_s
-.test_name:       \
-  .ascii TEST_FUNC_TXT;   \
-  .byte 0x00;     \
-  .balign 4;
+#define TESTNUM gp
+#define RVTEST_FAIL                                                     \
+        fence;                                                          \
+1:      beqz TESTNUM, 1b;                                               \
+        sll TESTNUM, TESTNUM, 1;                                        \
+        or TESTNUM, TESTNUM, 1;                                         \
+        ecall
 
-#define RVTEST_PASS     \
-  addi  a0,zero,'O';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'K';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'\n';   \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  jal zero,TEST_FUNC_RET;
+//-----------------------------------------------------------------------
+// Data Section Macro
+//-----------------------------------------------------------------------
 
-#define RVTEST_FAIL     \
-  addi  a0,zero,'E';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'R';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'O';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  li sp, STACK_POINTER; \
-  addi  a0,zero,'R';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'\n';   \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  jal zero,TEST_FUNC_RET;
+#define EXTRA_DATA
 
-#define RVTEST_CODE_END
-#define RVTEST_DATA_BEGIN .balign 4;
-#define RVTEST_DATA_END
+#define RVTEST_DATA_BEGIN                                               \
+        EXTRA_DATA                                                      \
+        .pushsection .tohost,"aw",@progbits;                            \
+        .align 6; .global tohost; tohost: .dword 0;                     \
+        .align 6; .global fromhost; fromhost: .dword 0;                 \
+        .popsection;                                                    \
+        .align 4; .global begin_signature; begin_signature:
+
+#define RVTEST_DATA_END .align 4; .global end_signature; end_signature:
 
 #endif

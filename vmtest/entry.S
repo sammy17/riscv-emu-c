@@ -14,6 +14,7 @@
 
   .section ".text.init","ax",@progbits
   .globl _start
+  .global userstart;
 _start:
   j handle_reset
 
@@ -23,6 +24,7 @@ nmi_vector:
 
 trap_vector:
   j wtf
+
 
 handle_reset:
   la t0, trap_vector

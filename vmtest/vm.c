@@ -6,6 +6,8 @@
 
 #include "riscv_test.h"
 
+#define ENTROPY 0xf21e02b
+
 void trap_entry();
 void pop_tf(trapframe_t*);
 
@@ -175,7 +177,7 @@ void handle_trap(trapframe_t* tf)
     assert(tf->epc % 4 == 0);
 
     int* fssr;
-    asm ("jal %0, 1f; fssr x0; 1:" : "=r"(fssr));
+    asm ("jal %0, 1f; csrrw x0, fcsr, x0; 1:" : "=r"(fssr));
 
     if (*(int*)tf->epc == *fssr)
       terminate(1); // FP test on non-FP hardware.  "succeed."
