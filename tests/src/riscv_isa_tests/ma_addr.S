@@ -24,7 +24,7 @@
   #define sret mret
   #define stvec mtvec
   #define stvec_handler3 mtvec_handler3
-  #deine sbadaddr mbadaddr
+  #define sbadaddr mbadaddr
 #endif
 
 RVTEST_RV64M
