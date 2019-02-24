@@ -48,7 +48,33 @@ typedef uint64_t data_t;
 #define CAUSE_LOAD_PAGE_FAULT 0xd
 #define CAUSE_STORE_PAGE_FAULT 0xf
 
+#define CAUSE_USER_SOFT_INT 0x0
+#define CAUSE_SUPERVISOR_SOFT_INT 0x1
 
+#define CAUSE_MACHINE_SOFT_INT 0x3
+#define CAUSE_USER_TIMER_INT 0x4
+#define CAUSE_SUPERVISOR_TIMER_INT 0x5
+
+#define CAUSE_MACHINE_TIMER_INT 0x7
+#define CAUSE_USER_EXT_INT 0x8
+#define CAUSE_SUPERVISOR_EXT_INT 0x9
+
+#define CAUSE_MACHINE_EXT_INT 0xb
+
+
+
+bool INS_ADDR_MISSALIG   = false; //instruction address miss
+bool INS_ACC_FAULT       = false; //instruction access fault
+bool ILL_INS             = false; //illegal instruction
+bool EBREAK               = false; //break point
+bool LD_ADDR_MISSALIG    = false; //load address misalignmen
+bool LD_ACC_FAULT        = false; //load access fault
+bool STORE_ADDR_MISSALIG = false; //store/amo address misali
+bool STORE_ACC_FAULT     = false; //store/amo access fault
+bool INS_PAGE_FAULT      = false; //instructioin page fault
+bool LD_PAGE_FAULT       = false; //load page fault
+bool STORE_PAGE_FAULT    = false; //store/amo page fault
+bool ECALL               = false;
 enum plevel_t {
     MMODE = 0b11,
     HMODE = 0b10,

@@ -375,13 +375,13 @@ module CSR_FILE (
         if(LD_ACC_FAULT) begin
             ecode_reg     =   31'd5    ;
             interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
+            exception     =   1'b1     ;
         end
         
         else if(STORE_ACC_FAULT) begin 
             ecode_reg     =   31'd7    ;
             interrupt     =   1'b0     ;
-            exception     =   1'b1     ; 
+            exception     =   1'b1     ;
         end
 
         else if(LD_PAGE_FAULT) begin 

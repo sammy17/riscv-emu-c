@@ -306,8 +306,8 @@ uint_t marchid = 0;
 uint_t mimpid = 0;
 
 uint_t mtval = 0;
-uint_t &stval = mtval;
-uint_t &utval = mtval;
+uint_t stval = 0;
+uint_t utval = 0;
 
 uint_t mcounteren = 0;
 uint_t scounteren = 0;
@@ -899,7 +899,7 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
     else if (handling_mode == MMODE)
         ecode = mecode;
 */
-    if (handling_mode == UMODE){
+    if ( handling_mode == UMODE){
         cp = UMODE;
     	ustatus.upie = ustatus.uie;
         ustatus.uie  = 0;
@@ -912,7 +912,7 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
 
         new_PC = utvec.base;   
     }
-    else if (handling_mode == SMODE){
+    else if ( handling_mode == SMODE ){
         mstatus.mpp = (uint_t)cp; // setting both to SMODE
         mstatus.spp = (uint_t)cp;
         cp = SMODE;
@@ -921,14 +921,12 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         scause.interrupt = 0;
         scause.ecode = ecode;
         sepc = PC-4;
-
-
         //cout << "handling in smode "<<ecode<<endl;
 
         new_PC = stvec.base; 
     }
-    else if (handling_mode == MMODE){
-        //cout << "excep MMODE : " << mtvec.base << endl;
+    else if ( handling_mode == MMODE ){
+    //cout << "excep MMODE : " << mtvec.base << endl;
         mstatus.mpp = (uint_t)cp;
         cp = MMODE;
     	mstatus.mpie = mstatus.mie;
@@ -941,26 +939,28 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         //    new_PC = 0x3ac0;
         //}
         //else{
-            new_PC = mtvec.base; 
+        new_PC = mtvec.base; 
         //}
     }
-    else 
+    else{ 
     	cout << "Unrecognized mode for excep_function" <<endl;
+        return PC;
+    }
 
 
     return new_PC;
 }
 
-uint_t interrupt_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, plevel_t current_privilage){
+uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
 
     uint_t ecode = 0;
     uint_t new_PC = 0;
 
-    if (current_privilage == UMODE)
+    /*if (current_privilage == UMODE)
         ecode = uecode;
     else if (current_privilage == SMODE)
         ecode = secode;
-    else if (current_privilage == MMODE)
+    else if (current_privilage == MMODE)*/
         ecode = mecode;
 
     plevel_t handling_mode = trap_mode_select(ecode, true, current_privilage);
