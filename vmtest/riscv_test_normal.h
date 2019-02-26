@@ -1,9 +1,7 @@
+// See LICENSE for license details.
 
-#include "firmware.h"
-
-#ifndef _ENV_RV32_TEST_H
-#define _ENV_RV32_TEST_H
-
+#ifndef _ENV_PHYSICAL_SINGLE_CORE_H
+#define _ENV_PHYSICAL_SINGLE_CORE_H
 
 #include "encoding.h"
 
@@ -65,7 +63,7 @@
   .align 2;                                                             \
 1:
 
-#define INIT_SATP                                                       \
+#define INIT_SATP                                                      \
   la t0, 1f;                                                            \
   csrw mtvec, t0;                                                       \
   csrwi sptbr, 0;                                                       \
@@ -107,69 +105,42 @@
 
 #define INTERRUPT_HANDLER j other_exception /* No interrupts should occur */
 
+#define RVTEST_CODE_BEGIN                                               \
+
+
 //-----------------------------------------------------------------------
 // End Macro
 //-----------------------------------------------------------------------
 
+#define RVTEST_CODE_END                                                 \
+        unimp
 
-#ifndef TEST_FUNC_NAME
-#  define TEST_FUNC_NAME mytest
-#  define TEST_FUNC_TXT "mytest"
-#  define TEST_FUNC_RET mytest_ret
-#endif
+//-----------------------------------------------------------------------
+// Pass/Fail Macro
+//-----------------------------------------------------------------------
 
-#define TESTNUM x31
+#define RVTEST_PASS                                                     \
+        fence;                                                          \
+        li TESTNUM, 1;                                                  \
+        ecall
 
-#define RVTEST_CODE_BEGIN   \
-  .text;        \
-  .global TEST_FUNC_NAME;   \
-  .global TEST_FUNC_RET;    \
-TEST_FUNC_NAME:       \
-  lui a0,%hi(.test_name); \
-  addi  a0,a0,%lo(.test_name);  \
-.prname_next:       \
-  li sp, STACK_POINTER; \
-  jal ra, printf_s
-.test_name:       \
-  .ascii TEST_FUNC_TXT;   \
-  .byte 0x00;     \
-  .balign 4;
+#define TESTNUM gp
+#define RVTEST_FAIL                                                     \
+        fence;                                                          \
+1:      beqz TESTNUM, 1b;                                               \
+        sll TESTNUM, TESTNUM, 1;                                        \
+        or TESTNUM, TESTNUM, 1;                                         \
+        ecall
 
-#define RVTEST_PASS     \
-  addi  a0,zero,'O';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'K';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'\n';   \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  jal zero,TEST_FUNC_RET;
+//-----------------------------------------------------------------------
+// Data Section Macro
+//-----------------------------------------------------------------------
 
-#define RVTEST_FAIL     \
-  addi  a0,zero,'E';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'R';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'O';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  li sp, STACK_POINTER; \
-  addi  a0,zero,'R';    \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  addi  a0,zero,'\n';   \
-  li sp, STACK_POINTER; \
-  jal ra, printf_c  ; \
-  jal zero,TEST_FUNC_RET;
+#define EXTRA_DATA
 
-#define RVTEST_CODE_END
-#define RVTEST_DATA_BEGIN .balign 4;
+#define RVTEST_DATA_BEGIN
+
+
 #define RVTEST_DATA_END
 
 #endif

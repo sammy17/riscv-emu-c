@@ -5,20 +5,23 @@
 #include <stdio.h>
 
 #include "riscv_test.h"
+#include "firmware.h"
+
+#define ENTROPY 0xf21e02b
 
 void trap_entry();
 void pop_tf(trapframe_t*);
 
-volatile uint64_t tohost;
-volatile uint64_t fromhost;
-
+//volatile uint64_t tohost;
+//volatile uint64_t fromhost;
+/*
 static void do_tohost(uint64_t tohost_value)
 {
   while (tohost)
     fromhost = 0;
   tohost = tohost_value;
 }
-
+*/
 #define pa2kva(pa) ((void*)(pa) - DRAM_BASE - MEGAPAGE_SIZE)
 #define uva2kva(pa) ((void*)(pa) - MEGAPAGE_SIZE)
 
@@ -30,9 +33,11 @@ static uint64_t lfsr63(uint64_t x)
   return (x >> 1) | (bit << 62);
 }
 
-static void cputchar(int x)
+static void cputchar(int x) //edited this to put our own print char function
 {
-  do_tohost(0x0101000000000000 | (unsigned char)x);
+  volatile int *c = (int *)0xe000102c;
+  while ((*c&16)==16);
+  *(int*) 0xe0001030= x;
 }
 
 static void cputstring(const char* s)
@@ -43,7 +48,7 @@ static void cputstring(const char* s)
 
 static void terminate(int code)
 {
-  do_tohost(code);
+  cputchar(code);
   while (1);
 }
 
@@ -175,7 +180,7 @@ void handle_trap(trapframe_t* tf)
     assert(tf->epc % 4 == 0);
 
     int* fssr;
-    asm ("jal %0, 1f; fssr x0; 1:" : "=r"(fssr));
+    asm ("jal %0, 1f; csrrw x0, fcsr, x0; 1:" : "=r"(fssr));
 
     if (*(int*)tf->epc == *fssr)
       terminate(1); // FP test on non-FP hardware.  "succeed."
@@ -269,5 +274,6 @@ void vm_boot(uintptr_t test_addr)
   trapframe_t tf;
   memset(&tf, 0, sizeof(tf));
   tf.epc = test_addr - DRAM_BASE;
+  tf.gpr[2] = STACK_POINTER;
   pop_tf(&tf);
 }

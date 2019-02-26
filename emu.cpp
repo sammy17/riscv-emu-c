@@ -182,6 +182,8 @@ int main(){
     uint_t LR_count = 0;
     bool csr_bool = false;
 
+    bool write_tval = false;
+
     plevel_t LR_cp64;
     uint_t LR_count64 = 0;
 
@@ -231,7 +233,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-        //    cout << "PC : "<< hex << PC << endl;
+            cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -247,8 +249,11 @@ int main(){
 
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
-            PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            continue;
+            //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
+            cout << "instruction fetch page fault" << endl;
+            INS_PAGE_FAULT = true;
+            mtval = PC;
+            //continue; //exception will not occur if continue is there
         }
 
         instruction = getINST(PC_phy/4,&memory);
@@ -396,23 +401,21 @@ int main(){
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     if (load_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         mtval = load_addr;
-                        PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);   
+                        //PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);  
+                        LD_ACC_FAULT = true; 
                     }
                     else{
                         load_addr_phy = translate(load_addr, LOAD, cp);
                         if (load_addr_phy==-1){
-                            PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
+                            mtval = load_addr;
+                            LD_PAGE_FAULT = true;
                             continue;
                         }
                         load_data = memory.at(load_addr_phy/8);
-                        if (PC==(0x20fbc+4)){
-                            cout << "ld : "<<load_data<<endl;
-                            cout << "ld addr : "<<load_addr<<endl;
-                        }
                         switch(func3){
                             case 0b000 : 
                                 if (!load_byte(load_addr_phy,load_data, wb_data)){
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;                                  
                                 } else {
                                     wb_data = sign_extend<uint_t>(wb_data & (0xFF)      , 8); 
@@ -422,7 +425,7 @@ int main(){
 
                             case 0b001 : 
                                 if (!load_halfw(load_addr_phy,load_data, wb_data)){
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                 } else {
                                     wb_data = sign_extend<uint_t>(wb_data & (0xFFFF)    ,16); 
@@ -432,7 +435,7 @@ int main(){
 
                             case 0b010 : 
                                 if (!load_word(load_addr_phy,load_data, wb_data)){
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                     //cout << "LW"<<endl;
                                 } else {
@@ -443,7 +446,7 @@ int main(){
 
                             case 0b100 : 
                                 if (!load_byte(load_addr_phy,load_data, wb_data)){
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                     //cout << "LBU" <<hex<<load_addr_phy<<endl;
                                 } else {
@@ -454,7 +457,7 @@ int main(){
 
                             case 0b101 : 
                                 if (!load_halfw(load_addr_phy,load_data, wb_data)){
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                     //cout << "LHU"<<endl;
                                 } else {
@@ -465,7 +468,7 @@ int main(){
 
                             case 0b110 : 
                                 if (!load_word(load_addr_phy,load_data, wb_data)){
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                     //cout << "LWU"<<endl;
                                 } else {
@@ -483,7 +486,7 @@ int main(){
                                         cout << "rd val : "<<reg_file[rd]<<endl;
                                     }
                                 } else {
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+                                    LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                     //cout << "LD"<<endl;
                                 }
@@ -511,16 +514,21 @@ int main(){
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
-                    if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
+                    /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         cout << "Mem access exception : "<<hex<<store_addr<<endl;
                         mtval = store_addr;
-                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   
+                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   //access excep should be handled by translate function
                     }
-                    else {
-                        store_addr_phy = translate(store_addr, STOR, cp);
+                    else {*/
+                    store_addr_phy = translate(store_addr, STOR, cp);
+                    if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
+                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                    }else{
                         if (store_addr_phy==-1){
                             cout << "Page fault exception"<<endl;
-                            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+                            //PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+                            STORE_PAGE_FAULT = true;
+                            mtval = store_addr;
                             continue;
                         }
                         store_data = memory.at(store_addr_phy/8);
@@ -558,27 +566,15 @@ int main(){
                         }
                         if (!ls_success){
                             //cout << "Mis-aligned store exception"<<endl;
-                            PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                            //PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                            STORE_ADDR_MISSALIG = true;
                             mtval = store_addr;
                         }else {
                             memory.at(store_addr_phy/8) = wb_data;
-                            if (PC==(0x20fcc+4)){
-                            cout << "sd : "<<wb_data<<endl;
-                            cout << "sd addr : "<<store_addr<<endl;
-                            cout << "a0 : "<<reg_file.at(10)<<endl;
-                        }
                         }
                     }
 
-                } /*
-                else if(store_addr == MTIME_ADDR){
-                    val = reg_file[rs2] ;
-                    mtime = val ;
-                }
-                else if(store_addr == MTIMECMP_ADDR){
-                    val = reg_file[rs2] ;
-                    mtimecmp = val ;
-                }*/
+                } 
                 else if(store_addr == FIFO_ADDR_TX){
                     #ifdef DEBUG
                         printf("STORE2\n");
@@ -594,12 +590,6 @@ int main(){
                 switch(func3){
                     case 0b000 :
                         wb_data = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12); //ADDI
-                        if (PC==(0x20fc0+4)){
-                            cout << "reg_file[rs1] : "<<reg_file[rs1]<<endl;
-                            cout << "imm11_0 : "<<imm11_0<<endl;
-                            cout << "wb_data : "<<wb_data<<endl;
-                            cout << "rd : "<<rd<<endl;
-                        }
                         break;
 
                     case 0b010 :
@@ -858,7 +848,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-LR.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                STORE_ADDR_MISSALIG = true;
+                                mtval = load_addr;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>(wb_data & MASK32,32);
@@ -878,7 +869,8 @@ int main(){
                                 ls_success = store_word(store_addr, load_data, store_data, wb_data);
                                 if (!ls_success){
                                     cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                    PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                    STORE_ADDR_MISSALIG = true;
+                                    mtval = load_addr;
                                     ret_data = 1;
                                 }
                                 else {
@@ -900,7 +892,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -916,7 +909,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -932,7 +926,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -948,7 +943,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -964,7 +960,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -980,7 +977,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -996,7 +994,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -1012,7 +1011,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -1028,7 +1028,8 @@ int main(){
                             ls_success = load_word(load_addr,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
@@ -1042,7 +1043,9 @@ int main(){
                             printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,(uint_t)opcode);
                             bitset<5> ins(amo_op);
                             cout<<  "amo op : "<<ins<<endl;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            //PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            mtval = instruction;
+                            ILL_INS = true;
                             break;   
                     }
                     reg_file[rd] = ret_data;
@@ -1057,6 +1060,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((load_addr%8)!=0){
                                 cout << "AMO-LR.D : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1073,6 +1078,8 @@ int main(){
                                 store_addr = reg_file[rs1];
                                 if ((store_addr%8)!=0){
                                     cout << "AMO-SC.D : Mis-aligned memory access" << endl;
+                                    mtval = load_addr;
+                                    STORE_ADDR_MISSALIG = true;
                                 }
                                 else {
                                     memory.at(store_addr/8) = store_data;
@@ -1091,6 +1098,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1104,6 +1113,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1117,6 +1128,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1130,6 +1143,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1143,6 +1158,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1156,6 +1173,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1169,6 +1188,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1182,6 +1203,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1195,6 +1218,8 @@ int main(){
                             wb_data = memory.at(load_addr/8);
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                mtval = load_addr;
+                                STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = wb_data;
@@ -1227,13 +1252,13 @@ int main(){
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
-                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                                ILL_INS = true;
                             }
                             else if (rd!=0)
                                 reg_file[rd] = csr_data;
                         } else{
                             mtval = instruction;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            ILL_INS = true;
                         }
                         break;
 
@@ -1247,12 +1272,12 @@ int main(){
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
-                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                                ILL_INS = true;
                             } else 
                                 reg_file[rd] = csr_data;
                         } else{
                             mtval = instruction;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            ILL_INS = true;
                         }
                         break;
 
@@ -1266,12 +1291,12 @@ int main(){
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
-                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                                ILL_INS = true;
                             } else 
                                 reg_file[rd] = csr_data;
                         } else{
                             mtval = instruction;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            ILL_INS = true;
                         }
                         break;
 
@@ -1283,13 +1308,13 @@ int main(){
                             csr_bool = csr_write(imm11_0,rs1);
                             if(!csr_bool){
                                 mtval = instruction;
-                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                                ILL_INS = true;
                             }
                             else if (rd!=0)
                                 reg_file[rd] = csr_data;
                         } else{
                             mtval = instruction;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            ILL_INS = true;
                         }
                         break;
 
@@ -1302,12 +1327,12 @@ int main(){
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
-                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                                ILL_INS = true;
                             } else 
                                 reg_file[rd] = csr_data;
                         } else{
                             mtval = instruction;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            ILL_INS = true;
                         }
                         break;
 
@@ -1320,23 +1345,25 @@ int main(){
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
-                                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                                ILL_INS = true;
                             } else 
                                 reg_file[rd] = csr_data;
                         } else{
                             mtval = instruction;
-                            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                            ILL_INS = true;
                         }
                         break;
 
                     case 0b000 : 
                         switch(imm11_0){
                             case 0 : //ecall
-                                PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
+                                ECALL = true;
+                                //PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
                                 break;
 
                             case 1 : //ebreak
-                                PC = excep_function(PC,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,cp);
+                                //PC = excep_function(PC,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,cp);
+                                EBREAK = true;
                                 break;
 
                             case 770 : //mret
@@ -1380,43 +1407,43 @@ int main(){
             case fd1 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                ILL_INS = true;
                 break;
 
             case fd2 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                ILL_INS = true;
                 break;
 
             case fd3 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                ILL_INS = true;
                 break;
 
             case fd4 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                ILL_INS = true;
                 break;
 
             case fd5 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                ILL_INS = true;
                 break;
 
             case fd6 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+                ILL_INS = true;
                 break;
 
             case fd7 :
                 cout << "FD Instructions"<<endl;
                 mtval = instruction;
-                PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp); 
+                ILL_INS = true; 
                 break;
 
             default :
@@ -1439,10 +1466,10 @@ int main(){
             mstatus.sd = 0;
         }
 
-        if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
-            mtval = PC;
-            PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
-        }
+        //if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
+        //    mtval = PC;
+        //    PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
+        //}
 
         if (lPC==PC){
             //infinite loop
@@ -1453,8 +1480,124 @@ int main(){
         //cout << "mtimecmp : "<<mtimecmp<<endl;
         //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
         if (mtime >= mtimecmp){ //timer interrupt
+            mip.MTIP = 0b1 ;
+        }
             //cout << "cp : "<< (uint_t)cp <<endl;
             //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
+
+        //exception/interupt finding combo
+
+        //external interupts >> software interupts >> timer interupts >> synchornous traps
+        
+        if(LD_ACC_FAULT) {
+            LD_ACC_FAULT = false;
+            PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);
+            write_tval = false;
+        }
+        else if(STORE_ACC_FAULT) { 
+            STORE_ACC_FAULT = false;
+            PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);
+            write_tval = false;
+        }
+        else if(LD_PAGE_FAULT) { 
+            LD_PAGE_FAULT = false;
+            PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
+            write_tval = false;
+        }
+        else if(STORE_PAGE_FAULT) {
+            STORE_PAGE_FAULT = false;
+            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+            write_tval = false;
+        }
+        else if( mie.MEIE & mip.MEIP) {
+            PC = interrupt_function(PC, CAUSE_MACHINE_EXT_INT, cp);
+        }
+        else if( mie.MTIE & mip.MTIP) {
+            PC = interrupt_function(PC, CAUSE_MACHINE_TIMER_INT, cp);
+        }
+        else if( mie.MSIE & mip.MSIP) {
+            PC = interrupt_function(PC, CAUSE_MACHINE_SOFT_INT, cp);
+        }
+        else if( mie.SEIE & mip.SEIP) {
+            PC = interrupt_function(PC, CAUSE_SUPERVISOR_EXT_INT, cp);  
+        }
+        else if( mie.STIE & mip.STIP) {
+            PC = interrupt_function(PC, CAUSE_SUPERVISOR_TIMER_INT, cp);
+        }
+        else if( mie.SSIE & mip.SSIP) {
+             PC = interrupt_function(PC, CAUSE_SUPERVISOR_SOFT_INT, cp);
+        }
+        else if( mie.UEIE & mip.UEIP) {
+                PC = interrupt_function(PC, CAUSE_USER_EXT_INT, cp);
+        }
+        else if( mie.UTIE & mip.UTIP) {
+             PC = interrupt_function(PC, CAUSE_USER_TIMER_INT, cp);
+        }
+        else if( mie.USIE & mip.USIP) {
+            PC = interrupt_function(PC, CAUSE_USER_SOFT_INT, cp);
+        }
+        
+        else if(INS_PAGE_FAULT) {
+            INS_PAGE_FAULT = false;
+            cout << "cp : "<<(uint_t)cp<<endl;
+            PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
+            write_tval = true;
+        }
+        else if(INS_ACC_FAULT) {
+            INS_ACC_FAULT = false;
+            PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);
+            write_tval = false;
+        }
+        else if(ECALL) {
+            ECALL = false;
+            PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
+            write_tval = false;
+        }
+        else if (ILL_INS) {
+            ILL_INS = false;
+            PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+            write_tval = true;
+        }
+        else if(EBREAK) {
+            EBREAK = false;
+            PC = excep_function(PC,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,cp);
+            write_tval = false;
+        }
+        else if(INS_ADDR_MISSALIG) {
+            INS_ADDR_MISSALIG = false;
+            PC = excep_function(PC,CAUSE_MISALIGNED_FETCH,CAUSE_MISALIGNED_FETCH,CAUSE_MISALIGNED_FETCH,cp);
+            write_tval = true;
+        }
+        else if (LD_ADDR_MISSALIG) {
+            LD_ADDR_MISSALIG = false;
+            PC = excep_function(PC,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,CAUSE_MISALIGNED_LOAD,cp);
+            write_tval = true;
+        }
+        else if(STORE_ADDR_MISSALIG) {
+            STORE_ADDR_MISSALIG = false;
+            PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+            write_tval = true;
+        }
+
+        if(write_tval){
+            write_tval = false;
+            switch(cp){
+                case MMODE : 
+                    mtval = mtval;
+                    break;
+                case SMODE :
+                    stval = mtval;
+                    mtval = 0;
+                    break;
+                case UMODE :
+                    utval = mtval;
+                    mtval = 0;
+                    break;
+            }
+        }
+
+/*
+        if (mip.MTIP == 0b1){
             switch(cp) {
                 case MMODE : 
                     if ((mie.MTIE == 0b1) & (mstatus.mie==0b1)){
@@ -1483,7 +1626,7 @@ int main(){
                     cout << "illegel mode for timer intterupt"<<endl;
                     break;
             }
-        }
+        }*/
 
     }
 
