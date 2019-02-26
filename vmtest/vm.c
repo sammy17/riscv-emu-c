@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "riscv_test.h"
+#include "firmware.h"
 
 #define ENTROPY 0xf21e02b
 
@@ -273,5 +274,6 @@ void vm_boot(uintptr_t test_addr)
   trapframe_t tf;
   memset(&tf, 0, sizeof(tf));
   tf.epc = test_addr - DRAM_BASE;
+  tf.gpr[2] = STACK_POINTER;
   pop_tf(&tf);
 }

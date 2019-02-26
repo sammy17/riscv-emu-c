@@ -66,7 +66,7 @@ typedef uint64_t data_t;
 bool INS_ADDR_MISSALIG   = false; //instruction address miss
 bool INS_ACC_FAULT       = false; //instruction access fault
 bool ILL_INS             = false; //illegal instruction
-bool EBREAK               = false; //break point
+bool EBREAK              = false; //break point
 bool LD_ADDR_MISSALIG    = false; //load address misalignmen
 bool LD_ACC_FAULT        = false; //load access fault
 bool STORE_ADDR_MISSALIG = false; //store/amo address misali
