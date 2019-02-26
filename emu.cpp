@@ -18,6 +18,9 @@ using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
+    vector<uint_t> memory(1<<MEM_SIZE); // main memory
+
+
 
 //#define DEBUG
 
@@ -137,7 +140,6 @@ uint_t getINST(uint_t PC,vector<uint_t> * memory){
 
 int main(){
 
-    vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
     vector<uint_t> reg_file(32);       // register file
 
@@ -229,7 +231,7 @@ int main(){
     memory.at(MTIME_ADDR/8) = 0;
     memory.at(MTIMECMP_ADDR/8) = 0;
     
-    while (PC < ((1llu)<<MEM_SIZE)){
+    while (1){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
@@ -253,6 +255,23 @@ int main(){
             cout << "instruction fetch page fault" << endl;
             INS_PAGE_FAULT = true;
             mtval = PC;
+            PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
+            write_tval = false;
+            switch(cp){
+                case MMODE : 
+                    mtval = mtval;
+                    break;
+                case SMODE :
+                    stval = mtval;
+                    mtval = 0;
+                    break;
+                case UMODE :
+                    utval = mtval;
+                    mtval = 0;
+                    break;
+        }
+
+        continue;
             //continue; //exception will not occur if continue is there
         }
 
@@ -399,18 +418,18 @@ int main(){
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
-                    if (load_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
-                        mtval = load_addr;
-                        //PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);  
-                        LD_ACC_FAULT = true; 
-                    }
-                    else{
+                    {
                         load_addr_phy = translate(load_addr, LOAD, cp);
                         if (load_addr_phy==-1){
                             mtval = load_addr;
                             LD_PAGE_FAULT = true;
+                               PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
+                                 cout << "Page fault exception load"<<endl; 
                             continue;
                         }
+                         if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
+                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                    }
                         load_data = memory.at(load_addr_phy/8);
                         switch(func3){
                             case 0b000 : 
@@ -525,8 +544,8 @@ int main(){
                         cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
                     }else{
                         if (store_addr_phy==-1){
-                            cout << "Page fault exception"<<endl;
-                            //PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+                            cout << "Page fault exception store"<<endl;
+                            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
                             STORE_PAGE_FAULT = true;
                             mtval = store_addr;
                             continue;
@@ -1494,21 +1513,13 @@ int main(){
             PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);
             write_tval = false;
         }
-        else if(STORE_ACC_FAULT) { 
-            STORE_ACC_FAULT = false;
-            PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);
-            write_tval = false;
-        }
+       
         else if(LD_PAGE_FAULT) { 
             LD_PAGE_FAULT = false;
             PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
             write_tval = false;
         }
-        else if(STORE_PAGE_FAULT) {
-            STORE_PAGE_FAULT = false;
-            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
-            write_tval = false;
-        }
+      
         else if( mie.MEIE & mip.MEIP) {
             PC = interrupt_function(PC, CAUSE_MACHINE_EXT_INT, cp);
         }
@@ -1537,12 +1548,7 @@ int main(){
             PC = interrupt_function(PC, CAUSE_USER_SOFT_INT, cp);
         }
         
-        else if(INS_PAGE_FAULT) {
-            INS_PAGE_FAULT = false;
-            cout << "cp : "<<(uint_t)cp<<endl;
-            PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            write_tval = true;
-        }
+    
         else if(INS_ACC_FAULT) {
             INS_ACC_FAULT = false;
             PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);

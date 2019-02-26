@@ -1,13 +1,13 @@
 src/riscv_isa_tests/remu.o: ../src/riscv_isa_tests/remu.S \
- /home/dean/Linux-ext/newenu/tests/src/riscv_test.h \
- /home/dean/Linux-ext/newenu/tests/src/firmware.h \
- /home/dean/Linux-ext/newenu/tests/src/encoding.h \
- /home/dean/Linux-ext/newenu/tests/src/test_macros.h
+ /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/riscv_test.h \
+ /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/firmware.h \
+ /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/encoding.h \
+ /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/test_macros.h
 
-/home/dean/Linux-ext/newenu/tests/src/riscv_test.h:
+/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/riscv_test.h:
 
-/home/dean/Linux-ext/newenu/tests/src/firmware.h:
+/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/firmware.h:
 
-/home/dean/Linux-ext/newenu/tests/src/encoding.h:
+/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/encoding.h:
 
-/home/dean/Linux-ext/newenu/tests/src/test_macros.h:
+/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/test_macros.h:

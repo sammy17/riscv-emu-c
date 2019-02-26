@@ -1152,6 +1152,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
             pte_addr = a + vir_addr.VPN2 * PTESIZE;
             
             pte2.write_reg(memory.at(pte_addr/8));
+           
             if ( (pte2.V==0) | ( (pte2.R==0) & (pte2.W==1) ) ){ //page fault -validity check failed
                 return -1;
             }
@@ -1185,6 +1186,7 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
 
                     pte0.write_reg(memory.at(pte_addr/8));
                     if ( (pte0.V==0) | ( (pte0.R==0) & (pte0.W==1) ) ){ //page fault -validity check failed
+
                         return -1;
                     }
                     if ( (pte0.R==1) | (pte0.X==1) ){ //pte is a leaf

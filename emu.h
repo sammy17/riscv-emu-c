@@ -83,7 +83,7 @@ enum plevel_t {
 };
 
 
-vector<uint_t> memory(1<<MEM_SIZE); // main memory
+extern vector<uint_t> memory; // main memory
 
 vector<uint_t> reg_file(32);       // register file
 
