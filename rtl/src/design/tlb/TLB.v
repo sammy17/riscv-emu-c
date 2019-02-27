@@ -315,7 +315,7 @@ module Itlb
     assign FAULT_TYPE     = page_fault_comb ? 2: fault_type_reg;
 
     assign PHY_ADDR       = translation_off ? virt_addr_reg : {pa_mem_data_out,page_offset};
-    assign tlb_addr_valid = translation_off | PAGE_FAULT | ACCESS_FAULT;
+    assign tlb_addr_valid = translation_off | tlb_hit | PAGE_FAULT | ACCESS_FAULT;
 
     assign ADDR_TO_AXIM_VALID     = addr_to_axim_valid_reg;
     assign ADDR_TO_AXIM           = addr_to_axim_reg;
