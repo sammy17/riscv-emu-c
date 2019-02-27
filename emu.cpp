@@ -235,7 +235,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-            cout << "PC : "<< hex << PC << endl;
+            // cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -252,10 +252,10 @@ int main(){
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            cout << "instruction fetch page fault" << endl;
+            cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
             INS_PAGE_FAULT = true;
             mtval = PC;
-            PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
+            PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
             write_tval = false;
             switch(cp){
                 case MMODE : 
@@ -429,6 +429,7 @@ int main(){
                         }
                          if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
                         cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                        exit(0);
                     }
                         load_data = memory.at(load_addr_phy/8);
                         switch(func3){
@@ -540,16 +541,18 @@ int main(){
                     }
                     else {*/
                     store_addr_phy = translate(store_addr, STOR, cp);
-                    if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
-                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
-                    }else{
-                        if (store_addr_phy==-1){
+                    if (store_addr_phy==-1){
                             cout << "Page fault exception store"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
                             STORE_PAGE_FAULT = true;
                             mtval = store_addr;
                             continue;
                         }
+                    if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
+                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                        exit(0);
+                    }else{
+                        
                         store_data = memory.at(store_addr_phy/8);
 
 

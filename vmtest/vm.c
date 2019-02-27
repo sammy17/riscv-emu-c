@@ -137,6 +137,7 @@ void handle_fault(uintptr_t addr, uintptr_t cause)
       assert(!(user_l3pt[addr/PGSIZE] & PTE_D) && cause == CAUSE_STORE_PAGE_FAULT);
       user_l3pt[addr/PGSIZE] |= PTE_D;
     }
+    __builtin___clear_cache(0,0);
     flush_page(addr);
     return;
   }
