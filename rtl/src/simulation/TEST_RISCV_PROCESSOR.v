@@ -119,7 +119,8 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
     wire  m00_axi_rlast;                                        
     wire [C_M00_AXI_RUSER_WIDTH-1 : 0] m00_axi_ruser;           
     wire  m00_axi_rvalid;                                       
-    wire  m00_axi_rready;                                      
+    wire  m00_axi_rready;   
+    ////////////////////////////////////////////////////////////////////////////////                                   
     wire  m01_axi_init_axi_txn;                                
     wire  m01_axi_txn_done;                                    
     wire  m01_axi_error;                                     
@@ -167,6 +168,7 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
     wire [C_M00_AXI_RUSER_WIDTH-1 : 0] m01_axi_ruser;           
     wire  m01_axi_rvalid;                                       
     wire  m01_axi_rready; 
+    //////////////////////////////////////////////////////////////////////////
      wire                                             peripheral_interface_init_axi_txn;       
     wire                                             peripheral_interface_error;             
     wire                                             peripheral_interface_txn_done;           
@@ -190,8 +192,106 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
     wire [C_Peripheral_Interface_DATA_WIDTH-1 : 0]   peripheral_interface_rdata;            
     wire [1 : 0]                                     peripheral_interface_rresp;              
     wire                                             peripheral_interface_rvalid;             
-    wire                                             peripheral_interface_rready;              
-                                                                                              
+    wire                                             peripheral_interface_rready; 
+    //////////////////////////////////////////////////////////////////////////////////             
+     wire  itlb_axi_init_axi_txn;                                
+    wire  itlb_axi_txn_done;                                    
+    wire  itlb_axi_error;                                     
+    wire  itlb_axi_aclk=CLK;                                         
+    wire  itlb_axi_aresetn=RSTN;                                      
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_awid;             
+    wire [C_M00_AXI_ADDR_WIDTH-1 : 0] itlb_axi_awaddr;          
+    wire [7 : 0] itlb_axi_awlen;                                
+    wire [2 : 0] itlb_axi_awsize;                               
+    wire [1 : 0] itlb_axi_awburst;                              
+    wire  itlb_axi_awlock;                                    
+    wire [3 : 0] itlb_axi_awcache;                             
+    wire [2 : 0] itlb_axi_awprot;                               
+    wire [3 : 0] itlb_axi_awqos;                               
+    wire [C_M00_AXI_AWUSER_WIDTH-1 : 0] itlb_axi_awuser;        
+    wire  itlb_axi_awvalid;                                     
+    wire  itlb_axi_awready;                                      
+    wire [C_M00_AXI_DATA_WIDTH-1 : 0] itlb_axi_wdata;           
+    wire [C_M00_AXI_DATA_WIDTH/8-1 : 0] itlb_axi_wstrb;         
+    wire  itlb_axi_wlast;                                       
+    wire [C_M00_AXI_WUSER_WIDTH-1 : 0] itlb_axi_wuser;          
+    wire  itlb_axi_wvalid;                                      
+    wire  itlb_axi_wready;                                       
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_bid;                
+    wire [1 : 0] itlb_axi_bresp;                                 
+    wire [C_M00_AXI_BUSER_WIDTH-1 : 0] itlb_axi_buser;          
+    wire  itlb_axi_bvalid;                                       
+    wire  itlb_axi_bready;                                      
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_arid;             
+    wire [C_M00_AXI_ADDR_WIDTH-1 : 0] itlb_axi_araddr;          
+    wire [7 : 0] itlb_axi_arlen;                                
+    wire [2 : 0] itlb_axi_arsize;                               
+    wire [1 : 0] itlb_axi_arburst;                              
+    wire  itlb_axi_arlock;                                      
+    wire [3 : 0] itlb_axi_arcache;                              
+    wire [2 : 0] itlb_axi_arprot;                               
+    wire [3 : 0] itlb_axi_arqos;                                
+    wire [C_M00_AXI_ARUSER_WIDTH-1 : 0] itlb_axi_aruser;        
+    wire  itlb_axi_arvalid;                                     
+    wire  itlb_axi_arready;                                      
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_rid;                
+    wire [C_M00_AXI_DATA_WIDTH-1 : 0] itlb_axi_rdata;            
+    wire [1 : 0] itlb_axi_rresp;                                 
+    wire  itlb_axi_rlast;                                        
+    wire [C_M00_AXI_RUSER_WIDTH-1 : 0] itlb_axi_ruser;           
+    wire  itlb_axi_rvalid;                                       
+    wire  itlb_axi_rready;     
+
+////////////////////////////////////////////////////////////////////////////////
+    wire  dtlb_axi_init_axi_txn;                                
+    wire  dtlb_axi_txn_done;                                    
+    wire  dtlb_axi_error;                                     
+    wire  dtlb_axi_aclk=CLK;                                         
+    wire  dtlb_axi_aresetn=RSTN;                                      
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_awid;             
+    wire [C_M00_AXI_ADDR_WIDTH-1 : 0] dtlb_axi_awaddr;          
+    wire [7 : 0] dtlb_axi_awlen;                                
+    wire [2 : 0] dtlb_axi_awsize;                               
+    wire [1 : 0] dtlb_axi_awburst;                              
+    wire  dtlb_axi_awlock;                                    
+    wire [3 : 0] dtlb_axi_awcache;                             
+    wire [2 : 0] dtlb_axi_awprot;                               
+    wire [3 : 0] dtlb_axi_awqos;                               
+    wire [C_M00_AXI_AWUSER_WIDTH-1 : 0] dtlb_axi_awuser;        
+    wire  dtlb_axi_awvalid;                                     
+    wire  dtlb_axi_awready;                                      
+    wire [C_M00_AXI_DATA_WIDTH-1 : 0] dtlb_axi_wdata;           
+    wire [C_M00_AXI_DATA_WIDTH/8-1 : 0] dtlb_axi_wstrb;         
+    wire  dtlb_axi_wlast;                                       
+    wire [C_M00_AXI_WUSER_WIDTH-1 : 0] dtlb_axi_wuser;          
+    wire  dtlb_axi_wvalid;                                      
+    wire  dtlb_axi_wready;                                       
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_bid;                
+    wire [1 : 0] dtlb_axi_bresp;                                 
+    wire [C_M00_AXI_BUSER_WIDTH-1 : 0] dtlb_axi_buser;          
+    wire  dtlb_axi_bvalid;                                       
+    wire  dtlb_axi_bready;                                      
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_arid;             
+    wire [C_M00_AXI_ADDR_WIDTH-1 : 0] dtlb_axi_araddr;          
+    wire [7 : 0] dtlb_axi_arlen;                                
+    wire [2 : 0] dtlb_axi_arsize;                               
+    wire [1 : 0] dtlb_axi_arburst;                              
+    wire  dtlb_axi_arlock;                                      
+    wire [3 : 0] dtlb_axi_arcache;                              
+    wire [2 : 0] dtlb_axi_arprot;                               
+    wire [3 : 0] dtlb_axi_arqos;                                
+    wire [C_M00_AXI_ARUSER_WIDTH-1 : 0] dtlb_axi_aruser;        
+    wire  dtlb_axi_arvalid;                                     
+    wire  dtlb_axi_arready;                                      
+    wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_rid;                
+    wire [C_M00_AXI_DATA_WIDTH-1 : 0] dtlb_axi_rdata;            
+    wire [1 : 0] dtlb_axi_rresp;                                 
+    wire  dtlb_axi_rlast;                                        
+    wire [C_M00_AXI_RUSER_WIDTH-1 : 0] dtlb_axi_ruser;           
+    wire  dtlb_axi_rvalid;                                       
+    wire  dtlb_axi_rready; 
+
+
    RISCV_PROCESSOR # (
    ) uut (
        // Standard inputs
@@ -244,6 +344,7 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
         .m00_axi_ruser(m00_axi_ruser),
         .m00_axi_rvalid(m00_axi_rvalid),
         .m00_axi_rready(m00_axi_rready),
+        //////////////////////////////////////////////////////////////
                .m01_axi_aclk(m01_axi_aclk),
        .m01_axi_aresetn(m01_axi_aresetn),
        .m01_axi_awid(m01_axi_awid),
@@ -288,6 +389,53 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
         .m01_axi_ruser(m01_axi_ruser),
         .m01_axi_rvalid(m01_axi_rvalid),
         .m01_axi_rready(m01_axi_rready),
+/////////////////////////////////////////////////////
+               .itlb_axi_aclk(itlb_axi_aclk),
+       .itlb_axi_aresetn(itlb_axi_aresetn),
+       .itlb_axi_awid(itlb_axi_awid),
+       .itlb_axi_awaddr(itlb_axi_awaddr),
+        .itlb_axi_awlen(itlb_axi_awlen),
+        .itlb_axi_awsize(itlb_axi_awsize),
+        .itlb_axi_awburst(itlb_axi_awburst),
+        .itlb_axi_awlock(itlb_axi_awlock),
+        .itlb_axi_awcache(itlb_axi_awcache),
+        .itlb_axi_awprot(itlb_axi_awprot),
+        .itlb_axi_awqos(itlb_axi_awqos),
+        .itlb_axi_awuser(itlb_axi_awuser),
+        .itlb_axi_awvalid(itlb_axi_awvalid),
+        .itlb_axi_awready(itlb_axi_awready),
+        .itlb_axi_wdata(itlb_axi_wdata),
+        .itlb_axi_wstrb(itlb_axi_wstrb),
+        .itlb_axi_wlast(itlb_axi_wlast),
+        .itlb_axi_wuser(itlb_axi_wuser),
+        .itlb_axi_wvalid(itlb_axi_wvalid),
+        .itlb_axi_wready(itlb_axi_wready),
+        .itlb_axi_bid(itlb_axi_bid),
+        .itlb_axi_bresp(itlb_axi_bresp),
+        .itlb_axi_buser(itlb_axi_buser),
+        .itlb_axi_bvalid(itlb_axi_bvalid),
+        .itlb_axi_bready(itlb_axi_bready),
+        .itlb_axi_arid(itlb_axi_arid),
+        .itlb_axi_araddr(itlb_axi_araddr),
+        .itlb_axi_arlen(itlb_axi_arlen),
+        .itlb_axi_arsize(itlb_axi_arsize),
+        .itlb_axi_arburst(itlb_axi_arburst),
+        .itlb_axi_arlock(itlb_axi_arlock),
+        .itlb_axi_arcache(itlb_axi_arcache),
+        .itlb_axi_arprot(itlb_axi_arprot),
+        .itlb_axi_arqos(itlb_axi_arqos),
+        .itlb_axi_aruser(itlb_axi_aruser),
+        .itlb_axi_arvalid(itlb_axi_arvalid),
+        .itlb_axi_arready(itlb_axi_arready),
+        .itlb_axi_rid(itlb_axi_rid),
+        .itlb_axi_rdata(itlb_axi_rdata),
+        .itlb_axi_rresp(itlb_axi_rresp),
+        .itlb_axi_rlast(itlb_axi_rlast),
+        .itlb_axi_ruser(itlb_axi_ruser),
+        .itlb_axi_rvalid(itlb_axi_rvalid),
+        .itlb_axi_rready(itlb_axi_rready),
+
+//////////////////////////////////////////////////////////////////////
       .peripheral_interface_error    (peripheral_interface_error),   
       .peripheral_interface_txn_done(peripheral_interface_txn_done),
       .peripheral_interface_awaddr  (peripheral_interface_awaddr),  
@@ -308,7 +456,53 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
       .peripheral_interface_rdata  (peripheral_interface_rdata),   
       .peripheral_interface_rresp   (peripheral_interface_rresp),   
       .peripheral_interface_rvalid  (peripheral_interface_rvalid),  
-      .peripheral_interface_rready  (peripheral_interface_rready)
+      .peripheral_interface_rready  (peripheral_interface_rready),
+///////////////////////////////////////////////////////////////////////
+                .dtlb_axi_aclk(dtlb_axi_aclk),
+       .dtlb_axi_aresetn(dtlb_axi_aresetn),
+       .dtlb_axi_awid(dtlb_axi_awid),
+       .dtlb_axi_awaddr(dtlb_axi_awaddr),
+        .dtlb_axi_awlen(dtlb_axi_awlen),
+        .dtlb_axi_awsize(dtlb_axi_awsize),
+        .dtlb_axi_awburst(dtlb_axi_awburst),
+        .dtlb_axi_awlock(dtlb_axi_awlock),
+        .dtlb_axi_awcache(dtlb_axi_awcache),
+        .dtlb_axi_awprot(dtlb_axi_awprot),
+        .dtlb_axi_awqos(dtlb_axi_awqos),
+        .dtlb_axi_awuser(dtlb_axi_awuser),
+        .dtlb_axi_awvalid(dtlb_axi_awvalid),
+        .dtlb_axi_awready(dtlb_axi_awready),
+        .dtlb_axi_wdata(dtlb_axi_wdata),
+        .dtlb_axi_wstrb(dtlb_axi_wstrb),
+        .dtlb_axi_wlast(dtlb_axi_wlast),
+        .dtlb_axi_wuser(dtlb_axi_wuser),
+        .dtlb_axi_wvalid(dtlb_axi_wvalid),
+        .dtlb_axi_wready(dtlb_axi_wready),
+        .dtlb_axi_bid(dtlb_axi_bid),
+        .dtlb_axi_bresp(dtlb_axi_bresp),
+        .dtlb_axi_buser(dtlb_axi_buser),
+        .dtlb_axi_bvalid(dtlb_axi_bvalid),
+        .dtlb_axi_bready(dtlb_axi_bready),
+        .dtlb_axi_arid(dtlb_axi_arid),
+        .dtlb_axi_araddr(dtlb_axi_araddr),
+        .dtlb_axi_arlen(dtlb_axi_arlen),
+        .dtlb_axi_arsize(dtlb_axi_arsize),
+        .dtlb_axi_arburst(dtlb_axi_arburst),
+        .dtlb_axi_arlock(dtlb_axi_arlock),
+        .dtlb_axi_arcache(dtlb_axi_arcache),
+        .dtlb_axi_arprot(dtlb_axi_arprot),
+        .dtlb_axi_arqos(dtlb_axi_arqos),
+        .dtlb_axi_aruser(dtlb_axi_aruser),
+        .dtlb_axi_arvalid(dtlb_axi_arvalid),
+        .dtlb_axi_arready(dtlb_axi_arready),
+        .dtlb_axi_rid(dtlb_axi_rid),
+        .dtlb_axi_rdata(dtlb_axi_rdata),
+        .dtlb_axi_rresp(dtlb_axi_rresp),
+        .dtlb_axi_rlast(dtlb_axi_rlast),
+        .dtlb_axi_ruser(dtlb_axi_ruser),
+        .dtlb_axi_rvalid(dtlb_axi_rvalid),
+        .dtlb_axi_rready(dtlb_axi_rready)
+
     );
             
 
@@ -491,4 +685,118 @@ parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
             .S_AXI_RVALID(peripheral_interface_rvalid),
             .S_AXI_RREADY(peripheral_interface_rready)
         );
+        myip_v1_0_S00_AXI # ( 
+        .C_S_AXI_ID_WIDTH   (C_S00_AXI_ID_WIDTH),
+        .C_S_AXI_DATA_WIDTH (C_S00_AXI_DATA_WIDTH),
+        .C_S_AXI_ADDR_WIDTH (C_S00_AXI_ADDR_WIDTH),
+        .C_S_AXI_AWUSER_WIDTH(C_S00_AXI_AWUSER_WIDTH),
+        .C_S_AXI_ARUSER_WIDTH(C_S00_AXI_ARUSER_WIDTH),
+        .C_S_AXI_WUSER_WIDTH(C_S00_AXI_WUSER_WIDTH),
+        .C_S_AXI_RUSER_WIDTH(C_S00_AXI_RUSER_WIDTH),
+        .C_S_AXI_BUSER_WIDTH(C_S00_AXI_BUSER_WIDTH)
+    ) dtlb_slave_AXI_inst (
+        .S_AXI_ACLK(dtlb_axi_aclk),
+        .S_AXI_ARESETN(dtlb_axi_aresetn),
+        .S_AXI_AWID(dtlb_axi_awid),
+        .S_AXI_AWADDR(dtlb_axi_awaddr),
+        .S_AXI_AWLEN(dtlb_axi_awlen),
+        .S_AXI_AWSIZE(dtlb_axi_awsize),
+        .S_AXI_AWBURST(dtlb_axi_awburst),
+        .S_AXI_AWLOCK(dtlb_axi_awlock),
+        .S_AXI_AWCACHE(dtlb_axi_awcache),
+        .S_AXI_AWPROT(dtlb_axi_awprot),
+        .S_AXI_AWQOS(dtlb_axi_awqos),
+        .S_AXI_AWREGION(dtlb_axi_awregion),
+        .S_AXI_AWUSER(dtlb_axi_awuser),
+        .S_AXI_AWVALID(dtlb_axi_awvalid),
+        .S_AXI_AWREADY(dtlb_axi_awready),
+        .S_AXI_WDATA(dtlb_axi_wdata),
+        .S_AXI_WSTRB(dtlb_axi_wstrb),
+        .S_AXI_WLAST(dtlb_axi_wlast),
+        .S_AXI_WUSER(dtlb_axi_wuser),
+        .S_AXI_WVALID(dtlb_axi_wvalid),
+        .S_AXI_WREADY(dtlb_axi_wready),
+        .S_AXI_BID(dtlb_axi_bid),
+        .S_AXI_BRESP(dtlb_axi_bresp),
+        .S_AXI_BUSER(dtlb_axi_buser),
+        .S_AXI_BVALID(dtlb_axi_bvalid),
+        .S_AXI_BREADY(dtlb_axi_bready),
+        .S_AXI_ARID(dtlb_axi_arid),
+        .S_AXI_ARADDR(dtlb_axi_araddr),
+        .S_AXI_ARLEN(dtlb_axi_arlen),
+        .S_AXI_ARSIZE(dtlb_axi_arsize),
+        .S_AXI_ARBURST(dtlb_axi_arburst),
+        .S_AXI_ARLOCK(dtlb_axi_arlock),
+        .S_AXI_ARCACHE(dtlb_axi_arcache),
+        .S_AXI_ARPROT(dtlb_axi_arprot),
+        .S_AXI_ARQOS(dtlb_axi_arqos),
+        .S_AXI_ARREGION(dtlb_axi_arregion),
+        .S_AXI_ARUSER(dtlb_axi_aruser),
+        .S_AXI_ARVALID(dtlb_axi_arvalid),
+        .S_AXI_ARREADY(dtlb_axi_arready),
+        .S_AXI_RID(dtlb_axi_rid),
+        .S_AXI_RDATA(dtlb_axi_rdata),
+        .S_AXI_RRESP(dtlb_axi_rresp),
+        .S_AXI_RLAST(dtlb_axi_rlast),
+        .S_AXI_RUSER(dtlb_axi_ruser),
+        .S_AXI_RVALID(dtlb_axi_rvalid),
+        .S_AXI_RREADY(dtlb_axi_rready)
+    );
+            myip_v1_0_S00_AXI # ( 
+        .C_S_AXI_ID_WIDTH   (C_S00_AXI_ID_WIDTH),
+        .C_S_AXI_DATA_WIDTH (C_S00_AXI_DATA_WIDTH),
+        .C_S_AXI_ADDR_WIDTH (C_S00_AXI_ADDR_WIDTH),
+        .C_S_AXI_AWUSER_WIDTH(C_S00_AXI_AWUSER_WIDTH),
+        .C_S_AXI_ARUSER_WIDTH(C_S00_AXI_ARUSER_WIDTH),
+        .C_S_AXI_WUSER_WIDTH(C_S00_AXI_WUSER_WIDTH),
+        .C_S_AXI_RUSER_WIDTH(C_S00_AXI_RUSER_WIDTH),
+        .C_S_AXI_BUSER_WIDTH(C_S00_AXI_BUSER_WIDTH)
+    ) itlb_slave_AXI_inst (
+        .S_AXI_ACLK(itlb_axi_aclk),
+        .S_AXI_ARESETN(itlb_axi_aresetn),
+        .S_AXI_AWID(itlb_axi_awid),
+        .S_AXI_AWADDR(itlb_axi_awaddr),
+        .S_AXI_AWLEN(itlb_axi_awlen),
+        .S_AXI_AWSIZE(itlb_axi_awsize),
+        .S_AXI_AWBURST(itlb_axi_awburst),
+        .S_AXI_AWLOCK(itlb_axi_awlock),
+        .S_AXI_AWCACHE(itlb_axi_awcache),
+        .S_AXI_AWPROT(itlb_axi_awprot),
+        .S_AXI_AWQOS(itlb_axi_awqos),
+        .S_AXI_AWREGION(itlb_axi_awregion),
+        .S_AXI_AWUSER(itlb_axi_awuser),
+        .S_AXI_AWVALID(itlb_axi_awvalid),
+        .S_AXI_AWREADY(itlb_axi_awready),
+        .S_AXI_WDATA(itlb_axi_wdata),
+        .S_AXI_WSTRB(itlb_axi_wstrb),
+        .S_AXI_WLAST(itlb_axi_wlast),
+        .S_AXI_WUSER(itlb_axi_wuser),
+        .S_AXI_WVALID(itlb_axi_wvalid),
+        .S_AXI_WREADY(itlb_axi_wready),
+        .S_AXI_BID(itlb_axi_bid),
+        .S_AXI_BRESP(itlb_axi_bresp),
+        .S_AXI_BUSER(itlb_axi_buser),
+        .S_AXI_BVALID(itlb_axi_bvalid),
+        .S_AXI_BREADY(itlb_axi_bready),
+        .S_AXI_ARID(itlb_axi_arid),
+        .S_AXI_ARADDR(itlb_axi_araddr),
+        .S_AXI_ARLEN(itlb_axi_arlen),
+        .S_AXI_ARSIZE(itlb_axi_arsize),
+        .S_AXI_ARBURST(itlb_axi_arburst),
+        .S_AXI_ARLOCK(itlb_axi_arlock),
+        .S_AXI_ARCACHE(itlb_axi_arcache),
+        .S_AXI_ARPROT(itlb_axi_arprot),
+        .S_AXI_ARQOS(itlb_axi_arqos),
+        .S_AXI_ARREGION(itlb_axi_arregion),
+        .S_AXI_ARUSER(itlb_axi_aruser),
+        .S_AXI_ARVALID(itlb_axi_arvalid),
+        .S_AXI_ARREADY(itlb_axi_arready),
+        .S_AXI_RID(itlb_axi_rid),
+        .S_AXI_RDATA(itlb_axi_rdata),
+        .S_AXI_RRESP(itlb_axi_rresp),
+        .S_AXI_RLAST(itlb_axi_rlast),
+        .S_AXI_RUSER(itlb_axi_ruser),
+        .S_AXI_RVALID(itlb_axi_rvalid),
+        .S_AXI_RREADY(itlb_axi_rready)
+    );
 endmodule

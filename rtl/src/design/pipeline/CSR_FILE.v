@@ -443,7 +443,8 @@ module CSR_FILE (
         
         else if(INS_PAGE_FAULT) begin
             ecode_reg     =   31'd12    ;
-            interrupt     =   1'b1     ; 
+            interrupt     =   1'b0     ; 
+            exception     =   1'b1     ; 
         end
         else if(INS_ACC_FAULT) begin
             ecode_reg     =   31'd1    ;
@@ -652,7 +653,7 @@ module CSR_FILE (
         else if( CSR_CNT==sys_mret) begin
             PRIV_JUMP_ADD = mepc_reg;
         end
-        else if( CSR_CNT==sys_mret) begin
+        else if( CSR_CNT==sys_sret) begin
             PRIV_JUMP_ADD = sepc_reg;
         end
         else begin
@@ -751,6 +752,10 @@ module CSR_FILE (
                         mtval_reg <= ERR_ADDR;
                         mepc_reg <= PC;
                     end
+                    else if(INS_ACC_FAULT|INS_PAGE_FAULT) begin
+                        mtval_reg<=PC;
+                        mepc_reg <=PC;
+                    end
                     else if(INS_ADDR_MISSALIG) begin
                         mtval_reg <= JUMP_ADD;
                         mepc_reg <= PC;
@@ -781,6 +786,10 @@ module CSR_FILE (
                         stval_reg <= ERR_ADDR;
                         sepc_reg <= PC;
                     end
+                    else if(INS_ACC_FAULT|INS_PAGE_FAULT) begin
+                        stval_reg<=PC;
+                        sepc_reg <=PC;
+                    end
                     else if(INS_ADDR_MISSALIG) begin
                         stval_reg <= JUMP_ADD;
                         sepc_reg <= PC;
@@ -809,6 +818,10 @@ module CSR_FILE (
                     else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
                         utval_reg <= ERR_ADDR;
                         uepc_reg <= PC; 
+                    end
+                    else if(INS_ACC_FAULT|INS_PAGE_FAULT) begin
+                       utval_reg<=PC;
+                        uepc_reg <=PC;
                     end
                     else if(INS_ADDR_MISSALIG) begin
                         utval_reg <= JUMP_ADD;

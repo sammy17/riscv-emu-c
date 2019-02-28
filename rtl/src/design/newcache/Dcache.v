@@ -199,6 +199,9 @@ module Dcache
         CACHE_READY = cache_ready;
     end
     always @(posedge CLK) begin
+    	// if(CONTROL==2) begin
+    	// 	$display("%h %h",ADDR,DATA_in);
+    	// end
         if (RST) begin
             addr_d0 <=0;
             addr_d1 <=   0;

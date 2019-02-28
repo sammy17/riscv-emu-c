@@ -53,7 +53,8 @@ module DECODE_UNIT(
     output reg          FENCE                   ,
     output reg   [4:0]  AMO_OP    ,
     output              ILEGAL    ,
-    output              op_32          
+    output              op_32   ,
+    output SFENCE       
     );
     
     `include "PipelineParams.vh"
@@ -142,7 +143,9 @@ module DECODE_UNIT(
         .INS2               (INSTRUCTION[31:27])                                    ,
         .AMO_OP             (amo_op)                ,
         .ILEGAL(ILEGAL),
-        .op_32(op_32)
+        .op_32(op_32),
+        .INS_up(INSTRUCTION[31:25]),
+        .SFENCE(SFENCE)
         );
                
     Multiplexer #(

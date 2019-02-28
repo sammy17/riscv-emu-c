@@ -37,7 +37,9 @@ module CONTROL_UNIT(
     output reg  [4:0]       AMO_OP,
     input  [31:27]          INS2,
     output ILEGAL,
-    output reg op_32
+    output reg op_32,
+    input [31:25] INS_up,
+    output reg SFENCE
     );
     
     `include "PipelineParams.vh"
@@ -55,7 +57,7 @@ module CONTROL_UNIT(
         FENCE           = INS1[6:0] == fence                     ;
         AMO_OP          = INS1[6:0] ==amos ? INS2[31:27] : 5       ;
         op_32            = ((INS1[6:0] ==amos) & (INS[14:12]==2)) | (INS1[6:0] ==rops32) | (INS1[6:0] ==iops32);
-       
+        SFENCE=(INS_up==7'b0001001) & (INS1[6:0] ==system);
         
         case (INS1[6:0])
         
@@ -293,7 +295,7 @@ module CONTROL_UNIT(
                     end
                     default              :
                     begin
-                        TYPE       =idle;
+                        TYPE        = idle;
                         undefined   = 1'b1      ;
                         CSR_CNT     = sys_idle  ;
                     end
@@ -323,5 +325,5 @@ module CONTROL_UNIT(
 //            default :   TYPE=ntype;
         endcase
     end
-    assign ILEGAL = undefined & !FENCE;
+    assign ILEGAL = undefined & !FENCE & !SFENCE;
 endmodule

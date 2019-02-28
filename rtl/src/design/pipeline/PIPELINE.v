@@ -22,7 +22,7 @@
 
 module PIPELINE #(
     // Fixed parameters
-        localparam ADDR_WIDTH                   = 39    ,
+        localparam ADDR_WIDTH                   = 64    ,
         localparam DATA_WIDTH                   = 64    ,
         localparam FUNCBIT_WIDTH                = 10    ,        
         localparam OPCODE_WIDTH                 = 7     ,
@@ -87,7 +87,8 @@ module PIPELINE #(
     output      [1:0]   MPP,
     output              MPRV,
     output   [1:0]           CURR_PREV,
-    output   [63:0]     SATP
+    output   [63:0]     SATP,
+    output              SFENCE
     );
     
     `include "PipelineParams.vh"
@@ -103,7 +104,9 @@ module PIPELINE #(
     wire [ 2:0] rs2_count                   ;
     
     reg         stall_enable_ex_ex2         ;
-    
+    wire         sfence_wire                 ;
+    reg         sfence_id_fb                 ;
+    reg         sfence_fb_ex                 ;
     wire        flush_internal              ;
 
     wire [63:0] expecting_pc                ;
@@ -183,7 +186,8 @@ module PIPELINE #(
         .FENCE              (fence_out)  ,
         .AMO_OP(amo_wire),
         .ILEGAL(ilegal_wire),
-        .op_32(op_32_wire)
+        .op_32(op_32_wire),
+        .SFENCE(sfence_wire)
         );        
   
     EXSTAGE exstage(
@@ -247,7 +251,9 @@ module PIPELINE #(
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
         .MPP(MPP),
-        .PC_EX_MEM1(pc_ex_mem1)
+        .PC_EX_MEM1(pc_ex_mem1),
+        .SFENCE_in(sfence_fb_ex),
+        .SFENCE(SFENCE)
         );
    
     Multiplexer #(
@@ -408,7 +414,7 @@ module PIPELINE #(
         else
             wb_data_final = alu_mem3_wb;
         
-        ADDR_TO_DATA_CACHE = {alu_out_wire[31:2],2'b00};
+        ADDR_TO_DATA_CACHE = {alu_out_wire[63:2],2'b00};
         
         if (op_type_ex_ex2 == store_double)
             BYTE_ENB_TO_CACHE =8'b1111_1111;
@@ -533,7 +539,8 @@ module PIPELINE #(
                 access_fault_id_fb<=0;
                 page_fault_id_fb<=0;
                 page_fault_fb_ex<=0;
-
+                sfence_id_fb <=0;
+                sfence_fb_ex <=0;
 
 
 
@@ -548,6 +555,9 @@ module PIPELINE #(
             
             if (stall_enable_id_fb||flush_e_i||flush_e)   
             begin  
+                sfence_id_fb             <= sfence_wire             ;
+                sfence_fb_ex             <= sfence_id_fb            ;
+
                 amo_id_fb                <= amo_wire               ;
                 amo_fb_ex                <= amo_id_fb               ;
                 fence_id_fb              <= fence_out               ;
@@ -677,6 +687,8 @@ module PIPELINE #(
 
                 access_fault_fb_ex <=0;
                 access_fault_id_fb<=0;
+                sfence_id_fb <=0;
+                sfence_fb_ex <=0;
 
             end
             

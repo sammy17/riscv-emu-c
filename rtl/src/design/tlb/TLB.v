@@ -25,7 +25,7 @@ module Itlb
 	output wire[ADDR_WIDTH-1 : 0]	CURR_ADDR			,
 	//Signals to I-Cache
 	output  reg			PHY_ADDR_VALID			,
-	output     [ADDR_WIDTH-1 : 0]	PHY_ADDR			,
+	output     [56-1 : 0]	PHY_ADDR			,
 	//Signals to/from AXI Master
 	output  			ADDR_TO_AXIM_VALID		,
 	output     [ADDR_WIDTH-1 : 0]	ADDR_TO_AXIM			,
@@ -53,7 +53,7 @@ module Itlb
     localparam ITER_1      = 1;
     localparam ITER_2      = 2;
     localparam ITER_3      = 3;
-
+    reg                     tlb_flush_reg;
     reg  [1         	:0] op_type_reg;
     reg  [1         	:0] mpp_reg;
     reg 		    mprv_reg;
@@ -144,6 +144,7 @@ module Itlb
 	    mpp_reg		 <=   0; // mpp intial value * should check
 	    mprv_reg		 <=   0;
 	    curr_prev_reg	 <=   mmode; // *should check	    
+        tlb_flush_reg<=0;
         end
         else if (tlb_addr_valid & VIRT_ADDR_VALID &  CACHE_READY) begin
 	    virt_addr_reg        <=   VIRT_ADDR; 
@@ -152,6 +153,7 @@ module Itlb
 	    mpp_reg		 <=   MPP;
 	    mprv_reg		 <=   MPRV;
 	    curr_prev_reg	 <=   CURR_PREV;
+        tlb_flush_reg<=TLB_FLUSH;
         end    
     end
 
@@ -286,14 +288,14 @@ module Itlb
     STATE_MEMORY
     #(
         .depth(TLB_DEPTH),
-        .address_width(TLB_ADDR_WIDTH)
+        .address_width(TLB_ADDR_WIDTH )
 
     )
     valid_mem
     (
         .CLK(CLK),
         .RST(RST),
-        .FLUSH(TLB_FLUSH),
+        .FLUSH(tlb_flush_reg),
         .WREN(valid_wren),
         .WADDR(valid_waddr),
         .RADDR(valid_raddr),
@@ -306,7 +308,7 @@ module Itlb
     assign valid_raddr    = virt_addr_reg[PAGE_OFFSET_WIDTH+:TLB_ADDR_WIDTH];
     assign CURR_ADDR      = virt_addr_reg;
 
-    assign translation_off= ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)));
+    assign translation_off= ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0);
 
     assign tlb_hit        = ((tag_mem_data_out == virt_addr_reg[(PAGE_OFFSET_WIDTH+TLB_ADDR_WIDTH) +: ((3*VPN_LEN)-TLB_ADDR_WIDTH)]) & valid_out);
 

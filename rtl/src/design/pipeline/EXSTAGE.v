@@ -80,7 +80,10 @@ module EXSTAGE(
     output              MPRV,
     output     [1:0]         CURR_PREV,
     output   [63:0]     SATP,
-    input [63:0] PC_EX_MEM1
+    input [63:0] PC_EX_MEM1,
+    input SFENCE_in,
+    output SFENCE
+
      
     );
     //     reg        comp_out;
@@ -303,7 +306,7 @@ rv64m
             data_cache_control  <= DATA_CACHE_CONTROL_IN        ;
             type_out            <= TYPE_IN                      ;
             
-            JUMP_ADDR           <= FENCE? PC_FB_EX+4 : (priv_jump ? priv_jump_add : (JUMP_BUS1+JUMP_BUS2))    ;  
+            JUMP_ADDR           <= (FENCE|SFENCE_in)? PC_FB_EX+4 : (priv_jump ? priv_jump_add : (JUMP_BUS1+JUMP_BUS2))    ;  
             jump_reg            <= JUMP                                                 ;          
             jumpr_reg           <= JUMPR                                                ;
             DATA_ADDRESS        <= (A_signed+B_signed)                                  ;
@@ -346,8 +349,8 @@ rv64m
              
              if (JUMP_FINAL)
              begin
-                FLUSH               <=    (PC_ID_FB!=JUMP_ADDR) | FENCE;
-                flush_internal      <=    (PC_ID_FB!=JUMP_ADDR) | FENCE  ;
+                FLUSH               <=    (PC_ID_FB!=JUMP_ADDR) | FENCE| SFENCE_in;
+                flush_internal      <=    (PC_ID_FB!=JUMP_ADDR) | FENCE  | SFENCE_in;
              end
              else if (STALL_ENABLE_EX & !flush_internal & cache_ready_ex2)
              begin
@@ -387,7 +390,7 @@ rv64m
     begin
         if (JUMP_FINAL & CACHE_READY & cache_ready_ex2 )
         begin
-            PREDICTED=(PC_ID_FB==JUMP_ADDR) & ~FENCE;
+            PREDICTED=(PC_ID_FB==JUMP_ADDR) & ~FENCE & ~SFENCE_in;
         end
         else if (STALL_ENABLE_EX & !flush_internal & cache_ready_ex2 & CACHE_READY)
         begin
@@ -436,14 +439,15 @@ rv64m
         end
     end
     
-    assign JUMP_FINAL           = (FENCE ? 1:((priv_jump ? priv_jump : (cbranch ? comp_out_w :jump_reg|jumpr_reg )))) & !flush_internal   ; 
+    assign JUMP_FINAL           = ((SFENCE_in|FENCE) ? 1:((priv_jump ? priv_jump : (cbranch ? comp_out_w :jump_reg|jumpr_reg )))) & !flush_internal   ; 
     assign WB_DATA              = wb_data                                                          ;
     assign DATA_CACHE_CONTROL   = data_cache_control & {2{!flush_internal}}   & {2{!priv_jump}}                             ;
     assign TYPE_OUT             = type_out & {2{!flush_internal}} & {2{!priv_jump}}                                         ;
     assign FLUSH_I              = flush_internal                                                                            ;
     assign EXSTAGE_STALLED      = ((ALU_CNT==alu_mstd) & !rv32m_ready ) & !flush_internal & {!priv_jump}                    ;
-    assign FENCE_OUT            = FENCE & !flush_internal;
+    assign FENCE_OUT            = (FENCE|priv_jump|SFENCE) & !flush_internal;
     assign AMO_OP_out         = AMO_OP_in & {5{!flush_internal}};
     assign OP_32_out       =  OPS_32 & !flush_internal;
+    assign SFENCE          = SFENCE_in & !flush_internal;
     
 endmodule

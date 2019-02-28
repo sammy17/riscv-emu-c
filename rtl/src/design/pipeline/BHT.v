@@ -21,7 +21,7 @@
 
 
 module BHT #(
-        parameter   ADDR_WIDTH      = 39                                ,
+        parameter   ADDR_WIDTH      = 64                                ,
         parameter   HISTORY_DEPTH   = 512                              ,
         
         localparam  H_ADDR_WIDTH    = logb2(HISTORY_DEPTH)              ,

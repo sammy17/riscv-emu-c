@@ -57,7 +57,7 @@ module RISCV_PROCESSOR#(
         parameter integer C_Peripheral_Interface_DATA_WIDTH             = 32,
         parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
         // Fixed parameters
-        localparam ADDR_WIDTH           = 39,
+        localparam ADDR_WIDTH           = 64,
         localparam DATA_WIDTH           = 64,
         localparam EXT_FIFO_ADDRESS     = 32'he0001030,
    //     localparam EXT_FIFO_ADDRESS     = 32'h10150,
@@ -211,7 +211,110 @@ module RISCV_PROCESSOR#(
         input  wire [C_Peripheral_Interface_DATA_WIDTH-1 : 0]   peripheral_interface_rdata,
         input  wire [1 : 0]                                     peripheral_interface_rresp,
         input  wire                                             peripheral_interface_rvalid,
-        output wire                                             peripheral_interface_rready 
+        output wire                                             peripheral_interface_rready ,
+
+
+
+
+         input wire  itlb_axi_init_axi_txn,
+        output wire  itlb_axi_txn_done,
+        output wire  itlb_axi_error,
+        input wire  itlb_axi_aclk,
+        input wire  itlb_axi_aresetn,
+        output wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_awid,
+        output wire [C_M00_AXI_ADDR_WIDTH-1 : 0] itlb_axi_awaddr,
+        output wire [7 : 0] itlb_axi_awlen,
+        output wire [2 : 0] itlb_axi_awsize,
+        output wire [1 : 0] itlb_axi_awburst,
+        output wire  itlb_axi_awlock,
+        output wire [3 : 0] itlb_axi_awcache,
+        output wire [2 : 0] itlb_axi_awprot,
+        output wire [3 : 0] itlb_axi_awqos,
+        output wire [C_M00_AXI_AWUSER_WIDTH-1 : 0] itlb_axi_awuser,
+        output wire  itlb_axi_awvalid,
+        input wire  itlb_axi_awready,
+        output wire [C_M00_AXI_DATA_WIDTH-1 : 0] itlb_axi_wdata,
+        output wire [C_M00_AXI_DATA_WIDTH/8-1 : 0] itlb_axi_wstrb,
+        output wire  itlb_axi_wlast,
+        output wire [C_M00_AXI_WUSER_WIDTH-1 : 0] itlb_axi_wuser,
+        output wire  itlb_axi_wvalid,
+        input wire  itlb_axi_wready,
+        input wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_bid,
+        input wire [1 : 0] itlb_axi_bresp,
+        input wire [C_M00_AXI_BUSER_WIDTH-1 : 0] itlb_axi_buser,
+        input wire  itlb_axi_bvalid,
+        output wire  itlb_axi_bready,
+        output wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_arid,
+        output wire [C_M00_AXI_ADDR_WIDTH-1 : 0] itlb_axi_araddr,
+        output wire [7 : 0] itlb_axi_arlen,
+        output wire [2 : 0] itlb_axi_arsize,
+        output wire [1 : 0] itlb_axi_arburst,
+        output wire  itlb_axi_arlock,
+        output wire [3 : 0] itlb_axi_arcache,
+        output wire [2 : 0] itlb_axi_arprot,
+        output wire [3 : 0] itlb_axi_arqos,
+        output wire [C_M00_AXI_ARUSER_WIDTH-1 : 0] itlb_axi_aruser,
+        output wire  itlb_axi_arvalid,
+        input wire  itlb_axi_arready,
+        input wire [C_M00_AXI_ID_WIDTH-1 : 0] itlb_axi_rid,
+        input wire [C_M00_AXI_DATA_WIDTH-1 : 0] itlb_axi_rdata,
+        input wire [1 : 0] itlb_axi_rresp,
+        input wire  itlb_axi_rlast,
+        input wire [C_M00_AXI_RUSER_WIDTH-1 : 0] itlb_axi_ruser,
+        input wire  itlb_axi_rvalid,
+        output wire  itlb_axi_rready,
+
+
+              input wire  dtlb_axi_init_axi_txn,
+        output wire  dtlb_axi_txn_done,
+        output wire  dtlb_axi_error,
+        input wire  dtlb_axi_aclk,
+        input wire  dtlb_axi_aresetn,
+        output wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_awid,
+        output wire [C_M00_AXI_ADDR_WIDTH-1 : 0] dtlb_axi_awaddr,
+        output wire [7 : 0] dtlb_axi_awlen,
+        output wire [2 : 0] dtlb_axi_awsize,
+        output wire [1 : 0] dtlb_axi_awburst,
+        output wire  dtlb_axi_awlock,
+        output wire [3 : 0] dtlb_axi_awcache,
+        output wire [2 : 0] dtlb_axi_awprot,
+        output wire [3 : 0] dtlb_axi_awqos,
+        output wire [C_M00_AXI_AWUSER_WIDTH-1 : 0] dtlb_axi_awuser,
+        output wire  dtlb_axi_awvalid,
+        input wire  dtlb_axi_awready,
+        output wire [C_M00_AXI_DATA_WIDTH-1 : 0] dtlb_axi_wdata,
+        output wire [C_M00_AXI_DATA_WIDTH/8-1 : 0] dtlb_axi_wstrb,
+        output wire  dtlb_axi_wlast,
+        output wire [C_M00_AXI_WUSER_WIDTH-1 : 0] dtlb_axi_wuser,
+        output wire  dtlb_axi_wvalid,
+        input wire  dtlb_axi_wready,
+        input wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_bid,
+        input wire [1 : 0] dtlb_axi_bresp,
+        input wire [C_M00_AXI_BUSER_WIDTH-1 : 0] dtlb_axi_buser,
+        input wire  dtlb_axi_bvalid,
+        output wire  dtlb_axi_bready,
+        output wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_arid,
+        output wire [C_M00_AXI_ADDR_WIDTH-1 : 0] dtlb_axi_araddr,
+        output wire [7 : 0] dtlb_axi_arlen,
+        output wire [2 : 0] dtlb_axi_arsize,
+        output wire [1 : 0] dtlb_axi_arburst,
+        output wire  dtlb_axi_arlock,
+        output wire [3 : 0] dtlb_axi_arcache,
+        output wire [2 : 0] dtlb_axi_arprot,
+        output wire [3 : 0] dtlb_axi_arqos,
+        output wire [C_M00_AXI_ARUSER_WIDTH-1 : 0] dtlb_axi_aruser,
+        output wire  dtlb_axi_arvalid,
+        input wire  dtlb_axi_arready,
+        input wire [C_M00_AXI_ID_WIDTH-1 : 0] dtlb_axi_rid,
+        input wire [C_M00_AXI_DATA_WIDTH-1 : 0] dtlb_axi_rdata,
+        input wire [1 : 0] dtlb_axi_rresp,
+        input wire  dtlb_axi_rlast,
+        input wire [C_M00_AXI_RUSER_WIDTH-1 : 0] dtlb_axi_ruser,
+        input wire  dtlb_axi_rvalid,
+        output wire  dtlb_axi_rready
+
+
+
         
         
     );
@@ -285,15 +388,15 @@ module RISCV_PROCESSOR#(
      wire   [DATA_WIDTH - 1 : 0]        data_to_proc_dat;
      
      /////////////////////////////////////////////////////////
- 
+     wire sfence_wire;
      wire predicted;
-     wire [31:0] pc;
-     wire [31:0] ex_pc;
+     wire [63:0] pc;
+     wire [63:0] ex_pc;
      wire branch;
      wire prd_valid;
-     wire [31:0] prd_addr;
+     wire [63:0] prd_addr;
      wire flush_w;
-     wire [31:0] return_addr;
+     wire [63:0] return_addr;
      wire  return_w;
      wire [31:0] ins_id_ex;
          reg                      flush                           ;
@@ -318,8 +421,8 @@ module RISCV_PROCESSOR#(
         wire                      write_done;
         wire  [block_size_dat*64-1:0]   data_to_l2                    ;
         wire addr_to_l2_valid_dat;
-        reg DATA_FROM_AXIM_VALID,DATA_FROM_AXIM_VALID_DAT;
-        reg [55:0] DATA_FROM_AXIM,DATA_FROM_AXIM_DAT;
+        wire DATA_FROM_AXIM_VALID,DATA_FROM_AXIM_VALID_DAT;
+        wire [55:0] DATA_FROM_AXIM,DATA_FROM_AXIM_DAT;
         wire [55:0] PHY_ADDR,ADDR_TO_AXIM,ADDR_TO_AXIM_DAT;
         wire itlb_ready,ADDR_TO_AXIM_VALID,ADDR_TO_AXIM_VALID_DAT;
 
@@ -379,7 +482,8 @@ module RISCV_PROCESSOR#(
            .MPRV(MPRV),
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
-        .MPP(MPP)
+        .MPP(MPP),
+        .SFENCE(sfence_wire)
     );
     
 
@@ -450,7 +554,7 @@ module RISCV_PROCESSOR#(
 
             
         end
-        else if  (addr_from_proc_dat >= PERIPHERAL_BASE_ADDR &&  control_from_proc_dat != 0 && !stop_dat_cache && cache_ready_ins && cache_ready_dat & dtlb_ready && counter==0 )
+        else if  ((addr_from_proc_dat ==EXT_FIFO_ADDRESS | addr_from_proc_dat==32'he000102c)&&  control_from_proc_dat != 0 && !stop_dat_cache && cache_ready_ins && cache_ready_dat & dtlb_ready && counter==0 )
         begin
             data_to_peri <= data_from_proc_dat;
             addr_to_peri <= addr_from_proc_dat;
@@ -691,7 +795,7 @@ myip_v1_0_M00_AXI # (
     dtlb (
         .CLK(CLK),
         .RST(~RSTN),
-    .TLB_FLUSH(0),
+    .TLB_FLUSH(sfence_wire),
     .VIRT_ADDR(addr_from_proc_dat),
     .VIRT_ADDR_VALID(1),
     // .CURR_ADDR(pc),
@@ -702,7 +806,7 @@ myip_v1_0_M00_AXI # (
     .DATA_FROM_AXIM_VALID(DATA_FROM_AXIM_VALID_DAT),
     .DATA_FROM_AXIM(DATA_FROM_AXIM_DAT),
     .CACHE_READY(cache_ready_dat),
-    .OP_TYPE(control_from_proc_dat),
+    .OP_TYPE((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c  & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0),
     .FAULT_TYPE(fault_type),
     .PAGE_FAULT(page_fault_dat),
     .ACCESS_FAULT(access_fault_dat),
@@ -732,7 +836,7 @@ myip_v1_0_M00_AXI # (
         .ADDR_TO_L2 (addr_to_l2_dat)                    ,
         .DATA_FROM_L2 (data_from_l2_dat)                ,
         .DATA_FROM_L2_VALID (data_from_l2_valid_dat)    ,
-         .CONTROL ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat < PERIPHERAL_BASE_ADDR & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)                         ,   
+         .CONTROL ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)                         ,   
         .WSTRB (byte_enb_proc)                           ,
         .DATA_in(data_from_proc_dat),
         .DATA_TO_L2_VALID(data_to_l2_valid)                ,
@@ -751,7 +855,7 @@ myip_v1_0_M00_AXI # (
    itlb (
         .CLK(CLK),
         .RST(~RSTN),
-    .TLB_FLUSH(0),
+    .TLB_FLUSH(sfence_wire),
     .VIRT_ADDR(prd_addr),
     .VIRT_ADDR_VALID(proc_ready_ins & !exstage_stalled  & !stop_ins_cache),
     .CURR_ADDR(pc),
@@ -772,7 +876,142 @@ myip_v1_0_M00_AXI # (
             
             
     );
-
+myip_v1_0_M00_AXI # ( 
+        .C_M_TARGET_SLAVE_BASE_ADDR(0),
+        .C_M_AXI_BURST_LEN(2),
+        .C_M_AXI_ID_WIDTH(0),
+        .C_M_AXI_ADDR_WIDTH(32),
+        .C_M_AXI_DATA_WIDTH(32),
+        .C_M_AXI_AWUSER_WIDTH(C_M00_AXI_AWUSER_WIDTH),
+        .C_M_AXI_ARUSER_WIDTH(C_M00_AXI_ARUSER_WIDTH),
+        .C_M_AXI_WUSER_WIDTH(C_M00_AXI_WUSER_WIDTH),
+        .C_M_AXI_RUSER_WIDTH(C_M00_AXI_RUSER_WIDTH),
+        .C_M_AXI_BUSER_WIDTH(C_M00_AXI_BUSER_WIDTH),
+        .cache_width(64)
+    ) ITLB_AXI_MASTER (
+        .RSTN(RSTN),
+        .INIT_AXI_TXN(itlb_axi_init_axi_txn),
+        .TXN_DONE(itlb_axi_txn_done),
+        .ERROR(itlb_axi_error),
+        .M_AXI_ACLK(itlb_axi_aclk),
+        .M_AXI_ARESETN(itlb_axi_aresetn),
+        .M_AXI_AWID(itlb_axi_awid),
+        .M_AXI_AWADDR(itlb_axi_awaddr),
+        .M_AXI_AWLEN(itlb_axi_awlen),
+        .M_AXI_AWSIZE(itlb_axi_awsize),
+        .M_AXI_AWBURST(itlb_axi_awburst),
+        .M_AXI_AWLOCK(itlb_axi_awlock),
+        .M_AXI_AWCACHE(itlb_axi_awcache),
+        .M_AXI_AWPROT(itlb_axi_awprot),
+        .M_AXI_AWQOS(itlb_axi_awqos),
+        .M_AXI_AWUSER(itlb_axi_awuser),
+        .M_AXI_AWVALID(itlb_axi_awvalid),
+        .M_AXI_AWREADY(itlb_axi_awready),
+        .M_AXI_WDATA(itlb_axi_wdata),
+        .M_AXI_WSTRB(itlb_axi_wstrb),
+        .M_AXI_WLAST(itlb_axi_wlast),
+        .M_AXI_WUSER(itlb_axi_wuser),
+        .M_AXI_WVALID(itlb_axi_wvalid),
+        .M_AXI_WREADY(itlb_axi_wready),
+        .M_AXI_BID(itlb_axi_bid),
+        .M_AXI_BRESP(itlb_axi_bresp),
+        .M_AXI_BUSER(itlb_axi_buser),
+        .M_AXI_BVALID(itlb_axi_bvalid),
+        .M_AXI_BREADY(itlb_axi_bready),
+        .M_AXI_ARID(itlb_axi_arid),
+        .M_AXI_ARADDR(itlb_axi_araddr),
+        .M_AXI_ARLEN(itlb_axi_arlen),
+        .M_AXI_ARSIZE(itlb_axi_arsize),
+        .M_AXI_ARBURST(itlb_axi_arburst),
+        .M_AXI_ARLOCK(itlb_axi_arlock),
+        .M_AXI_ARCACHE(itlb_axi_arcache),
+        .M_AXI_ARPROT(itlb_axi_arprot),
+        .M_AXI_ARQOS(itlb_axi_arqos),
+        .M_AXI_ARUSER(itlb_axi_aruser),
+        .M_AXI_ARVALID(itlb_axi_arvalid),
+        .M_AXI_ARREADY(itlb_axi_arready),
+        .M_AXI_RID(itlb_axi_rid),
+        .M_AXI_RDATA(itlb_axi_rdata),
+        .M_AXI_RRESP(itlb_axi_rresp),
+        .M_AXI_RLAST(itlb_axi_rlast),
+        .M_AXI_RUSER(itlb_axi_ruser),
+        .M_AXI_RVALID(itlb_axi_rvalid),
+        .M_AXI_RREADY(itlb_axi_rready),
+        // user defined ports
+        .data_from_l2(DATA_FROM_AXIM)         ,
+        .addr_to_l2_valid(ADDR_TO_AXIM_VALID) ,
+        .addr_to_l2(ADDR_TO_AXIM)              ,
+        .data_from_l2_valid(DATA_FROM_AXIM_VALID)
+ 
+    );
+    myip_v1_0_M00_AXI # ( 
+        .C_M_TARGET_SLAVE_BASE_ADDR(0),
+        .C_M_AXI_BURST_LEN(2),
+        .C_M_AXI_ID_WIDTH(0),
+        .C_M_AXI_ADDR_WIDTH(32),
+        .C_M_AXI_DATA_WIDTH(32),
+        .C_M_AXI_AWUSER_WIDTH(C_M00_AXI_AWUSER_WIDTH),
+        .C_M_AXI_ARUSER_WIDTH(C_M00_AXI_ARUSER_WIDTH),
+        .C_M_AXI_WUSER_WIDTH(C_M00_AXI_WUSER_WIDTH),
+        .C_M_AXI_RUSER_WIDTH(C_M00_AXI_RUSER_WIDTH),
+        .C_M_AXI_BUSER_WIDTH(C_M00_AXI_BUSER_WIDTH),
+        .cache_width(64)
+    ) DLTB_AXI_MASTER (
+        .RSTN(RSTN),
+        .INIT_AXI_TXN(dtlb_axi_init_axi_txn),
+        .TXN_DONE(dtlb_axi_txn_done),
+        .ERROR(dtlb_axi_error),
+        .M_AXI_ACLK(dtlb_axi_aclk),
+        .M_AXI_ARESETN(dtlb_axi_aresetn),
+        .M_AXI_AWID(dtlb_axi_awid),
+        .M_AXI_AWADDR(dtlb_axi_awaddr),
+        .M_AXI_AWLEN(dtlb_axi_awlen),
+        .M_AXI_AWSIZE(dtlb_axi_awsize),
+        .M_AXI_AWBURST(dtlb_axi_awburst),
+        .M_AXI_AWLOCK(dtlb_axi_awlock),
+        .M_AXI_AWCACHE(dtlb_axi_awcache),
+        .M_AXI_AWPROT(dtlb_axi_awprot),
+        .M_AXI_AWQOS(dtlb_axi_awqos),
+        .M_AXI_AWUSER(dtlb_axi_awuser),
+        .M_AXI_AWVALID(dtlb_axi_awvalid),
+        .M_AXI_AWREADY(dtlb_axi_awready),
+        .M_AXI_WDATA(dtlb_axi_wdata),
+        .M_AXI_WSTRB(dtlb_axi_wstrb),
+        .M_AXI_WLAST(dtlb_axi_wlast),
+        .M_AXI_WUSER(dtlb_axi_wuser),
+        .M_AXI_WVALID(dtlb_axi_wvalid),
+        .M_AXI_WREADY(dtlb_axi_wready),
+        .M_AXI_BID(dtlb_axi_bid),
+        .M_AXI_BRESP(dtlb_axi_bresp),
+        .M_AXI_BUSER(dtlb_axi_buser),
+        .M_AXI_BVALID(dtlb_axi_bvalid),
+        .M_AXI_BREADY(dtlb_axi_bready),
+        .M_AXI_ARID(dtlb_axi_arid),
+        .M_AXI_ARADDR(dtlb_axi_araddr),
+        .M_AXI_ARLEN(dtlb_axi_arlen),
+        .M_AXI_ARSIZE(dtlb_axi_arsize),
+        .M_AXI_ARBURST(dtlb_axi_arburst),
+        .M_AXI_ARLOCK(dtlb_axi_arlock),
+        .M_AXI_ARCACHE(dtlb_axi_arcache),
+        .M_AXI_ARPROT(dtlb_axi_arprot),
+        .M_AXI_ARQOS(dtlb_axi_arqos),
+        .M_AXI_ARUSER(dtlb_axi_aruser),
+        .M_AXI_ARVALID(dtlb_axi_arvalid),
+        .M_AXI_ARREADY(dtlb_axi_arready),
+        .M_AXI_RID(dtlb_axi_rid),
+        .M_AXI_RDATA(dtlb_axi_rdata),
+        .M_AXI_RRESP(dtlb_axi_rresp),
+        .M_AXI_RLAST(dtlb_axi_rlast),
+        .M_AXI_RUSER(dtlb_axi_ruser),
+        .M_AXI_RVALID(dtlb_axi_rvalid),
+        .M_AXI_RREADY(dtlb_axi_rready),
+        // user defined ports
+        .data_from_l2(DATA_FROM_AXIM_DAT)         ,
+        .addr_to_l2_valid(ADDR_TO_AXIM_VALID_DAT) ,
+        .addr_to_l2(ADDR_TO_AXIM_DAT)              ,
+        .data_from_l2_valid(DATA_FROM_AXIM_VALID_DAT)
+ 
+    );
       PERIPHERAL_INTERFACE # ( 
 
        ) peripheral_interface (
@@ -830,30 +1069,30 @@ myip_v1_0_M00_AXI # (
             tlb_ready_d3  <= tlb_ready_d2;
         end
     end
-    always @(posedge CLK) begin
-        if (~RSTN)
-        begin
-            DATA_FROM_AXIM_VALID_DAT     <=0;
-            DATA_FROM_AXIM_DAT<=0;
-        end
-        else if(ADDR_TO_AXIM_VALID_DAT)begin
-            DATA_FROM_AXIM_VALID_DAT <= 1;
-            DATA_FROM_AXIM_DAT       <= (ADDR_TO_AXIM_DAT) >> 2;
-        end
-        else DATA_FROM_AXIM_VALID_DAT <= 0;
-    end   
+    // always @(posedge CLK) begin
+    //     if (~RSTN)
+    //     begin
+    //         DATA_FROM_AXIM_VALID_DAT     <=0;
+    //         DATA_FROM_AXIM_DAT<=0;
+    //     end
+    //     else if(ADDR_TO_AXIM_VALID_DAT)begin
+    //         DATA_FROM_AXIM_VALID_DAT <= 1;
+    //         DATA_FROM_AXIM_DAT       <= (ADDR_TO_AXIM_DAT) >> 2;
+    //     end
+    //     else DATA_FROM_AXIM_VALID_DAT <= 0;
+    // end   
 
-    always @(posedge CLK) begin
-        if (~RSTN)
-        begin
-            DATA_FROM_AXIM_VALID     <=0;
-            DATA_FROM_AXIM<=0;
-        end
-        else if(ADDR_TO_AXIM_VALID)begin
-            DATA_FROM_AXIM_VALID <= 1;
-            DATA_FROM_AXIM       <= (ADDR_TO_AXIM) >> 2;
-        end
-        else DATA_FROM_AXIM_VALID <= 0;
-    end
+    // always @(posedge CLK) begin
+    //     if (~RSTN)
+    //     begin
+    //         DATA_FROM_AXIM_VALID     <=0;
+    //         DATA_FROM_AXIM<=0;
+    //     end
+    //     else if(ADDR_TO_AXIM_VALID)begin
+    //         DATA_FROM_AXIM_VALID <= 1;
+    //         DATA_FROM_AXIM       <= (ADDR_TO_AXIM) >> 2;
+    //     end
+    //     else DATA_FROM_AXIM_VALID <= 0;
+    // end
 
 endmodule
