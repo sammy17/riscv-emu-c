@@ -245,7 +245,7 @@ module EXSTAGE(
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
         .MPP(MPP),
-        .PC_EX_MEM1(pc_ex_mem1),
+        .PC_EX_MEM1(PC_EX_MEM1),
         .JUMP_ADD(jump_addr_for_non_priv_branch),
         .INS_FB_EX(INS_FB_EX)
 

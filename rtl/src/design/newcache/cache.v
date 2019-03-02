@@ -160,23 +160,24 @@ module Icache
                 addr_to_l2          <= addr_d4[address_width  -1 : offset_width] ;
                 flag                <= 1        ;
             end
-            else
-            begin
+            else if(DATA_FROM_L2_VALID) begin
+                addr_to_l2_valid    <= 0        ;
+                flag<=0;
+            end
+            else begin
                 addr_to_l2_valid    <= 0        ;
             end
 
         end
 
-        if (RST)
-        begin
+        if (RST) begin
             state_wren              <= 0        ;
             tag_porta_wren          <= 0        ;
             cache_porta_wren        <= 0        ;
             cache_porta_waddr       <= 0        ;   
             cache_porta_data_in     <= 0        ;
         end
-        else if (DATA_FROM_L2_VALID)
-        begin
+        else if (DATA_FROM_L2_VALID) begin
             cache_porta_wren    <= 1                ;
             cache_porta_data_in <= DATA_FROM_L2     ;
             cache_porta_waddr   <= cache_porta_raddr;
@@ -185,10 +186,8 @@ module Icache
             state_wren          <= 1                ; 
             state_waddr         <= state_raddr      ;  
             tag_porta_data_in   <= tag_addr         ;
-            flag                <= 0                ;       
         end
-        else
-        begin
+        else begin
             cache_porta_wren   <=  0            ;
             tag_porta_wren     <=  0            ;
             state_wren         <=  0            ;
@@ -206,7 +205,7 @@ module Icache
     assign tag_porta_raddr      = cache_porta_raddr                                         ;
     assign state_raddr          = cache_porta_raddr                                         ;
     assign tag_addr             = addr_d4[address_width-1:offset_width+line_width]             ;
-    assign cache_ready          =  ((tag_porta_data_out == tag_addr) & state )| page_fault_d4|access_fault_d4                 ;
+    assign cache_ready          =  ((tag_porta_data_out == tag_addr) & state )| page_fault_d4|access_fault_d4  |flush_d3|flush_d2|flush_d1|FLUSH               ;
     assign ADDR_TO_L2_VALID     = addr_to_l2_valid                                          ;
     assign ADDR_TO_L2           = addr_to_l2                                                ;
     assign ADDR_OUT             = addr_d4_vir                                                   ;

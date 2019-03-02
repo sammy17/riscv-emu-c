@@ -252,7 +252,7 @@ int main(){
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
+            // cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
             INS_PAGE_FAULT = true;
             mtval = PC;
             PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
@@ -424,7 +424,21 @@ int main(){
                             mtval = load_addr;
                             LD_PAGE_FAULT = true;
                                PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
-                                 cout << "Page fault exception load"<<endl; 
+                                 // cout << "Page fault exception load"<<endl; 
+                                switch(cp){
+                                    case MMODE : 
+                                    mtval = mtval;
+                                    break;
+                                    case SMODE :
+                                    stval = mtval;
+                                    mtval = 0;
+                                    break;
+                                    case UMODE :
+                                    utval = mtval;
+                                    mtval = 0;
+                                    break;
+                                }
+
                             continue;
                         }
                          if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
@@ -542,10 +556,24 @@ int main(){
                     else {*/
                     store_addr_phy = translate(store_addr, STOR, cp);
                     if (store_addr_phy==-1){
-                            cout << "Page fault exception store"<<endl;
+                            // cout << "Page fault exception store"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
-                            STORE_PAGE_FAULT = true;
+                            // STORE_PAGE_FAULT = true;
                             mtval = store_addr;
+                            switch(cp){
+                                    case MMODE : 
+                                    mtval = mtval;
+                                    break;
+                                    case SMODE :
+                                    stval = mtval;
+                                    mtval = 0;
+                                    break;
+                                    case UMODE :
+                                    utval = mtval;
+                                    mtval = 0;
+                                    break;
+                                }
+
                             continue;
                         }
                     if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
@@ -1415,7 +1443,7 @@ int main(){
                                 break;
 
                             default :
-                                cout << "Invalid EXCEP"<<endl;
+                                // cout << "Invalid EXCEP"<<endl;
                                 break;
                         }
                         break;

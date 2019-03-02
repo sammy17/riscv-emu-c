@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-
+#include <stdarg.h>
 #include "riscv_test.h"
 #include "firmware.h"
 
@@ -26,6 +26,91 @@ static void do_tohost(uint64_t tohost_value)
 #define uva2kva(pa) ((void*)(pa) - MEGAPAGE_SIZE)
 
 #define flush_page(addr) asm volatile ("sfence.vma %0" : : "r" (addr) : "memory")
+void hprintf_c(int c){
+  //volatile char* serial_base = (char*) OUTPORT;
+  //*serial_base = c;
+  volatile int *x = (int *)0xe000102c;
+  while ((*x&16)==16);
+  *(int*) 0xe0001030= c;
+}
+
+void hprintf_s(char *s){
+  while(*s) hprintf_c(*(s++));
+}
+
+void hprintf_d(int val){
+  char buffer[32];
+  char *p = buffer;
+  if (val < 0) {
+    hprintf_c('-');
+    val = -val;
+  }
+  while (val || p == buffer) {
+    *(p++) = '0' + val % 10;
+    val = val / 10;
+  }
+  while (p != buffer)
+    hprintf_c(*(--p));
+}
+
+void hprintf_h(unsigned int val, int digits){
+  digits=8;
+  for (int i = (4*digits)-4; i >= 0; i -= 4)
+    hprintf_c("0123456789ABCDEF"[(val >> i) % 16]);
+}
+
+void hprintf(const char *format, ...){
+  int i;
+  va_list ap;
+  va_start(ap, format);
+  for (i = 0; format[i]; i++)
+    if (format[i] == '%') {
+      while (format[++i]) {
+        if (format[i] == 'c') {
+          hprintf_c(va_arg(ap, int));
+          break;
+        }
+        if (format[i] == 's') {
+          hprintf_s(va_arg(ap,char*));
+          break;
+        }
+        if (format[i] == 'd') {
+          hprintf_d(va_arg(ap,int));
+          break;
+        }
+        //own imp bgn
+        if (format[i] == 'u') {
+          hprintf_d(va_arg(ap,unsigned int));
+          break;
+        }
+        if (format[i] == 'l') {
+          if(format[i+1] == 'u'){
+            i++;
+            hprintf_d(va_arg(ap,unsigned long));
+          }
+          else{
+            hprintf_d(va_arg(ap,long));
+          }
+          break;
+        }
+        if (format[i] == '0') {
+          hprintf_h(va_arg(ap,unsigned int),(int)(format[i+1]-'0'));
+          i+=2;
+          break;
+        }
+        /*if (format[i] == 'f') {
+          float flt=va_arg(ap,double);
+          printf_d((int)flt);
+          printf_c('.');
+          printf_d((int)(((float)flt-(int)flt)*1000));
+          break;
+        }*/
+        //own imp end
+      }
+    } else
+      hprintf_c(format[i]);
+  va_end(ap);
+}
 
 static uint64_t lfsr63(uint64_t x)
 {
@@ -98,6 +183,7 @@ void printhex(uint64_t x)
 
 static void evict(unsigned long addr)
 {
+
   assert(addr >= PGSIZE && addr < MAX_TEST_PAGES * PGSIZE);
   addr = addr/PGSIZE*PGSIZE;
 
@@ -127,15 +213,19 @@ static void evict(unsigned long addr)
 
 void handle_fault(uintptr_t addr, uintptr_t cause)
 {
+  hprintf("handling fault for address %0a \n ",addr);
   assert(addr >= PGSIZE && addr < MAX_TEST_PAGES * PGSIZE);
   addr = addr/PGSIZE*PGSIZE;
 
   if (user_l3pt[addr/PGSIZE]) {
     if (!(user_l3pt[addr/PGSIZE] & PTE_A)) {
       user_l3pt[addr/PGSIZE] |= PTE_A;
+
+  hprintf("setting access bit \n");
     } else {
       assert(!(user_l3pt[addr/PGSIZE] & PTE_D) && cause == CAUSE_STORE_PAGE_FAULT);
       user_l3pt[addr/PGSIZE] |= PTE_D;
+      hprintf("setting dirty bit \n");
     }
     __builtin___clear_cache(0,0);
     flush_page(addr);
@@ -275,6 +365,6 @@ void vm_boot(uintptr_t test_addr)
   trapframe_t tf;
   memset(&tf, 0, sizeof(tf));
   tf.epc = test_addr - DRAM_BASE;
-  tf.gpr[2] = STACK_POINTER;
+  // tf.gpr[2] = 0x1000;
   pop_tf(&tf);
 }

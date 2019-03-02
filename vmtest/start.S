@@ -15,10 +15,11 @@
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
 starter:
-	# addi	sp,sp,-32
-	# sd	t4,8(sp)
-	# sd	t5,16(sp)
-	# sd	t6,24(sp)
+    li sp,0x10000
+    addi	sp,sp,-32
+	sd	t4,8(sp)
+	sd	t5,16(sp)
+	sd	t6,24(sp)
 	li t5, FIFO_ADDR_TX
 	li t6, '\n'
     sb t6, 0(t5)
@@ -50,10 +51,10 @@ starter:
     sb t6, 0(t5)
     li t6, '\n'
     sb t6, 0(t5) 
-	# ld	t4,8(sp)
-	# ld	t5,16(sp)
-	# ld	t6,24(sp)   
-	# addi	sp,sp,32   
+	ld	t4,8(sp)
+	ld	t5,16(sp)
+	ld	t6,24(sp)   
+	addi	sp,sp,32   
 end:
     j end
 

@@ -198,6 +198,10 @@ module CSR_FILE (
      reg illegal_access;
     reg csr_op;
     reg [63:0] err_addr;
+    reg         fault_while_idle ;
+    reg [63:0] err_addr_while_idle ;
+    reg [63:0] pc_while_idle ;
+    reg [6:0] ecode_while_idle;
     `ifdef CSR_DEBUG
    
     always@(posedge CLK) 
@@ -371,7 +375,11 @@ module CSR_FILE (
         
         
         //exception/interupt finding combo
-        
+        if(fault_while_idle) begin
+            ecode_reg     =   ecode_while_idle    ;
+            interrupt     =   1'b0     ;
+            exception     =   1'b1     ;
+        end
         if(LD_ACC_FAULT) begin
             ecode_reg     =   31'd5    ;
             interrupt     =   1'b0     ;
@@ -674,7 +682,19 @@ module CSR_FILE (
         else begin
              mcycle_reg   <= mcycle_reg + 1'b1       ;
         end
-
+        if(RST) begin
+            fault_while_idle <=0;
+            err_addr_while_idle <=0;
+        end
+        else if (PROC_IDLE) begin
+            fault_while_idle <=LD_PAGE_FAULT|STORE_PAGE_FAULT|LD_ACC_FAULT|STORE_ACC_FAULT;
+            err_addr_while_idle <= err_addr;
+            pc_while_idle <= PC_EX_MEM1;
+            ecode_while_idle <= ecode_reg;
+        end
+        else begin
+            fault_while_idle <=0;
+        end
         if(RST)
         begin
             minsret_reg <= 0;
@@ -700,7 +720,7 @@ module CSR_FILE (
             mtval_reg     <=0                            ;    
             mecode_reg    <=0                            ;    
             minterrupt    <=0                            ;    
-                                                
+                  {smode_reg,asid,ppn}  <=0;                            
                                                 
             st_base       <=0                            ;    
             st_mode       <=0                            ;    
@@ -713,8 +733,6 @@ module CSR_FILE (
             stval_reg     <=0                            ;    
             secode_reg    <=0                            ;    
             sinterrupt    <=0                            ;    
-            smode_reg     <=0                            ;    
-            asid          <=0                            ;         
             curr_prev     <=mmode                           ;    
             uinterrupt <=0;
             uecode_reg <=0;
@@ -739,34 +757,43 @@ module CSR_FILE (
                 if(handling_priviledge==mmode) begin
                     mpp <= curr_prev;
                     mpie <= m_ie;
-                    
+                    mecode_reg<=ecode_reg;
                     m_ie <=0;
                     curr_prev <= mmode;
-                    mecode_reg <= ecode_reg;
                     minterrupt <= interrupt_final;
-
-                    if(LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT) begin
+                    if(fault_while_idle) begin
+                        mepc_reg <= pc_while_idle;
+                        mtval_reg <= err_addr;
+                    end
+                    else if(LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT) begin
                         mepc_reg <= PC_EX_MEM1;
+                        mtval_reg <= err_addr;
+
                     end
                     else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG ) begin
                         mtval_reg <= ERR_ADDR;
                         mepc_reg <= PC;
+
                     end
                     else if(INS_ACC_FAULT|INS_PAGE_FAULT) begin
                         mtval_reg<=PC;
                         mepc_reg <=PC;
+
                     end
                     else if(INS_ADDR_MISSALIG) begin
                         mtval_reg <= JUMP_ADD;
                         mepc_reg <= PC;
+
                     end
                     else if(ILL_INS|illegal_access) begin
                         mtval_reg <=INS_FB_EX;
                         mepc_reg <= PC;
+
                     end
                     else begin
                         mtval_reg<=0;
                         mepc_reg <=PC;
+
                     end
 
 
@@ -777,30 +804,43 @@ module CSR_FILE (
                     sepc_reg <= PC;
                     s_ie <=0;
                     curr_prev <= smode;
-                    secode_reg <= ecode_reg;
                     sinterrupt <= interrupt_final;
-                    if((LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT)) begin
+                    secode_reg <= ecode_reg;
+
+                    if(fault_while_idle) begin
+                        sepc_reg <= pc_while_idle;
+                        stval_reg <= err_addr_while_idle;
+                        $finish;
+                    end
+                    else if((LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT)) begin
                         sepc_reg <= PC_EX_MEM1;
+                        stval_reg <= err_addr;
+
                     end
                     else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
                         stval_reg <= ERR_ADDR;
                         sepc_reg <= PC;
+
                     end
                     else if(INS_ACC_FAULT|INS_PAGE_FAULT) begin
                         stval_reg<=PC;
                         sepc_reg <=PC;
+
                     end
                     else if(INS_ADDR_MISSALIG) begin
                         stval_reg <= JUMP_ADD;
                         sepc_reg <= PC;
+
                     end
                     else if(ILL_INS|illegal_access) begin
                         stval_reg <=INS_FB_EX;
                         sepc_reg <= PC;
+
                     end
                     else begin
                         stval_reg<=0;
                         sepc_reg <=PC;
+
                     end
                  
                 end   
@@ -809,31 +849,42 @@ module CSR_FILE (
                     uepc_reg <= PC;
                     u_ie <=0;
                     curr_prev <= umode;
-                    uecode_reg <= ecode_reg ;
                     sinterrupt <= interrupt_final;
-                    if((LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT)) begin
+                    uecode_reg <= ecode_reg ;
+
+                    if(fault_while_idle) begin
+                        uepc_reg <= pc_while_idle;
+                        utval_reg <= err_addr_while_idle;
+                    end
+                    else if((LD_ACC_FAULT|LD_PAGE_FAULT| STORE_PAGE_FAULT| STORE_ACC_FAULT)) begin
                         uepc_reg <= PC_EX_MEM1;
                         utval_reg <= err_addr;
+
                     end
                     else if(STORE_ADDR_MISSALIG | LD_ADDR_MISSALIG) begin
                         utval_reg <= ERR_ADDR;
-                        uepc_reg <= PC; 
+                        uepc_reg <= PC;
+
                     end
                     else if(INS_ACC_FAULT|INS_PAGE_FAULT) begin
                        utval_reg<=PC;
                         uepc_reg <=PC;
+
                     end
                     else if(INS_ADDR_MISSALIG) begin
                         utval_reg <= JUMP_ADD;
                         uepc_reg <= PC;
+
                     end
                     else if(ILL_INS|illegal_access) begin
                         utval_reg <=INS_FB_EX;
                         uepc_reg <= PC;
+
                     end
                     else begin
                         utval_reg<=0;
                         uepc_reg <=PC;
+
                     end
 
                 end
