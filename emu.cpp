@@ -18,7 +18,8 @@ using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
-    vector<uint_t> memory(1<<MEM_SIZE); // main memory
+    
+vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
 
 
@@ -230,12 +231,21 @@ int main(){
 
     memory.at(MTIME_ADDR/8) = 0;
     memory.at(MTIMECMP_ADDR/8) = 0;
+
+    time_csr = 0;
     
     while (1){
 
+        cycle_count += 1;
+
+        cycle  = cycle_count ;
+        instret  = cycle ;
+        time_csr = cycle;
+        mtime += 1;
+
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-            // cout << "PC : "<< hex << PC << endl;
+        //     cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -274,6 +284,7 @@ int main(){
         continue;
             //continue; //exception will not occur if continue is there
         }
+        //cout << "PC_phy : "<< hex << PC_phy << endl;
 
         instruction = getINST(PC_phy/4,&memory);
 
@@ -417,9 +428,10 @@ int main(){
                     printf("LOAD\n");
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
+                load_addr_phy = translate(load_addr, LOAD, cp);
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     {
-                        load_addr_phy = translate(load_addr, LOAD, cp);
+                        
                         if (load_addr_phy==-1){
                             mtval = load_addr;
                             LD_PAGE_FAULT = true;
@@ -532,11 +544,11 @@ int main(){
                                 break;
                         }
                     }
-                } else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_RX) {
+                } else if ( load_addr == FIFO_ADDR_RX ) {
                     wb_data = 0 ;
                     reg_file[rd] = wb_data;
                 }
-                else if (((reg_file[rs1] + sign_extend<uint_t>(imm11_0,12))) == FIFO_ADDR_TX){
+                else if ( load_addr == FIFO_ADDR_TX ){
                     wb_data = (uint_t)getchar() ;
                     reg_file[rd] = wb_data;
                 }
@@ -547,6 +559,7 @@ int main(){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
+                store_addr_phy = translate(store_addr, STOR, cp);
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
                     /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         cout << "Mem access exception : "<<hex<<store_addr<<endl;
@@ -554,7 +567,7 @@ int main(){
                         PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   //access excep should be handled by translate function
                     }
                     else {*/
-                    store_addr_phy = translate(store_addr, STOR, cp);
+                    
                     if (store_addr_phy==-1){
                             // cout << "Page fault exception store"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
@@ -1292,6 +1305,10 @@ int main(){
                 continue;
 
             case systm :
+                if (imm11_0==CYCLE){
+                    cout << "culprit PC : "<<hex<<PC_phy<<endl;
+                    cout << func3 << endl;
+                }
                 switch(func3){
                     case 0b001 : // CSRRW
                         //csr_data = csr_file[imm11_0];
@@ -1312,20 +1329,29 @@ int main(){
                         }
                         break;
 
-                    case 0b010 : // CSRRS
+                    case 0b010 : // CSRRS     rdtime, rdcycle, rdinsret should be handled here
                         //csr_data = csr_file[imm11_0];
                         csr_data = csr_read(imm11_0);
-                        if (csr_read_success){
-                            store_data = reg_file[rs1];
-                            store_data = (store_data | csr_data);
-                            //csr_file[imm11_0] = store_data;
-                            csr_bool = csr_write(imm11_0,store_data);
-                            if(!csr_bool){
-                                mtval = instruction;
-                                ILL_INS = true;
-                            } else 
-                                reg_file[rd] = csr_data;
-                        } else{
+                        //cout << csr_read_success << endl;
+                        if (csr_read_success) {
+                            if ( (imm11_0==CYCLE) | (imm11_0==TIME) | (imm11_0==INSTRET) ){
+                                store_data = reg_file[rs1];
+                                store_data = (store_data | csr_data);
+                                cout << hex << imm11_0 << " read : "<<store_data<<endl;
+                            }
+                            else {
+                                store_data = reg_file[rs1];
+                                store_data = (store_data | csr_data);
+                                //csr_file[imm11_0] = store_data;
+                                csr_bool = csr_write(imm11_0,store_data);
+                                if(!csr_bool){
+                                    mtval = instruction;
+                                    ILL_INS = true;
+                                } else 
+                                    reg_file[rd] = csr_data;
+                            }
+                        } 
+                        else{
                             mtval = instruction;
                             ILL_INS = true;
                         }
@@ -1503,11 +1529,7 @@ int main(){
                 cout << "PC : " << PC-4 <<endl;
                 break;
         }
-        cycle_count += 1;
-
-        cycle  = cycle_count ;
-        instret  = cycle ;
-        mtime += 1;
+        
 
         if (mstatus.fs==3){
             mstatus.sd = 1;

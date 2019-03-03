@@ -28,17 +28,18 @@ void risvCoremarkStartMsg(void){
 
 void init(void){
 	while(1){
-		/*printf("\n------------------------ Welcome to RISC-V ------------------------\n");
+		printf("\n------------------------ Welcome to RISC-V ------------------------\n");
 		printf("1) ISA Standard Tests\n");
 		printf("2) DHRYSTONE Benchmark\n");
 		printf("3) COREMARK  Benchmark\n");
 		printf("4) Exit\n");
 		printf("Please Select a Choice\t:\t");
 		char c = scanf_c();
-		if(c=='1'){*/
-			risvISATestStartMsg();
+		if(c=='1'){
+			//risvISATestStartMsg();
 			isaTest();
-		/*}
+		//coremarkBenchmark();
+		}
 		else if(c=='2'){
 			dhrystoneBenchmark();
 		}
@@ -51,5 +52,5 @@ void init(void){
 		else{
 			printf("Invalid Input\n");
 		}
-	*/}
+	}
 }

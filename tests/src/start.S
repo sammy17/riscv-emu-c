@@ -84,6 +84,7 @@ coremarkBenchmark:
 	jal ra,initReg
 	jal ra,COREMARK
 	jal ra,init
+	ret
 
 
 //#define IRQ

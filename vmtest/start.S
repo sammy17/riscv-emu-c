@@ -14,6 +14,14 @@
 
 RVTEST_RV64U
 RVTEST_CODE_BEGIN
+
+#ifdef CMARK
+
+starter:
+    jal ra,COREMARK
+
+#else
+
 starter:
     li sp,0x10000
     addi	sp,sp,-32
@@ -55,7 +63,10 @@ starter:
 	ld	t5,16(sp)
 	ld	t6,24(sp)   
 	addi	sp,sp,32   
+
+#endif
+
 end:
     j end
-
+    
 RVTEST_CODE_END

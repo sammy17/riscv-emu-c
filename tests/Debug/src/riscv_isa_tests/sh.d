@@ -1,13 +1,10 @@
-src/riscv_isa_tests/sh.o: ../src/riscv_isa_tests/sh.S \
- /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/riscv_test.h \
- /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/firmware.h \
- /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/encoding.h \
- /slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/test_macros.h
+src/riscv_isa_tests/sh.o: ../src/riscv_isa_tests/sh.S ../src/riscv_test.h \
+ ../src/firmware.h ../src/encoding.h ../src/test_macros.h
 
-/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/riscv_test.h:
+../src/riscv_test.h:
 
-/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/firmware.h:
+../src/firmware.h:
 
-/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/encoding.h:
+../src/encoding.h:
 
-/slowfs/vgzebupv10/chathura/ARC/riscv/riscv-emu-c/tests/src/test_macros.h:
+../src/test_macros.h:
