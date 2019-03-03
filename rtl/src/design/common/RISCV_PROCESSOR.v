@@ -318,6 +318,7 @@ module RISCV_PROCESSOR#(
         
         
     );
+    wire                DCACHE_flusing;
     wire      [1:0]   MPP;
     wire              MPRV;
     wire   [1:0]          CURR_PREV;
@@ -780,7 +781,8 @@ myip_v1_0_M00_AXI # (
         .ACCESS_FAULT(access_fault_ins),
         .PAGE_FAULT(page_fault_ins),
         .PAGE_FAULT_OUT(page_fault_to_proc_ins),
-        .ACCESS_FAULT_OUT(access_fault_to_proc_ins)
+        .ACCESS_FAULT_OUT(access_fault_to_proc_ins),
+        .DCACHE_flusing(DCACHE_flusing)
         
 
     ); 
@@ -813,7 +815,8 @@ myip_v1_0_M00_AXI # (
            .MPRV(MPRV),
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
-        .MPP(MPP)            
+        .MPP(MPP) ,
+        .DCACHE_flusing(DCACHE_flusing)           
             
     );
    Dcache
@@ -846,7 +849,8 @@ myip_v1_0_M00_AXI # (
         .AMO(amo_op),
         .OP32(op32),
         .PAGE_FAULT(page_fault_dat),
-        .ACCESS_FAULT(access_fault_dat)
+        .ACCESS_FAULT(access_fault_dat),
+        .DCACHE_flusing(DCACHE_flusing)
 
     );
     Itlb
@@ -872,7 +876,8 @@ myip_v1_0_M00_AXI # (
            .MPRV(MPRV),
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
-        .MPP(MPP)
+        .MPP(MPP),
+        .DCACHE_flusing(DCACHE_flusing)
             
             
     );

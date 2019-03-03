@@ -162,7 +162,7 @@ module Itlb
         end
         else if (~tlb_addr_valid & ~valid_wren )   //check whether cache ready and make sure flag goes 0 one cycle before data get written
         begin
-            if(~addr_to_axim_valid & ~flag & (VIRT_ADDR_VALID | ~TLB_FLUSH)) 
+            if(~addr_to_axim_valid & ~flag & (VIRT_ADDR_VALID)) 
             begin
                 addr_to_axim_valid    <= 1;
                 addr_to_axim          <= virt_addr; // calculate the AXI address here from SATP

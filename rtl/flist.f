@@ -1,3 +1,9 @@
+-y $XILINX_VIVADO/data/verilog/src/unisims
+-y $XILINX_VIVADO/data/verilog/src/unimacro
+-y $XILINX_VIVADO/data/verilog/src/retarget
+-v $XILINX_VIVADO/data/ip/xpm/xpm_cdc/hdl/xpm_cdc.sv
++incdir+$XILINX_VIVADO/data/verilog/src +libext+.v
+$XILINX_VIVADO/data/verilog/src/glbl.v
 ./src/design/common/Multiplexer.v
 ./src/design/common/RISCV_PROCESSOR.v
 ./src/design/m_standard/Division.v
@@ -25,3 +31,7 @@
 ./src/design/newcache/myip_slave_lite.v
 ./src/design/m_standard/mul_top.v
 ./src/design/wrapper/PERIPHERAL_INTERFACE.v
+./axi_interconnect_0.v  
+/remote/vgrnd21/subashar/fpgaaccel/sim_v5p0/ip/xpm_mem_simple.sv
+./axi_interconnect_v1_7_vl_rfs.v
+./fifo_generator_v13_2_rfs.v

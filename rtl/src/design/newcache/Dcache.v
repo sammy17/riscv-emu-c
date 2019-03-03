@@ -33,7 +33,8 @@ module Dcache
         input           [4:0]         AMO,
         input OP32,
         input PAGE_FAULT,
-        input ACCESS_FAULT
+        input ACCESS_FAULT,
+        output DCACHE_flusing
 
     );
     `include "PipelineParams.vh"
@@ -661,7 +662,7 @@ module Dcache
     assign ADDR_TO_L2_VALID     = addr_to_l2_valid                                          ;
     assign ADDR_TO_L2           = addr_to_l2                                                ;
     
-
+    assign DCACHE_flusing= flush_d0|flush_d1|FLUSH|flush_d3|flush_d2;
 
 endmodule
 

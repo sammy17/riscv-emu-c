@@ -445,7 +445,7 @@ rv64m
     assign TYPE_OUT             = type_out & {2{!flush_internal}} & {2{!priv_jump}}                                         ;
     assign FLUSH_I              = flush_internal                                                                            ;
     assign EXSTAGE_STALLED      = ((ALU_CNT==alu_mstd) & !rv32m_ready ) & !flush_internal & {!priv_jump}                    ;
-    assign FENCE_OUT            = (FENCE|priv_jump|SFENCE) & !flush_internal;
+    assign FENCE_OUT            = (FENCE|priv_jump|SFENCE_in) & !flush_internal& CACHE_READY;
     assign AMO_OP_out         = AMO_OP_in & {5{!flush_internal}};
     assign OP_32_out       =  OPS_32 & !flush_internal;
     assign SFENCE          = SFENCE_in & !flush_internal;

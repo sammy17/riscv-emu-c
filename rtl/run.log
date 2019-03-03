@@ -1,0 +1,75 @@
+Command: /u/subashar/workdir/risc64/riscv-emu-c/rtl/./simv -fgp:numcores=10 -l run.log
+Chronologic VCS simulator copyright 1991-2018
+Contains Synopsys proprietary information.
+Compiler version O-2018.09-SP1-1_Full64; Runtime version O-2018.09-SP1-1_Full64;  Mar  3 01:19 2019
+*Verdi* Loading libsscore_vcs201809.so
+FSDB Dumper for VCS, Release Verdi_O-2018.09-SP1-1, Linux x86_64/64bit, 01/20/2019
+(C) 1996 - 2019 by Synopsys, Inc.
+*Verdi* : Create FSDB file 'novas.fsdb'
+*Verdi* : Begin traversing the scopes, layer (0).
+*Verdi* : Enable +mda dumping.
+*Verdi* WARNING: Var 'byte_ram' will be ignored because its total element is larger than or equal to 33554432.
+*Verdi* WARNING: Var 'Test_RISCV_PROCESSOR.word_ram' will be ignored because its total element is larger than or equal to 2097152.
+*Verdi* : You may set environmental parameter "FSDB_MAX_VAR_ELEM" to enable the dumping.
+*Verdi* : Value of "FSDB_MAX_VAR_ELEM" should be between 2^21~2^25.
+*Verdi* : End of traversing.
+handling fault for address 00020000
+ handling fault for address 00020000
+ setting access bit 
+handling fault for address 00001FE8
+ handling fault for address 00001FE8
+ setting access bit 
+handling fault for address 00002FE8
+ handling fault for address 00002FE8
+ setting access bit 
+handling fault for address 00003FE8
+ handling fault for address 00003FE8
+ setting access bit 
+handling fault for address 00004FE8
+ handling fault for address 00004FE8
+ setting access bit 
+handling fault for address 00005FE8
+ handling fault for address 00005FE8
+ setting access bit 
+handling fault for address 00006FE8
+ handling fault for address 00006FE8
+ setting access bit 
+handling fault for address 00007FE8
+ handling fault for address 00007FE8
+ setting access bit 
+handling fault for address 00008FE8
+ handling fault for address 00008FE8
+ setting access bit 
+handling fault for address 0000FFE8
+ handling fault for address 0000FFE8
+ setting access bit 
+handling fault for address 00010FE8
+ handling fault for address 00010FE8
+ setting access bit 
+handling fault for address 00011FE8
+ handling fault for address 00011FE8
+ setting access bit 
+handling fault for address 00012FE8
+ handling fault for address 00012FE8
+ setting access bit 
+handling fault for address 00013FE8
+ handling fault for address 00013FE8
+ setting access bit 
+handling fault for address 00014FE8
+ handling fault for address 00014FE8
+ setting access bit 
+handling fault for address 00015FE8
+ handling fault for address 00015FE8
+ setting access bit 
+handling fault for address 00016FE8
+ handling fault for address 00016FE8
+ setting access bit 
+
+----FIRED----
+Interrupt at time 24382625000
+
+exit
+            V C S   S i m u l a t i o n   R e p o r t 
+Time: 24382625000 ps
+CPU Time:     38.520 seconds;       Data structure size: 192.6Mb
+Sun Mar  3 01:20:30 2019

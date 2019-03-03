@@ -1,6 +1,6 @@
 all: clean vcs
 vcs:
-	vcs -full64 -f flist.f -sverilog +incdir+./src/design/common +incdir+./src/design/newcache -fgp -debug_access+all +vcs+fsdbon+mda -kdb -lca -l vcs.log; ./simv -fgp:numcores=10 -l run.log
+	vcs -full64 -top glbl -top Test_RISCV_PROCESSOR -f flist.f -sverilog +incdir+./src/design/common +incdir+./src/design/newcache -fgp -debug_access+all +vcs+fsdbon+mda -kdb -lca -l vcs.log; ./simv -fgp:numcores=10 -l run.log
 vcs1:
 	vcs -full64 -f flist.f -sverilog +incdir+./src/design/common +incdir+./src/design/newcache -fgp; ./simv -fgp:numcores=10  
 clean:
