@@ -105,6 +105,7 @@ MAIN_RETURN_TYPE COREMARK(int argc, char *argv[]) {
 	/* First some checks to make sure benchmark will run ok */
 	if (sizeof(struct list_head_s)>128) {
 		ee_printf("list_head structure too big for comparable data!\n");
+		while(1);
 		return MAIN_RETURN_VAL;
 	}
 	results[0].seed1=get_seed(1);
@@ -366,7 +367,7 @@ MAIN_RETURN_TYPE COREMARK(int argc, char *argv[]) {
 #endif
 	/* And last call any target specific code for finalizing */
 	portable_fini(&(results[0].port));
-
+	while(1);
 	return MAIN_RETURN_VAL;	
 }
 
