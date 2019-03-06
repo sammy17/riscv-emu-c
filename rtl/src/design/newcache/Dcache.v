@@ -240,7 +240,7 @@ module Dcache
             addr_d4 <= addr_d3;
 
             control_d0 <= CONTROL;
-            control_d1 <= control_d0;
+            control_d1 <= CONTROL;
             control_d2 <= control_d1;
             control_d3 <= control_d2;
 

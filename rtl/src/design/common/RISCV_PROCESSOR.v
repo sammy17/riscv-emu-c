@@ -758,6 +758,7 @@ myip_v1_0_M00_AXI # (
         .data_written(write_done)
     );
 
+   wire [1:0] final_dcache_control= (off_translation_for_tlb_request? control_to_dcache_from_itlb : ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)  ) ;
 
         Icache
     #(
@@ -793,6 +794,7 @@ myip_v1_0_M00_AXI # (
     ); 
     wire dtlb_ready;
     wire [55:0] addr_to_dat_cache_from_tlb; 
+    wire [1:0] control_dcache_from_dtlb;
     // wire [63:0] data_to_dat_cache_from_tlb;
     // wire [1:0] control_to_data_cache_from_tlb;
     // wire flush_to_data_cache_from_tlb;
@@ -813,7 +815,7 @@ myip_v1_0_M00_AXI # (
     .DATA_FROM_AXIM_VALID(DATA_FROM_AXIM_VALID_DAT),
     .DATA_FROM_AXIM(DATA_FROM_AXIM_DAT),
     .CACHE_READY(cache_ready_dat),
-    .OP_TYPE((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c  & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0),
+    .OP_TYPE(final_dcache_control),
     .FAULT_TYPE(fault_type),
     .PAGE_FAULT(page_fault_dat),
     .ACCESS_FAULT(access_fault_dat),
@@ -822,7 +824,8 @@ myip_v1_0_M00_AXI # (
         .CURR_PREV(CURR_PREV),
         .MPP(MPP) ,
         .DCACHE_flusing(DCACHE_flusing),
-        .OFF_TRANSLATION_FROM_TLB(off_translation_for_tlb_request)           
+        .OFF_TRANSLATION_FROM_TLB(off_translation_for_tlb_request) ,
+     .OP_TYPE_OUT(control_dcache_from_dtlb)          
             
     );
     //////////////////////////////////////////////////////////////////////
@@ -855,7 +858,6 @@ TLB
             
             
     );
-   wire [1:0] final_dcache_control= (off_translation_for_tlb_request? control_to_dcache_from_itlb : ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)  ) ;
    Dcache
     #(
         .data_width     (64)                                        ,
@@ -876,7 +878,7 @@ TLB
         .ADDR_TO_L2 (addr_to_l2_dat)                    ,
         .DATA_FROM_L2 (data_from_l2_dat)                ,
         .DATA_FROM_L2_VALID (data_from_l2_valid_dat)    ,
-         .CONTROL  (final_dcache_control)                     ,   
+         .CONTROL  (control_dcache_from_dtlb)                     ,   
         .WSTRB (byte_enb_proc)                           ,
         .DATA_in(data_from_proc_dat),
         .DATA_TO_L2_VALID(data_to_l2_valid)                ,

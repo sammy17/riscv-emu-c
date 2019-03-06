@@ -42,7 +42,8 @@ module TLB
     	input	 			MPRV				,
    	input 	   [1		  :0]	CURR_PREV,
     input DCACHE_flusing,
-    input OFF_TRANSLATION_FROM_TLB
+    input OFF_TRANSLATION_FROM_TLB,
+    output [1:0] OP_TYPE_OUT
 
     );
 
@@ -324,6 +325,7 @@ module TLB
 
     assign ADDR_TO_AXIM_VALID     = addr_to_axim_valid_reg;
     assign ADDR_TO_AXIM           = addr_to_axim_reg;
+    assign OP_TYPE_OUT =op_type_reg & {2{PHY_ADDR_VALID}};
 
 
     function integer logb2;
