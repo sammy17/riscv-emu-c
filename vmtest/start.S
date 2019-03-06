@@ -4,6 +4,7 @@
 
 	.section .text.boot
 	.global init
+    .global COREMARK
 
 /* Main program
  **********************************/

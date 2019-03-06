@@ -245,7 +245,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-             cout << "PC : "<< hex << PC << endl;
+             // cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -253,7 +253,7 @@ int main(){
 
         //cout << "sp : "<<reg_file.at(2)<<endl;
 
-        cout << "PRIV : "<< (uint_t)cp<<endl;
+        //cout << "PRIV : "<< (uint_t)cp<<endl;
 
         //cout << "t0 : "<<reg_file.at(5)<<endl;
         //cout << "t1 : "<<reg_file.at(6)<<endl;
@@ -262,7 +262,7 @@ int main(){
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            // cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
+            cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
             INS_PAGE_FAULT = true;
             mtval = PC;
             PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
@@ -284,7 +284,7 @@ int main(){
         continue;
             //continue; //exception will not occur if continue is there
         }
-        cout << "PC_phy : "<< hex << PC_phy << endl;
+        // cout << "PC_phy : "<< hex << PC_phy << endl;
 
         instruction = getINST(PC_phy/4,&memory);
 
@@ -428,15 +428,16 @@ int main(){
                     printf("LOAD\n");
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
-                load_addr_phy = translate(load_addr, LOAD, cp);
-                if ((load_addr_phy != FIFO_ADDR_RX) && ((load_addr_phy != FIFO_ADDR_TX))){
+                
+                if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     {
+                        load_addr_phy = translate(load_addr, LOAD, cp);
                         
                         if (load_addr_phy==-1){
                             mtval = load_addr;
-                            LD_PAGE_FAULT = true;
+                            // LD_PAGE_FAULT = true;
                                PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
-                                 // cout << "Page fault exception load"<<endl; 
+                                 cout << "Page fault exception load"<<hex<<PC<<endl; 
                                 switch(cp){
                                     case MMODE : 
                                     mtval = mtval;
@@ -544,11 +545,11 @@ int main(){
                                 break;
                         }
                     }
-                } else if ( load_addr_phy == FIFO_ADDR_RX ) {
+                } else if ( load_addr == FIFO_ADDR_RX ) {
                     wb_data = 0 ;
                     reg_file[rd] = wb_data;
                 }
-                else if ( load_addr_phy == FIFO_ADDR_TX ){
+                else if ( load_addr == FIFO_ADDR_TX ){
                     wb_data = (uint_t)getchar() ;
                     reg_file[rd] = wb_data;
                 }
@@ -559,8 +560,10 @@ int main(){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
-                store_addr_phy = translate(store_addr, STOR, cp);
-                if (store_addr_phy != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
+                
+                if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
+
+                    store_addr_phy = translate(store_addr, STOR, cp);
                     /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
                         cout << "Mem access exception : "<<hex<<store_addr<<endl;
                         mtval = store_addr;
@@ -569,7 +572,7 @@ int main(){
                     else {*/
                     
                     if (store_addr_phy==-1){
-                            // cout << "Page fault exception store"<<endl;
+                            cout << "Page fault exception store"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
                             // STORE_PAGE_FAULT = true;
                             mtval = store_addr;
@@ -638,7 +641,7 @@ int main(){
                     }
 
                 } 
-                else if(store_addr_phy == FIFO_ADDR_TX){
+                else if(store_addr == FIFO_ADDR_TX){
                     #ifdef DEBUG
                         printf("STORE2\n");
                     #endif
@@ -1567,11 +1570,7 @@ int main(){
             write_tval = false;
         }
        
-        else if(LD_PAGE_FAULT) { 
-            LD_PAGE_FAULT = false;
-            PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
-            write_tval = false;
-        }
+     
       
         else if( mie.MEIE & mip.MEIP) {
             PC = interrupt_function(PC, CAUSE_MACHINE_EXT_INT, cp);

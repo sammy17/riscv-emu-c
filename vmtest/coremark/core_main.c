@@ -84,6 +84,8 @@ char *mem_name[3] = {"Static","Heap","Stack"};
 	4 - Iterations  : Special, if set to 0, iterations will be automatically determined such that the benchmark will run between 10 to 100 secs
 
 */
+	asm("li sp,0x40000");
+
 
 #if MAIN_HAS_NOARGC
 MAIN_RETURN_TYPE COREMARK(void) {
