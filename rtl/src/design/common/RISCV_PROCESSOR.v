@@ -330,6 +330,9 @@ module RISCV_PROCESSOR#(
     wire [1:0] fault_type;
     wire page_fault_to_proc_ins;
     wire access_fault_to_proc_ins;
+    reg off_translation_for_tlb_request;
+    reg [address_width-1:0] addr_to_dcache_from_itlb;
+    reg [1:0] control_to_dcache_from_itlb;
     wire [ADDR_WIDTH      - 1 : 0]  RD_ADDR_TO_PERI;
     wire                            RD_ADDR_TO_PERI_VALID;
     wire                            RD_ADDR_TO_PERI_READY;
@@ -422,9 +425,11 @@ module RISCV_PROCESSOR#(
         wire                      write_done;
         wire  [block_size_dat*64-1:0]   data_to_l2                    ;
         wire addr_to_l2_valid_dat;
-        wire DATA_FROM_AXIM_VALID,DATA_FROM_AXIM_VALID_DAT;
-        wire [55:0] DATA_FROM_AXIM,DATA_FROM_AXIM_DAT;
-        wire [55:0] PHY_ADDR,ADDR_TO_AXIM,ADDR_TO_AXIM_DAT;
+        reg  DATA_FROM_AXIM_VALID;
+        wire DATA_FROM_AXIM_VALID_DAT;
+        reg [63:0] DATA_FROM_AXIM;
+        wire [63:0] DATA_FROM_AXIM_DAT;
+        wire [63:0] PHY_ADDR,ADDR_TO_AXIM,ADDR_TO_AXIM_DAT;
         wire itlb_ready,ADDR_TO_AXIM_VALID,ADDR_TO_AXIM_VALID_DAT;
 
         wire [3:0] WSTRB_OUT;
@@ -791,14 +796,14 @@ myip_v1_0_M00_AXI # (
     // wire [63:0] data_to_dat_cache_from_tlb;
     // wire [1:0] control_to_data_cache_from_tlb;
     // wire flush_to_data_cache_from_tlb;
-    Itlb
+    TLB
     #(.virt_addr_init(32'h0000_0000),
         .init_op(0))                                                      
     dtlb (
         .CLK(CLK),
         .RST(~RSTN),
     .TLB_FLUSH(sfence_wire),
-    .VIRT_ADDR(addr_from_proc_dat),
+    .VIRT_ADDR(off_translation_for_tlb_request? addr_to_dcache_from_itlb :  addr_from_proc_dat),
     .VIRT_ADDR_VALID(1),
     // .CURR_ADDR(pc),
     .PHY_ADDR_VALID(dtlb_ready),
@@ -816,44 +821,12 @@ myip_v1_0_M00_AXI # (
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
         .MPP(MPP) ,
-        .DCACHE_flusing(DCACHE_flusing)           
+        .DCACHE_flusing(DCACHE_flusing),
+        .OFF_TRANSLATION_FROM_TLB(off_translation_for_tlb_request)           
             
     );
-   Dcache
-    #(
-        .data_width     (64)                                        ,
-        .address_width  (56)                                     ,
-        .block_size     (block_size_dat)                                        ,
-        .cache_depth    ( cache_depth)                                      
-        
-        )
-   dcache (
-           .CLK(CLK)                                   ,
-        .RST(~RSTN)                                   ,
-        .FLUSH(fence)                               ,
-        .ADDR(addr_to_dat_cache_from_tlb)                                 ,
-        .ADDR_VALID(dtlb_ready)                     ,
-        .DATA (data_to_proc_dat)                                ,
-        .CACHE_READY(cache_ready_dat)                   ,
-        .ADDR_TO_L2_VALID(addr_to_l2_valid_dat)         ,
-        .ADDR_TO_L2 (addr_to_l2_dat)                    ,
-        .DATA_FROM_L2 (data_from_l2_dat)                ,
-        .DATA_FROM_L2_VALID (data_from_l2_valid_dat)    ,
-         .CONTROL ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)                         ,   
-        .WSTRB (byte_enb_proc)                           ,
-        .DATA_in(data_from_proc_dat),
-        .DATA_TO_L2_VALID(data_to_l2_valid)                ,
-        .WADDR_TO_L2(waddr_to_l2)    ,
-        .WRITE_DONE(write_done),
-        .DATA_TO_L2(data_to_l2),
-        .AMO(amo_op),
-        .OP32(op32),
-        .PAGE_FAULT(page_fault_dat),
-        .ACCESS_FAULT(access_fault_dat),
-        .DCACHE_flusing(DCACHE_flusing)
-
-    );
-    Itlb
+    //////////////////////////////////////////////////////////////////////
+TLB
     #(.virt_addr_init(32'h0000_0000) ,
         .init_op(3))                                                      
    itlb (
@@ -877,78 +850,115 @@ myip_v1_0_M00_AXI # (
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
         .MPP(MPP),
+        .DCACHE_flusing(DCACHE_flusing),
+        .OFF_TRANSLATION_FROM_TLB(1'b0)
+            
+            
+    );
+   wire [1:0] final_dcache_control= (off_translation_for_tlb_request? control_to_dcache_from_itlb : ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)  ) ;
+   Dcache
+    #(
+        .data_width     (64)                                        ,
+        .address_width  (56)                                     ,
+        .block_size     (block_size_dat)                                        ,
+        .cache_depth    ( cache_depth)                                      
+        
+        )
+   dcache (
+           .CLK(CLK)                                   ,
+        .RST(~RSTN)                                   ,
+        .FLUSH(fence)                               ,
+        .ADDR(addr_to_dat_cache_from_tlb)                                 ,
+        .ADDR_VALID(dtlb_ready)                     ,
+        .DATA (data_to_proc_dat)                                ,
+        .CACHE_READY(cache_ready_dat)                   ,
+        .ADDR_TO_L2_VALID(addr_to_l2_valid_dat)         ,
+        .ADDR_TO_L2 (addr_to_l2_dat)                    ,
+        .DATA_FROM_L2 (data_from_l2_dat)                ,
+        .DATA_FROM_L2_VALID (data_from_l2_valid_dat)    ,
+         .CONTROL  (final_dcache_control)                     ,   
+        .WSTRB (byte_enb_proc)                           ,
+        .DATA_in(data_from_proc_dat),
+        .DATA_TO_L2_VALID(data_to_l2_valid)                ,
+        .WADDR_TO_L2(waddr_to_l2)    ,
+        .WRITE_DONE(write_done),
+        .DATA_TO_L2(data_to_l2),
+        .AMO(amo_op),
+        .OP32(op32),
+        .PAGE_FAULT(page_fault_dat),
+        .ACCESS_FAULT(access_fault_dat),
         .DCACHE_flusing(DCACHE_flusing)
-            
-            
+
     );
-myip_v1_0_M00_AXI # ( 
-        .C_M_TARGET_SLAVE_BASE_ADDR(0),
-        .C_M_AXI_BURST_LEN(2),
-        .C_M_AXI_ID_WIDTH(0),
-        .C_M_AXI_ADDR_WIDTH(32),
-        .C_M_AXI_DATA_WIDTH(32),
-        .C_M_AXI_AWUSER_WIDTH(C_M00_AXI_AWUSER_WIDTH),
-        .C_M_AXI_ARUSER_WIDTH(C_M00_AXI_ARUSER_WIDTH),
-        .C_M_AXI_WUSER_WIDTH(C_M00_AXI_WUSER_WIDTH),
-        .C_M_AXI_RUSER_WIDTH(C_M00_AXI_RUSER_WIDTH),
-        .C_M_AXI_BUSER_WIDTH(C_M00_AXI_BUSER_WIDTH),
-        .cache_width(64)
-    ) ITLB_AXI_MASTER (
-        .RSTN(RSTN),
-        .INIT_AXI_TXN(itlb_axi_init_axi_txn),
-        .TXN_DONE(itlb_axi_txn_done),
-        .ERROR(itlb_axi_error),
-        .M_AXI_ACLK(itlb_axi_aclk),
-        .M_AXI_ARESETN(itlb_axi_aresetn),
-        .M_AXI_AWID(itlb_axi_awid),
-        .M_AXI_AWADDR(itlb_axi_awaddr),
-        .M_AXI_AWLEN(itlb_axi_awlen),
-        .M_AXI_AWSIZE(itlb_axi_awsize),
-        .M_AXI_AWBURST(itlb_axi_awburst),
-        .M_AXI_AWLOCK(itlb_axi_awlock),
-        .M_AXI_AWCACHE(itlb_axi_awcache),
-        .M_AXI_AWPROT(itlb_axi_awprot),
-        .M_AXI_AWQOS(itlb_axi_awqos),
-        .M_AXI_AWUSER(itlb_axi_awuser),
-        .M_AXI_AWVALID(itlb_axi_awvalid),
-        .M_AXI_AWREADY(itlb_axi_awready),
-        .M_AXI_WDATA(itlb_axi_wdata),
-        .M_AXI_WSTRB(itlb_axi_wstrb),
-        .M_AXI_WLAST(itlb_axi_wlast),
-        .M_AXI_WUSER(itlb_axi_wuser),
-        .M_AXI_WVALID(itlb_axi_wvalid),
-        .M_AXI_WREADY(itlb_axi_wready),
-        .M_AXI_BID(itlb_axi_bid),
-        .M_AXI_BRESP(itlb_axi_bresp),
-        .M_AXI_BUSER(itlb_axi_buser),
-        .M_AXI_BVALID(itlb_axi_bvalid),
-        .M_AXI_BREADY(itlb_axi_bready),
-        .M_AXI_ARID(itlb_axi_arid),
-        .M_AXI_ARADDR(itlb_axi_araddr),
-        .M_AXI_ARLEN(itlb_axi_arlen),
-        .M_AXI_ARSIZE(itlb_axi_arsize),
-        .M_AXI_ARBURST(itlb_axi_arburst),
-        .M_AXI_ARLOCK(itlb_axi_arlock),
-        .M_AXI_ARCACHE(itlb_axi_arcache),
-        .M_AXI_ARPROT(itlb_axi_arprot),
-        .M_AXI_ARQOS(itlb_axi_arqos),
-        .M_AXI_ARUSER(itlb_axi_aruser),
-        .M_AXI_ARVALID(itlb_axi_arvalid),
-        .M_AXI_ARREADY(itlb_axi_arready),
-        .M_AXI_RID(itlb_axi_rid),
-        .M_AXI_RDATA(itlb_axi_rdata),
-        .M_AXI_RRESP(itlb_axi_rresp),
-        .M_AXI_RLAST(itlb_axi_rlast),
-        .M_AXI_RUSER(itlb_axi_ruser),
-        .M_AXI_RVALID(itlb_axi_rvalid),
-        .M_AXI_RREADY(itlb_axi_rready),
-        // user defined ports
-        .data_from_l2(DATA_FROM_AXIM)         ,
-        .addr_to_l2_valid(ADDR_TO_AXIM_VALID) ,
-        .addr_to_l2(ADDR_TO_AXIM)              ,
-        .data_from_l2_valid(DATA_FROM_AXIM_VALID)
+
+// myip_v1_0_M00_AXI # ( 
+//         .C_M_TARGET_SLAVE_BASE_ADDR(0),
+//         .C_M_AXI_BURST_LEN(2),
+//         .C_M_AXI_ID_WIDTH(0),
+//         .C_M_AXI_ADDR_WIDTH(32),
+//         .C_M_AXI_DATA_WIDTH(32),
+//         .C_M_AXI_AWUSER_WIDTH(C_M00_AXI_AWUSER_WIDTH),
+//         .C_M_AXI_ARUSER_WIDTH(C_M00_AXI_ARUSER_WIDTH),
+//         .C_M_AXI_WUSER_WIDTH(C_M00_AXI_WUSER_WIDTH),
+//         .C_M_AXI_RUSER_WIDTH(C_M00_AXI_RUSER_WIDTH),
+//         .C_M_AXI_BUSER_WIDTH(C_M00_AXI_BUSER_WIDTH),
+//         .cache_width(64)
+//     ) ITLB_AXI_MASTER (
+//         .RSTN(RSTN),
+//         .INIT_AXI_TXN(itlb_axi_init_axi_txn),
+//         .TXN_DONE(itlb_axi_txn_done),
+//         .ERROR(itlb_axi_error),
+//         .M_AXI_ACLK(itlb_axi_aclk),
+//         .M_AXI_ARESETN(itlb_axi_aresetn),
+//         .M_AXI_AWID(itlb_axi_awid),
+//         .M_AXI_AWADDR(itlb_axi_awaddr),
+//         .M_AXI_AWLEN(itlb_axi_awlen),
+//         .M_AXI_AWSIZE(itlb_axi_awsize),
+//         .M_AXI_AWBURST(itlb_axi_awburst),
+//         .M_AXI_AWLOCK(itlb_axi_awlock),
+//         .M_AXI_AWCACHE(itlb_axi_awcache),
+//         .M_AXI_AWPROT(itlb_axi_awprot),
+//         .M_AXI_AWQOS(itlb_axi_awqos),
+//         .M_AXI_AWUSER(itlb_axi_awuser),
+//         .M_AXI_AWVALID(itlb_axi_awvalid),
+//         .M_AXI_AWREADY(itlb_axi_awready),
+//         .M_AXI_WDATA(itlb_axi_wdata),
+//         .M_AXI_WSTRB(itlb_axi_wstrb),
+//         .M_AXI_WLAST(itlb_axi_wlast),
+//         .M_AXI_WUSER(itlb_axi_wuser),
+//         .M_AXI_WVALID(itlb_axi_wvalid),
+//         .M_AXI_WREADY(itlb_axi_wready),
+//         .M_AXI_BID(itlb_axi_bid),
+//         .M_AXI_BRESP(itlb_axi_bresp),
+//         .M_AXI_BUSER(itlb_axi_buser),
+//         .M_AXI_BVALID(itlb_axi_bvalid),
+//         .M_AXI_BREADY(itlb_axi_bready),
+//         .M_AXI_ARID(itlb_axi_arid),
+//         .M_AXI_ARADDR(itlb_axi_araddr),
+//         .M_AXI_ARLEN(itlb_axi_arlen),
+//         .M_AXI_ARSIZE(itlb_axi_arsize),
+//         .M_AXI_ARBURST(itlb_axi_arburst),
+//         .M_AXI_ARLOCK(itlb_axi_arlock),
+//         .M_AXI_ARCACHE(itlb_axi_arcache),
+//         .M_AXI_ARPROT(itlb_axi_arprot),
+//         .M_AXI_ARQOS(itlb_axi_arqos),
+//         .M_AXI_ARUSER(itlb_axi_aruser),
+//         .M_AXI_ARVALID(itlb_axi_arvalid),
+//         .M_AXI_ARREADY(itlb_axi_arready),
+//         .M_AXI_RID(itlb_axi_rid),
+//         .M_AXI_RDATA(itlb_axi_rdata),
+//         .M_AXI_RRESP(itlb_axi_rresp),
+//         .M_AXI_RLAST(itlb_axi_rlast),
+//         .M_AXI_RUSER(itlb_axi_ruser),
+//         .M_AXI_RVALID(itlb_axi_rvalid),
+//         .M_AXI_RREADY(itlb_axi_rready),
+//         // user defined ports
+//         .data_from_l2(DATA_FROM_AXIM)         ,
+//         .addr_to_l2_valid(ADDR_TO_AXIM_VALID) ,
+//         .addr_to_l2(ADDR_TO_AXIM)              ,
+//         .data_from_l2_valid(DATA_FROM_AXIM_VALID)
  
-    );
+//     );
     myip_v1_0_M00_AXI # ( 
         .C_M_TARGET_SLAVE_BASE_ADDR(0),
         .C_M_AXI_BURST_LEN(2),
@@ -1058,7 +1068,7 @@ myip_v1_0_M00_AXI # (
        .valid_rd                        (DATA_FROM_PERI_VALID),
        .ack                             (TRANSACTION_COMPLETE_PERI)
        );
-
+    reg [2:0] itlb_data_counter;
     always@(posedge CLK)
     begin
         if(~RSTN)
@@ -1074,6 +1084,51 @@ myip_v1_0_M00_AXI # (
             tlb_ready_d3  <= tlb_ready_d2;
         end
     end
+    always@(posedge CLK) begin
+        if(~RSTN) begin
+            off_translation_for_tlb_request <=0;
+            addr_to_dcache_from_itlb    <= ADDR_TO_AXIM;
+            control_to_dcache_from_itlb <=0;
+            itlb_data_counter <=0;
+            DATA_FROM_AXIM_VALID <=0;
+            DATA_FROM_AXIM <=0;
+        end
+        if(ADDR_TO_AXIM_VALID) begin
+            off_translation_for_tlb_request <= 1;
+            addr_to_dcache_from_itlb    <= ADDR_TO_AXIM;
+            control_to_dcache_from_itlb <=1; // 1 for load 2 for store
+            itlb_data_counter <=1;
+            DATA_FROM_AXIM_VALID <=0;
+            DATA_FROM_AXIM <=0;
+        end
+        else if(cache_ready_dat & dtlb_ready ) begin
+             off_translation_for_tlb_request <= 0;
+             control_to_dcache_from_itlb <=0;
+             if(itlb_data_counter==5) begin
+                 itlb_data_counter <=0;
+
+                 DATA_FROM_AXIM_VALID <=1;
+                 DATA_FROM_AXIM <=data_to_proc_dat;
+             end
+             else if(itlb_data_counter!=0 ) begin
+                itlb_data_counter <= itlb_data_counter +1;
+                DATA_FROM_AXIM_VALID <=0;
+                DATA_FROM_AXIM <=0;
+             end
+             else begin
+                DATA_FROM_AXIM_VALID <=0;
+                DATA_FROM_AXIM <=0;
+             end
+        end
+        else begin
+            DATA_FROM_AXIM_VALID <=0;
+            DATA_FROM_AXIM <=0;
+        end
+
+
+
+    end
+
     // always @(posedge CLK) begin
     //     if (~RSTN)
     //     begin

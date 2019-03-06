@@ -1,5 +1,5 @@
 `timescale 1 ps  /  1 ps
-module Itlb
+module TLB
     #(
         parameter   DATA_WIDTH        = 64				,
         parameter   ADDR_WIDTH        = 64                              ,
@@ -41,7 +41,8 @@ module Itlb
     	input      [1		  :0]   MPP				,
     	input	 			MPRV				,
    	input 	   [1		  :0]	CURR_PREV,
-    input DCACHE_flusing
+    input DCACHE_flusing,
+    input OFF_TRANSLATION_FROM_TLB
 
     );
 
@@ -59,7 +60,7 @@ module Itlb
     reg  [1         	:0] mpp_reg;
     reg 		    mprv_reg;
     reg  [1         	:0] curr_prev_reg;
-
+    reg off_translation_from_tlb_reg;
     wire [MODE_LEN  -1	:0] satp_mode;
     wire [ASID_LEN  -1	:0] satp_asid;
     wire [PPN_LEN   -1 	:0] satp_ppn;
@@ -155,6 +156,7 @@ module Itlb
 	    mprv_reg		 <=   MPRV;
 	    curr_prev_reg	 <=   CURR_PREV;
         tlb_flush_reg<=TLB_FLUSH;
+        off_translation_from_tlb_reg <= OFF_TRANSLATION_FROM_TLB;
         end    
     end
 
@@ -176,47 +178,47 @@ module Itlb
                 state                     <= ITER_1;
             end
             else if(state != IDLE) begin
-		if (DATA_FROM_AXIM_VALID)begin
-		    if(~pte_v)begin
-			addr_to_axim_valid_reg  <= 0;
-			page_fault_reg 		<= 1;
-			fault_type_reg 		<= op_type_reg;
-			state      		<= IDLE;
-		    end
-		    else if(pte_r | pte_x)begin // some other conditions are there for page fault
-			addr_to_axim_valid_reg    <= 0;
-			if(~pte_a | ((op_type_reg == 2) & ~pte_d))begin
-			   page_fault_reg <= 1;
-			   fault_type_reg <= op_type_reg;
-			   state          <= IDLE;
-			end
-			else begin
-            		   state          <= IDLE; // leaf page found, update the cache in below always block
-			end
-		    end
-		    else begin
-			if(state == ITER_1) begin
-                		addr_to_axim_valid_reg    <= 1;
-                		addr_to_axim_reg          <= {8'd0,pte_ppn2,pte_ppn1,pte_ppn0,vpn1,3'd0}; // calculate the AXI address from PTE
-                		state                     <= ITER_2;
-			end
-			else if(state == ITER_2) begin
-                		addr_to_axim_valid_reg    <= 1;
-                		addr_to_axim_reg          <= {8'd0,pte_ppn2,pte_ppn1,pte_ppn0,vpn0,3'd0}; // calculate the AXI address from PTE
-                		state                     <= ITER_3;
-			end
-			else begin
-                		addr_to_axim_valid_reg    <= 0;
-			   	page_fault_reg 		  <= 1;
-			   	fault_type_reg 		  <= op_type_reg;
-			   	state      		  <= IDLE;
-			end						
-		    end
-		end
-            	else begin
-                   addr_to_axim_valid_reg <= 0;
-            	end
-            end
+        		if (DATA_FROM_AXIM_VALID)begin
+        		    if(~pte_v)begin
+        			addr_to_axim_valid_reg  <= 0;
+        			page_fault_reg 		<= 1;
+        			fault_type_reg 		<= op_type_reg;
+        			state      		<= IDLE;
+        		    end
+        		    else if(pte_r | pte_x)begin // some other conditions are there for page fault
+        			addr_to_axim_valid_reg    <= 0;
+        			if(~pte_a | ((op_type_reg == 2) & ~pte_d))begin
+        			   page_fault_reg <= 1;
+        			   fault_type_reg <= op_type_reg;
+        			   state          <= IDLE;
+        			end
+        			else begin
+                    		   state          <= IDLE; // leaf page found, update the cache in below always block
+        			end
+        		    end
+        		    else begin
+        			if(state == ITER_1) begin
+                        		addr_to_axim_valid_reg    <= 1;
+                        		addr_to_axim_reg          <= {8'd0,pte_ppn2,pte_ppn1,pte_ppn0,vpn1,3'd0}; // calculate the AXI address from PTE
+                        		state                     <= ITER_2;
+        			end
+        			else if(state == ITER_2) begin
+                        		addr_to_axim_valid_reg    <= 1;
+                        		addr_to_axim_reg          <= {8'd0,pte_ppn2,pte_ppn1,pte_ppn0,vpn0,3'd0}; // calculate the AXI address from PTE
+                        		state                     <= ITER_3;
+        			end
+        			else begin
+                        		addr_to_axim_valid_reg    <= 0;
+        			   	page_fault_reg 		  <= 1;
+        			   	fault_type_reg 		  <= op_type_reg;
+        			   	state      		  <= IDLE;
+        			end						
+        		    end
+        		end
+                    	else begin
+                           addr_to_axim_valid_reg <= 0;
+                    	end
+                    end
         end
 	else if(tlb_addr_valid & VIRT_ADDR_VALID &  CACHE_READY) page_fault_reg <= 0; // shoould check
 	else;
@@ -309,7 +311,7 @@ module Itlb
     assign valid_raddr    = virt_addr_reg[PAGE_OFFSET_WIDTH+:TLB_ADDR_WIDTH];
     assign CURR_ADDR      = virt_addr_reg;
 
-    assign translation_off= ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0)|tlb_flush_reg;
+    assign translation_off=off_translation_from_tlb_reg| ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0)|tlb_flush_reg;
 
     assign tlb_hit        = ((tag_mem_data_out == virt_addr_reg[(PAGE_OFFSET_WIDTH+TLB_ADDR_WIDTH) +: ((3*VPN_LEN)-TLB_ADDR_WIDTH)]) & valid_out);
 
