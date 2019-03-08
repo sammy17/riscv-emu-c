@@ -251,7 +251,7 @@ module PIPELINE #(
         .SATP(SATP),
         .CURR_PREV(CURR_PREV),
         .MPP(MPP),
-        .PC_EX_MEM1(pc_ex_mem1),
+        .PC_EX_MEM1(pc_mem3_wb),
         .SFENCE_in(sfence_fb_ex),
         .SFENCE(SFENCE)
         );
@@ -757,14 +757,13 @@ module PIPELINE #(
                 alu_ex_mem1              <=      alu_out_wire           ;
                 op_type_ex_mem1          <=      op_type_ex_ex2         ;         
             end
-            
+            type_mem1_mem2 <= type_ex_mem1; 
              type_mem2_mem3           <=      type_mem1_mem2               ;
-            type_mem3_wb             <=      type_mem2_mem3             ;
             if(PAGE_FAULT_DAT| ACCESS_FAULT_DAT) begin
-                type_mem1_mem2 <= 0;
+                type_mem3_wb <= 0;
             end
             else begin
-                type_mem1_mem2  <= type_ex_mem1;
+                type_mem3_wb <= type_mem2_mem3;
             end
             alu_mem1_mem2            <=      alu_ex_mem1                ;
             alu_mem2_mem3            <=      alu_mem1_mem2              ;

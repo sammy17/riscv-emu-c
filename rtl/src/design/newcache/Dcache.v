@@ -245,27 +245,27 @@ module Dcache
             control_d3 <= control_d2;
 
             data_d0    <= DATA_in;
-            data_d1    <= data_d0;
+            data_d1    <= DATA_in;
             data_d2    <= data_d1;
             data_d3    <= data_d2;
             
             wstrb_d0   <= WSTRB;
-            wstrb_d1   <= wstrb_d0;
+            wstrb_d1   <= WSTRB;
             wstrb_d2   <= wstrb_d1;
             wstrb_d3   <= wstrb_d2;
 
             flush_d0   <= FLUSH;
-            flush_d1   <= flush_d0;
+            flush_d1   <= FLUSH;
             flush_d2   <= flush_d1;
             flush_d3   <= flush_d2;
 
             amo_d0     <= AMO;
-            amo_d1     <= amo_d0;
+            amo_d1     <= AMO;
             amo_d2     <= amo_d1;
             amo_d3     <= amo_d2;
 
             op32_d0 <= OP32;
-            op32_d1 <=op32_d0;
+            op32_d1 <=OP32;
             op32_d2 <= op32_d1;
             op32_d3 <= op32_d2;
 

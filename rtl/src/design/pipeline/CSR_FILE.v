@@ -687,10 +687,13 @@ module CSR_FILE (
             err_addr_while_idle <=0;
         end
         else if (PROC_IDLE) begin
-            fault_while_idle <=LD_PAGE_FAULT|STORE_PAGE_FAULT|LD_ACC_FAULT|STORE_ACC_FAULT;
-            err_addr_while_idle <= err_addr;
-            pc_while_idle <= PC_EX_MEM1;
-            ecode_while_idle <= ecode_reg;
+			if( LD_PAGE_FAULT|STORE_PAGE_FAULT|LD_ACC_FAULT|STORE_ACC_FAULT) begin
+
+           		fault_while_idle <=1;
+            	err_addr_while_idle <= err_addr;
+            	pc_while_idle <= PC_EX_MEM1;
+            	ecode_while_idle <= ecode_reg;
+			end
             // if(LD_PAGE_FAULT|STORE_PAGE_FAULT|LD_ACC_FAULT|STORE_ACC_FAULT) begin
             //     $display("idle page fault");
             // end

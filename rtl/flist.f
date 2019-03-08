@@ -27,8 +27,9 @@ $XILINX_VIVADO/data/verilog/src/glbl.v
 ./src/design/pipeline/REG_ARRAY.v
 ./src/design/pipeline/STATE_REG.v
 ./src/simulation/TEST_RISCV_PROCESSOR.v
-./src/design/tlb/TLB.v
 ./src/design/newcache/myip_slave_lite.v
+./src/design/tlb/DTLB.v
+./src/design/tlb/ITLB.v
 ./src/design/m_standard/mul_top.v
 ./src/design/wrapper/PERIPHERAL_INTERFACE.v
 ./axi_interconnect_0.v  

@@ -1,5 +1,5 @@
 `timescale 1 ps  /  1 ps
-module TLB
+module ITLB
     #(
         parameter   DATA_WIDTH        = 64				,
         parameter   ADDR_WIDTH        = 64                              ,
@@ -244,7 +244,7 @@ module TLB
 		else 			 {pa_mem_data_in,dirty_in} <= 0;
 	     end
 	     else begin
-		pa_mem_wren            <= 0;
+		 		pa_mem_wren            <= 0;
             	tag_mem_wren           <= 0;
             	valid_wren             <= 0;	
              end
