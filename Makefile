@@ -1,7 +1,12 @@
+all : run
+
 comp :
 	g++ emu.cpp -o emu -std=c++11
 
-run : comp
+image :
+	python comp.py bbl
+
+run : comp image
 	./emu
 
 comp_debug :
@@ -13,4 +18,3 @@ run_debug : comp_debug
 clean : 
 	rm -rf emu
 
-all : run

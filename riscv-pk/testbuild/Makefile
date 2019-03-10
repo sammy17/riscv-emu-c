@@ -98,11 +98,11 @@ VPATH := $(addprefix $(src_dir)/, $(sprojs_enabled))
 # C++ compiler
 #  - CPPFLAGS : flags for the preprocessor (eg. -I,-D)
 #  - CXXFLAGS : flags for C++ compiler (eg. -Wall,-g,-O3)
-DTB           := ../bbl/shakti.dts
+
 CC            := riscv64-unknown-elf-gcc
 READELF       := riscv64-unknown-elf-readelf
 OBJCOPY       := riscv64-unknown-elf-objcopy
-CFLAGS        := -Wall -Werror -D__NO_INLINE__ -mcmodel=medany -O2 -std=gnu99 -Wno-unused -Wno-attributes -fno-delete-null-pointer-checks -fno-PIE $(CFLAGS) $(march) $(mabi) -DBBL_PAYLOAD=\"bbl_payload\" -DBBL_LOGO_FILE=\"bbl_logo_file\" -DDTB=\"dtb\"
+CFLAGS        := -Wall -Werror -D__NO_INLINE__ -mcmodel=medany -O2 -std=gnu99 -Wno-unused -Wno-attributes -fno-delete-null-pointer-checks -fno-PIE $(CFLAGS) $(march) $(mabi) -DBBL_PAYLOAD=\"bbl_payload\" -DBBL_LOGO_FILE=\"bbl_logo_file\"
 BBL_PAYLOAD   := ./hello_new
 COMPILE       := $(CC) -MMD -MP $(CFLAGS) \
                  $(sprojs_include)

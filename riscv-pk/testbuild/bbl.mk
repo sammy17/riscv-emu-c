@@ -19,7 +19,7 @@ bbl_asm_srcs = \
 dtb: $(DTB)
 	dtc -O dtb -o dtb -b 0 < $<
   
-payload.o: bbl_payload dtb
+payload.o:dtb bbl_payload
 
 #payload.o: bbl_payload
 

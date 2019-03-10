@@ -6,6 +6,9 @@
 #include <bits/stdc++.h> 
 
 using namespace std;
+typedef uint64_t uint_t;
+typedef uint64_t data_t;
+
 
 template<class T>
 T sign_extend(T x, const int bits) {
@@ -25,6 +28,26 @@ __uint128_t testt;
 
 int main(){
 	uint8_t a = 255;
+
+  ifstream infile("dtb");
+    string line;
+
+    uint_t temp;
+
+    char val;
+
+
+    //infile.read(&val,sizeof(uint8_t));  // read 1 byte from the file
+
+    while(infile.read(&val,sizeof(uint8_t))){
+    cout << hex << (0xFF & (uint32_t)int(val));  // print it as 2-digit hex 
+    infile.read(&val,sizeof(uint8_t)); 
+  }
+
+    //while (std::getline(infile, line)) {            // Initialize memory with instructions
+    //    temp = stoul(line,nullptr,16);
+    //    cout << hex << temp <<endl;
+    //}
 	//uint32_t b = 
     /*bitset<8> ins(a & (0xF<<4));
 
@@ -49,14 +72,5 @@ int main(){
 
     //printf("Value : %d\n",signed_value(128));
 
-  int8_t a =-1;
-  int8_t b = 10;
-
-  cout << div(b,a)<<endl;
-
-
-  
-  bitset<8> ins( );
-  cout << ins<<endl;
 	return 0;
 }

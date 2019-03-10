@@ -19,8 +19,6 @@ using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
     
-vector<uint_t> memory(1<<MEM_SIZE); // main memory
-
 
 
 //#define DEBUG
@@ -138,11 +136,16 @@ uint_t getINST(uint_t PC,vector<uint_t> * memory){
         return ((memory->at(PC/2))>>32);
 }
 
+void early_stage_bootloader(){
+    reg_file.at(10) = 0; //setting hart id to a0 = 0
+    reg_file.at(11) = 0x00202000;
+}
+
 
 int main(){
 
 
-    vector<uint_t> reg_file(32);       // register file
+    
 
     ifstream infile("data_hex.txt");
     string line;
@@ -233,8 +236,15 @@ int main(){
     memory.at(MTIMECMP_ADDR/8) = 0;
 
     time_csr = 0;
+
+    //early_stage_bootloader();
+
+    reg_file.at(10) = 0; //setting hart id to a0 = 0
+    reg_file.at(11) = 0x00202000;
     
     while (1){
+
+        cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
 
         cycle_count += 1;
 
@@ -245,7 +255,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-             // cout << "PC : "<< hex << PC << endl;
+             cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
