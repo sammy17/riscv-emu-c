@@ -152,7 +152,7 @@ int main(){
 
     uint_t i = 0;
 
-    uint_t PC = 0;
+    uint_t PC = DRAM_BASE;
     uint_t PC_phy = 0;
     uint_t instruction = 0;
     bool branch = false;
@@ -200,8 +200,8 @@ int main(){
     uint_t amo_reserve_addr64 = 0;
 
     //initializing reg file
-    reg_file[2]  = 0x00040000 ; //SP
-    reg_file[11] = 0x00010000 ;
+    //reg_file[2]  = 0x80040000 ; //SP
+    //reg_file[11] = 0x80010000 ;
 
     bool ls_success = false;
 
@@ -239,12 +239,14 @@ int main(){
 
     //early_stage_bootloader();
 
-    reg_file.at(10) = 0; //setting hart id to a0 = 0
-    reg_file.at(11) = 0x00202000;
+    //reg_file.at(10) = 0; //setting hart id to a0 = 0
+    //reg_file.at(11) = 0x00202000;
+
+    mhartid = 0;
     
     while (1){
 
-        cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
+        //cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
 
         cycle_count += 1;
 
@@ -263,7 +265,9 @@ int main(){
 
         //cout << "sp : "<<reg_file.at(2)<<endl;
 
-        //cout << "PRIV : "<< (uint_t)cp<<endl;
+        cout << "PRIV : "<< (uint_t)cp<<endl;
+
+        //cout << "a0 : "<<reg_file.at(10)<<endl;
 
         //cout << "t0 : "<<reg_file.at(5)<<endl;
         //cout << "t1 : "<<reg_file.at(6)<<endl;
@@ -273,7 +277,7 @@ int main(){
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
             cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
-            INS_PAGE_FAULT = true;
+            //INS_PAGE_FAULT = true;
             mtval = PC;
             PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
             write_tval = false;
@@ -289,12 +293,21 @@ int main(){
                     utval = mtval;
                     mtval = 0;
                     break;
-        }
-
+            }
         continue;
             //continue; //exception will not occur if continue is there
         }
-        // cout << "PC_phy : "<< hex << PC_phy << endl;
+
+        cout << "PC_phy  : "<< hex << PC_phy << endl;
+
+        if (PC_phy >= DRAM_BASE){ // mapping to RAM
+            PC_phy = PC_phy - DRAM_BASE; // mapping to emulator array memory
+        }
+        else{ // mapping to peripheral
+            cout << "peripheral access PC :"<< hex << PC_phy << endl;
+            break;
+        }
+        //cout << "PC_phy converted : "<< hex << PC_phy << endl;
 
         instruction = getINST(PC_phy/4,&memory);
 
@@ -320,7 +333,7 @@ int main(){
         func7   = ((instruction) >> 25) & 0b1111111 ;
 
         imm11_0  = ((instruction) >> 20) & 0b111111111111 ;
-        imm31_12 = ((instruction) >> 12) & 1048575 ;       // extract 20 bits
+        imm31_12 = ((instruction) >> 12) & 0xFFFFF ;       // extract 20 bits
 
         imm_j    = ((((instruction)>>31) & 0b1)<<20) + ((instruction) & (0b11111111<<12)) + ((((instruction)>>20) & 0b1)<<11) + ((((instruction)>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
         imm_b    = ((((instruction)>>31) & 0b1)<<12) + ((((instruction)>>7) & 0b1)<<11) + ((((instruction)>>25) & 0b111111)<<5) + (((instruction)>>7) & 0b11110) ;
@@ -383,6 +396,7 @@ int main(){
                 #endif
                 wb_data = (PC-4) + sign_extend<uint_t>(((imm31_12) << 12),32);
                 reg_file[rd] = wb_data;
+                cout << "AUIPC : "<<hex<<wb_data<<endl;
                 break;
 
             case jump :
@@ -441,13 +455,14 @@ int main(){
                 
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     {
+                        //cout << "load addr not translate : "<<hex<<load_addr<<endl;
                         load_addr_phy = translate(load_addr, LOAD, cp);
-                        
+
                         if (load_addr_phy==-1){
                             mtval = load_addr;
                             // LD_PAGE_FAULT = true;
                                PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
-                                 cout << "Page fault exception load"<<hex<<PC<<endl; 
+                                 cout << "Page fault exception load : "<< hex << load_addr <<endl; 
                                 switch(cp){
                                     case MMODE : 
                                     mtval = mtval;
@@ -464,10 +479,26 @@ int main(){
 
                             continue;
                         }
+
+                        if (load_addr_phy >= DRAM_BASE){ // mapping to RAM
+                            load_addr_phy = load_addr_phy - DRAM_BASE; // mapping to emulator array memory
+
+                            if (load_addr_phy > DRAM_SIZE){
+                                cout << "ERROR : Exceeds RAM limit" << endl;
+                                exit(0);
+                            }
+
+                        }
+                        else{ // mapping to peripheral
+                            cout << "peripheral access"<< hex << load_addr_phy << endl;
+                            continue;
+                        }
+
                          if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
-                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
-                        exit(0);
-                    }
+                            //cout << "Physical memory limit          : "<<hex<<((1llu)<<MEM_SIZE)<<endl;
+                            cout << "Physical memory limit exceeded : "<<hex<<load_addr_phy<<endl;
+                            exit(0);
+                        }
                         load_data = memory.at(load_addr_phy/8);
                         switch(func3){
                             case 0b000 : 
@@ -574,13 +605,7 @@ int main(){
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
 
                     store_addr_phy = translate(store_addr, STOR, cp);
-                    /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
-                        cout << "Mem access exception : "<<hex<<store_addr<<endl;
-                        mtval = store_addr;
-                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   //access excep should be handled by translate function
-                    }
-                    else {*/
-                    
+
                     if (store_addr_phy==-1){
                             cout << "Page fault exception store"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
@@ -588,20 +613,37 @@ int main(){
                             mtval = store_addr;
                             switch(cp){
                                     case MMODE : 
-                                    mtval = mtval;
-                                    break;
+                                        mtval = mtval;
+                                        break;
                                     case SMODE :
-                                    stval = mtval;
-                                    mtval = 0;
-                                    break;
+                                        stval = mtval;
+                                        mtval = 0;
+                                        break;
                                     case UMODE :
-                                    utval = mtval;
-                                    mtval = 0;
-                                    break;
+                                        utval = mtval;
+                                        mtval = 0;
+                                        break;
                                 }
 
                             continue;
                         }
+
+                    if (store_addr_phy >= DRAM_BASE){ // mapping to RAM
+                        store_addr_phy = store_addr_phy - DRAM_BASE; // mapping to emulator array memory
+                    }
+                    else{ // mapping to peripheral
+                        cout << "peripheral access"<< hex << store_addr_phy << endl;
+                        continue;
+                    }
+
+                    /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
+                        cout << "Mem access exception : "<<hex<<store_addr<<endl;
+                        mtval = store_addr;
+                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   //access excep should be handled by translate function
+                    }
+                    else {*/
+                    
+                    
                     if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
                         cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
                         exit(0);
@@ -1575,6 +1617,7 @@ int main(){
         //external interupts >> software interupts >> timer interupts >> synchornous traps
         
         if(LD_ACC_FAULT) {
+            cout << "This should not occur"<<endl;
             LD_ACC_FAULT = false;
             PC = excep_function(PC,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,CAUSE_LOAD_ACCESS,cp);
             write_tval = false;

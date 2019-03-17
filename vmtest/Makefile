@@ -3,7 +3,7 @@ RISCV_GCC_OPTS ?= -static -mcmodel=medany -fvisibility=hidden -nostdlib -nostart
 
 coremark_compil :
 	riscv64-unknown-elf-gcc -c stdlib.c                   -mabi=lp64 -march=rv64im $(RISCV_GCC_OPTS) -I./coremark/ -fPIC
-	riscv64-unknown-elf-gcc -c coremark/core_list_join.c  -mabi=lp64 -march=rv64im $(RISCV_GCC_OPTS) -I./coremark/  -fPIC
+	riscv64-unknown-elf-gcc -c coremark/core_list_join.c  -mabi=lp64 -march=rv64im $(RISCV_GCC_OPTS) -I./coremark/ -fPIC
 	riscv64-unknown-elf-gcc -c coremark/core_main.c       -mabi=lp64 -march=rv64im $(RISCV_GCC_OPTS) -I./coremark/ -fPIC
 	riscv64-unknown-elf-gcc -c coremark/core_matrix.c     -mabi=lp64 -march=rv64im $(RISCV_GCC_OPTS) -I./coremark/ -fPIC
 	riscv64-unknown-elf-gcc -c coremark/core_portme.c 	  -mabi=lp64 -march=rv64im $(RISCV_GCC_OPTS) -I./coremark/ -fPIC

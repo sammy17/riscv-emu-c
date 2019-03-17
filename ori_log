@@ -1,0 +1,24 @@
+instruction fetch page fault PC: 228e0
+handling fault for address 000228E0
+ instruction fetch page fault PC: 228e0
+handling fault for address 000228E0
+ setting access bit 
+instruction fetch page fault PC: 20980
+handling fault for address 00020980
+ instruction fetch page fault PC: 20980
+handling fault for address 00020980
+ setting access bit 
+instruction fetch page fault PC: 21ff0
+handling fault for address 00021FF0
+ instruction fetch page fault PC: 21ff0
+handling fault for address 00021FF0
+ setting access bit 
+Page fault exception load : 245b4
+handling fault for address 000245B4
+ Page fault exception load : 245b4
+handling fault for address 000245B4
+ setting access bit 
+Page fault exception load : 8002501c
+handling fault for address 8002501C
+ Assertion failed: addr >= (1UL << 12) && addr < 63 * (1UL << 12)
+Infinite loop!

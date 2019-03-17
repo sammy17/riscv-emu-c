@@ -1150,6 +1150,15 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
             a = satp.PPN * PAGESIZE;
 
             pte_addr = a + vir_addr.VPN2 * PTESIZE;
+
+            if (pte_addr >= DRAM_BASE){ // check whether this is inside dram range
+                pte_addr = pte_addr - DRAM_BASE;    // // mapping to emulator array memory
+            }
+            else {
+                cout <<"ERROR : Looking for PTE outside RAM"<<endl;
+            }
+
+            
             
             pte2.write_reg(memory.at(pte_addr/8));
            
@@ -1168,6 +1177,13 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 a = pte2.PPN * PAGESIZE;
                 pte_addr = a + vir_addr.VPN1 * PTESIZE;
 
+                if (pte_addr >= DRAM_BASE){ // check whether this is inside dram range
+                    pte_addr = pte_addr - DRAM_BASE;    // // mapping to emulator array memory
+                }
+                else {
+                    cout <<"ERROR : Looking for PTE outside RAM"<<endl;
+                }
+
                 pte1.write_reg(memory.at(pte_addr/8));
                 if ( (pte1.V==0) | ( (pte1.R==0) & (pte1.W==1) ) ){ //page fault -validity check failed
                     return -1;
@@ -1183,6 +1199,13 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 else{
                     a = pte1.PPN * PAGESIZE;
                     pte_addr = a + vir_addr.VPN0 * PTESIZE;
+
+                    if (pte_addr >= DRAM_BASE){ // check whether this is inside dram range
+                        pte_addr = pte_addr - DRAM_BASE;    // // mapping to emulator array memory
+                    }
+                    else {
+                        cout <<"ERROR : Looking for PTE outside RAM"<<endl;
+                    }
 
                     pte0.write_reg(memory.at(pte_addr/8));
                     if ( (pte0.V==0) | ( (pte0.R==0) & (pte0.W==1) ) ){ //page fault -validity check failed

@@ -25,6 +25,10 @@ typedef uint64_t data_t;
 #define FIFO_ADDR_RX 0xe000102c
 #define FIFO_ADDR_TX 0xe0001030
 
+#define DRAM_BASE 0x80000000
+
+#define DRAM_SIZE ((1llu)<<(MEM_SIZE))
+
 #define MASK64 0xFFFFFFFFFFFFFFFFllu
 #define MASK32 0xFFFFFFFFllu
 

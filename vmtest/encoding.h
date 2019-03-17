@@ -154,7 +154,7 @@
 #define CLINT_BASE         0x800000
 #define CLINT_SIZE         0x800100
 #define EXT_IO_BASE        0x40000000
-#define DRAM_BASE          0x00000000
+#define DRAM_BASE          0x80000000
 
 // page table entry (PTE) fields
 #define PTE_V     0x001 // Valid
