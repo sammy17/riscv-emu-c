@@ -276,7 +276,7 @@ int main(){
         PC_phy = translate(PC, INST, cp);
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
+            //cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
             //INS_PAGE_FAULT = true;
             mtval = PC;
             PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
@@ -462,7 +462,7 @@ int main(){
                             mtval = load_addr;
                             // LD_PAGE_FAULT = true;
 							
-                                 cout << "Page fault exception load : "<< hex << load_addr << "PC: " <<hex << PC<< " Physical PC : " <<hex <<PC_phy<< endl; 
+                                 //cout << "Page fault exception load : "<< hex << load_addr << "PC: " <<hex << PC<< " Physical PC : " <<hex <<PC_phy<< endl; 
                                PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
                                 switch(cp){
                                     case MMODE : 
@@ -571,8 +571,8 @@ int main(){
                                     wb_data = load_data ; 
                                     reg_file[rd] = wb_data;
                                     if (PC==(0x20fbc+4)){
-                                        cout << "rd : "<<rd<<endl;
-                                        cout << "rd val : "<<reg_file[rd]<<endl;
+                                        //cout << "rd : "<<rd<<endl;
+                                        //cout << "rd val : "<<reg_file[rd]<<endl;
                                     }
                                 } else {
                                     LD_ADDR_MISSALIG = true;
@@ -608,7 +608,7 @@ int main(){
                     store_addr_phy = translate(store_addr, STOR, cp);
 
                     if (store_addr_phy==-1){
-                            cout << "Page fault exception store"<<endl;
+                            //cout << "Page fault exception store"<<endl;
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
                             // STORE_PAGE_FAULT = true;
                             mtval = store_addr;
@@ -1362,8 +1362,8 @@ int main(){
 
             case systm :
                 if (imm11_0==CYCLE){
-                    cout << "culprit PC : "<<hex<<PC_phy<<endl;
-                    cout << func3 << endl;
+                    //cout << "culprit PC : "<<hex<<PC_phy<<endl;
+                    //cout << func3 << endl;
                 }
                 switch(func3){
                     case 0b001 : // CSRRW
