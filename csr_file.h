@@ -1226,10 +1226,10 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
             }
 
             if ( (translation_type==STOR) & ((pte_final.A==0) |  (pte_final.D==0) ) ){ // page fault according to spec - point 7
-                // cout<<"dirty bit not set"<<endl;
+                 cout<<"dirty bit not set"<<endl;
                 return -1;
             } else if ((translation_type==INST|translation_type==LOAD) & (pte_final.A==0)){
-                // cout<<"access bit not set"<<endl;
+                 cout<<"access bit not set"<<endl;
                 return -1;
             }
             return phy_addr.read_reg();

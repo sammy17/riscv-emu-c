@@ -257,7 +257,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-             cout << "PC : "<< hex << PC << endl;
+             //cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -265,7 +265,7 @@ int main(){
 
         //cout << "sp : "<<reg_file.at(2)<<endl;
 
-        cout << "PRIV : "<< (uint_t)cp<<endl;
+        //cout << "PRIV : "<< (uint_t)cp<<endl;
 
         //cout << "a0 : "<<reg_file.at(10)<<endl;
 
@@ -298,13 +298,13 @@ int main(){
             //continue; //exception will not occur if continue is there
         }
 
-        cout << "PC_phy  : "<< hex << PC_phy << endl;
+        //cout << "PC_phy  : "<< hex << PC_phy << endl;
 
         if (PC_phy >= DRAM_BASE){ // mapping to RAM
             PC_phy = PC_phy - DRAM_BASE; // mapping to emulator array memory
         }
         else{ // mapping to peripheral
-            cout << "peripheral access PC :"<< hex << PC_phy << endl;
+            //cout << "peripheral access PC :"<< hex << PC_phy << endl;
             break;
         }
         //cout << "PC_phy converted : "<< hex << PC_phy << endl;
@@ -396,7 +396,7 @@ int main(){
                 #endif
                 wb_data = (PC-4) + sign_extend<uint_t>(((imm31_12) << 12),32);
                 reg_file[rd] = wb_data;
-                cout << "AUIPC : "<<hex<<wb_data<<endl;
+                //cout << "AUIPC : "<<hex<<wb_data<<endl;
                 break;
 
             case jump :
@@ -461,8 +461,9 @@ int main(){
                         if (load_addr_phy==-1){
                             mtval = load_addr;
                             // LD_PAGE_FAULT = true;
+							
+                                 cout << "Page fault exception load : "<< hex << load_addr << "PC: " <<hex << PC<< " Physical PC : " <<hex <<PC_phy<< endl; 
                                PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
-                                 cout << "Page fault exception load : "<< hex << load_addr <<endl; 
                                 switch(cp){
                                     case MMODE : 
                                     mtval = mtval;

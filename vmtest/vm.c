@@ -365,6 +365,6 @@ void vm_boot(uintptr_t test_addr)
   trapframe_t tf;
   memset(&tf, 0, sizeof(tf));
   tf.epc = test_addr - DRAM_BASE;
-  //tf.gpr[2] = 0x30000;
+  tf.gpr[2] = 0x30000;
   pop_tf(&tf);
 }

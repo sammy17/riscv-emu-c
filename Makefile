@@ -6,7 +6,7 @@ comp :
 image :
 	python comp.py bbl
 
-run : comp image
+run : comp 
 	./emu
 
 comp_debug :
