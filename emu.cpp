@@ -257,6 +257,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
+        cout << "PC : "<<PC<<endl;
         //#endif
         //sleep_for(milliseconds(10));
 

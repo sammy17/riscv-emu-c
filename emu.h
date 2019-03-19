@@ -123,39 +123,55 @@ enum opcode_t {
 
 
 bool store_word(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_data){
-    if ((store_addr%8)==0){
-        wb_data = (load_data & ((0xFFFFFFFFull)   <<32)) + (value & 0xFFFFFFFF);
-    
-	}
-	//  else if ((store_addr%8)==1){
-	// 	wb_data = (load_data & ((0xFFFFFFFFull)   <<24)) + (value & (0xFFFFFFFFull<<8));
-    
-	// }
-	
-    else if ((store_addr%8)==4){
-        wb_data = (load_data & (0xFFFFFFFF)) + ((value & 0xFFFFFFFFull)<<32);
+    switch(store_addr%8){
+        case 0 :
+            wb_data = ( load_data & 0xFFFFFFFF00000000) + ((value & 0xFFFFFFFF) << 0 );
+            break;
+        case 1 :
+            wb_data = ( load_data & 0xFFFFFF00000000FF) + ((value & 0xFFFFFFFF) << 8 );
+            break;
+        case 2 :
+            wb_data = ( load_data & 0xFFFF00000000FFFF) + ((value & 0xFFFFFFFF) << 16);
+            break;
+        case 3 :
+            wb_data = ( load_data & 0xFF00000000FFFFFF) + ((value & 0xFFFFFFFF) << 24);
+            break;
+        case 4 :
+            wb_data = ( load_data & 0x00000000FFFFFFFF) + ((value & 0xFFFFFFFF) << 32);
+            break;
+        default :
+            //cout<<"######## Mis-aligned memory store #########\n";
+            wb_data = -1;
+            return false;
+            break;
     }
-    else{
-        //cout<<"######## Mis-aligned memory store #########\n";
-        wb_data = -1;
-        return false;
-    }
-
     return true;
 }
+
+
+
 bool store_halfw(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_data){
     switch(store_addr%8){
         case 0 :
-            wb_data = ( load_data & ((0xFFFFFFFFFFFFull)<<16)) + (value & 0xFFFF);
+            wb_data = ( load_data & 0xFFFFFFFFFFFF0000) + ((value & 0xFFFF) << 0 );
+            break;
+        case 1 :
+            wb_data = ( load_data & 0xFFFFFFFFFF0000FF) + ((value & 0xFFFF) << 8 );
             break;
         case 2 :
-            wb_data = ( load_data & ((0xFFFFFFFFull)<<32)) + ((value & 0xFFFF)<<16) + (load_data & 0xFFFF);
+            wb_data = ( load_data & 0xFFFFFFFF0000FFFF) + ((value & 0xFFFF) << 16);
+            break;
+        case 3 :
+            wb_data = ( load_data & 0xFFFFFF0000FFFFFF) + ((value & 0xFFFF) << 24);
             break;
         case 4 :
-            wb_data = ( load_data & ((0xFFFFull)<<48)) + ((value & 0xFFFF)<<32) + (load_data & 0xFFFFFFFF);
+            wb_data = ( load_data & 0xFFFF0000FFFFFFFF) + ((value & 0xFFFF) << 32);
+            break;
+        case 5 :
+            wb_data = ( load_data & 0xFF0000FFFFFFFFFF) + ((value & 0xFFFF) << 40);
             break;
         case 6 :
-            wb_data = ((value & 0xFFFF)<<48) + (load_data & 0xFFFFFFFFFFFF);
+            wb_data = ( load_data & 0x0000FFFFFFFFFFFF) + ((value & 0xFFFF) << 48);
             break;
         default :
             //cout<<"######## Mis-aligned memory store #########\n";
@@ -201,33 +217,55 @@ bool store_byte(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_da
     return true;
 }
 
-bool load_word(uint_t load_addr, uint_t load_data, uint_t &wb_data){
-    if ((load_addr%8)==0)
-        wb_data = (load_data & 0xFFFFFFFF);
-    else if ((load_addr%8)==4)
-        wb_data = (((load_data)>>32) & 0xFFFFFFFF);
-    else{
-        //cout<< "Mis-aligned memory load\n";
-        wb_data = -1;
-        return false;
-    }
 
+
+bool load_word(uint_t load_addr, uint_t load_data, uint_t &wb_data){
+    switch(load_addr%8){
+        case 0 :
+            wb_data = ((load_data >> 0 ) & 0xFFFFFFFF);
+            break;
+        case 1 :
+            wb_data = ((load_data >> 8 ) & 0xFFFFFFFF);
+            break;
+        case 2 :
+            wb_data = ((load_data >> 16) & 0xFFFFFFFF);
+            break;
+        case 3 :
+            wb_data = ((load_data >> 24) & 0xFFFFFFFF);
+            break;
+        case 4 :
+            wb_data = ((load_data >> 32) & 0xFFFFFFFF);
+            break;
+        default :
+            wb_data = -1;
+            return false;
+            break;   
+    }
     return true;
 }
 
 bool load_halfw(uint_t load_addr, uint_t load_data, uint_t &wb_data){
     switch(load_addr%8){
         case 0 :
-            wb_data = (load_data & 0xFFFF) ;
+            wb_data = ((load_data >> 0 ) & 0xFFFF) ;
+            break;
+        case 1 :
+            wb_data = ((load_data >> 8 ) & 0xFFFF) ;
             break;
         case 2 :
-            wb_data = (((load_data)>>16) & 0xFFFF) ;
+            wb_data = ((load_data >> 16) & 0xFFFF) ;
+            break;
+        case 3 :
+            wb_data = ((load_data >> 24) & 0xFFFF) ;
             break;
         case 4 :
-            wb_data = (((load_data)>>32) & 0xFFFF) ;
+            wb_data = ((load_data >> 32) & 0xFFFF) ;
+            break;
+        case 5 :
+            wb_data = ((load_data >> 40) & 0xFFFF) ;
             break;
         case 6 :
-            wb_data = (((load_data)>>48) & 0xFFFF) ;
+            wb_data = ((load_data >> 48) & 0xFFFF) ;
             break;
         default :
             //cout<<"######## Mis-aligned memory load #########\n";
