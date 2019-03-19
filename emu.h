@@ -125,7 +125,13 @@ enum opcode_t {
 bool store_word(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_data){
     if ((store_addr%8)==0){
         wb_data = (load_data & ((0xFFFFFFFFull)   <<32)) + (value & 0xFFFFFFFF);
-    }
+    
+	}
+	//  else if ((store_addr%8)==1){
+	// 	wb_data = (load_data & ((0xFFFFFFFFull)   <<24)) + (value & (0xFFFFFFFFull<<8));
+    
+	// }
+	
     else if ((store_addr%8)==4){
         wb_data = (load_data & (0xFFFFFFFF)) + ((value & 0xFFFFFFFFull)<<32);
     }

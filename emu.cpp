@@ -273,7 +273,7 @@ int main(){
         //cout << "t2 : "<<reg_file.at(7)<<endl;
 
         PC_phy = translate(PC, INST, cp);
-            cout << "PC : "<< hex << PC <<"PC_phy : "<<hex<<PC_phy<< endl;
+            // cout << "PC : "<< hex << PC <<"PC_phy : "<<hex<<PC_phy<< endl;
 
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
@@ -1019,7 +1019,7 @@ int main(){
 
                                 ls_success = store_word(load_addr_phy, load_data, store_data, wb_data);
                                 if (!ls_success){
-                                    cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                    cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                     STORE_ADDR_MISSALIG = true;
                                     mtval = load_addr;
                                     ret_data = 1;
@@ -1041,7 +1041,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1057,7 +1057,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1073,7 +1073,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1089,7 +1089,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1105,7 +1105,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1121,7 +1121,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1137,7 +1137,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1153,7 +1153,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1169,7 +1169,7 @@ int main(){
                             
                             ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr_phy;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1269,7 +1269,7 @@ int main(){
                         case 0b00001 : //AMOSWAP.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1283,7 +1283,7 @@ int main(){
                         case 0b00000 : //AMOADD.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1297,7 +1297,7 @@ int main(){
                         case 0b00100 : //AMOXOR.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1311,7 +1311,7 @@ int main(){
                         case 0b01100 : //AMOAND.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1325,7 +1325,7 @@ int main(){
                         case 0b01000 : //AMOOR.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1339,7 +1339,7 @@ int main(){
                         case 0b10000 : //AMOMIN.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1353,7 +1353,7 @@ int main(){
                         case 0b10100 : //AMOMAX.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1367,7 +1367,7 @@ int main(){
                         case 0b11000 : //AMOMINU.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
@@ -1381,7 +1381,7 @@ int main(){
                         case 0b11100 : //AMOMAXU.D
                             
                             if ((store_addr%8)!=0){
-                                cout << "AMO-SC.W : Mis-aligned memory access" << endl;
+                                cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
                             }
