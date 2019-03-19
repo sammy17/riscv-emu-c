@@ -257,7 +257,6 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-             //cout << "PC : "<< hex << PC << endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -274,6 +273,8 @@ int main(){
         //cout << "t2 : "<<reg_file.at(7)<<endl;
 
         PC_phy = translate(PC, INST, cp);
+            cout << "PC : "<< hex << PC <<"PC_phy : "<<hex<<PC_phy<< endl;
+
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
             //cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
@@ -344,34 +345,34 @@ int main(){
 
         if (amo_reserve_valid64){
             LR_count64 +=1;
-            if ( (opcode==jump) | (opcode==jumpr) | (opcode==cjump) | (opcode==load) | (opcode==store) | (opcode==fence) | (opcode==systm) ){
-                cout << "Illegal instruction in between LR/SC 64 : " << (uint_t)opcode << endl;
-                amo_reserve_valid64 = false;
-                amo_reserve_addr64 = 0;
-                LR_count64 = 0;
-            }
-            else if (LR_cp64 != cp){
-                cout << "Privilege changed in between LR/SC 64 : " << endl;
-                amo_reserve_valid64 = false;
-                amo_reserve_addr64 = 0;
-                LR_count64 = 0;
-            }
+            // if ( (opcode==jump) | (opcode==jumpr) | (opcode==cjump) | (opcode==load) | (opcode==store) | (opcode==fence) | (opcode==systm) ){
+            //     cout << "Illegal instruction in between LR/SC 64 : " << (uint_t)opcode << endl;
+            //     amo_reserve_valid64 = false;
+            //     amo_reserve_addr64 = 0;
+            //     LR_count64 = 0;
+            // }
+            // else if (LR_cp64 != cp){
+            //     cout << "Privilege changed in between LR/SC 64 : " << endl;
+            //     amo_reserve_valid64 = false;
+            //     amo_reserve_addr64 = 0;
+            //     LR_count64 = 0;
+            // }
         }
 
         if (amo_reserve_valid){
             LR_count +=1;
-            if ( (opcode==jump) | (opcode==jumpr) | (opcode==cjump) | (opcode==load) | (opcode==store) | (opcode==fence) | (opcode==systm) ){
-                cout << "Illegal instruction in between LR/SC : " << (uint_t)opcode << endl;
-                amo_reserve_valid = false;
-                amo_reserve_addr = 0;
-                LR_count = 0;
-            }
-            else if (LR_cp != cp){
-                cout << "Privilege changed in between LR/SC : " << endl;
-                amo_reserve_valid = false;
-                amo_reserve_addr = 0;
-                LR_count = 0;
-            }
+        //     if ( (opcode==jump) | (opcode==jumpr) | (opcode==cjump) | (opcode==load) | (opcode==store) | (opcode==fence) | (opcode==systm) ){
+        //         cout << "Illegal instruction in between LR/SC : " << (uint_t)opcode << endl;
+        //         amo_reserve_valid = false;
+        //         amo_reserve_addr = 0;
+        //         LR_count = 0;
+        //     }
+        //     else if (LR_cp != cp){
+        //         cout << "Privilege changed in between LR/SC : " << endl;
+        //         amo_reserve_valid = false;
+        //         amo_reserve_addr = 0;
+        //         LR_count = 0;
+        //     }
         }
 
         if ((PC%4)!=0){
@@ -492,7 +493,7 @@ int main(){
                         }
                         else{ // mapping to peripheral
                             cout << "peripheral access"<< hex << load_addr_phy << endl;
-                            continue;
+                            exit(0);
                         }
 
                          if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
@@ -634,7 +635,8 @@ int main(){
                     }
                     else{ // mapping to peripheral
                         cout << "peripheral access"<< hex << store_addr_phy << endl;
-                        continue;
+                        // continue;
+                        exit(0);
                     }
 
                     /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
@@ -960,11 +962,42 @@ int main(){
                     #ifdef DEBUG
                         printf("AMO 32\n");
                     #endif
+                    load_addr = reg_file[rs1];
+                    load_addr_phy = translate(load_addr, STOR, cp);
+
+                    if (load_addr_phy==-1){
+                            //cout << "Page fault exception store"<<endl;
+                            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+                            // STORE_PAGE_FAULT = true;
+                            mtval = load_addr;
+                            switch(cp){
+                                    case MMODE : 
+                                        mtval = mtval;
+                                        break;
+                                    case SMODE :
+                                        stval = mtval;
+                                        mtval = 0;
+                                        break;
+                                    case UMODE :
+                                        utval = mtval;
+                                        mtval = 0;
+                                        break;
+                                }
+
+                            continue;
+                        }
+                    if(load_addr_phy>0x80000000) {
+                        load_addr_phy = load_addr_phy -0x80000000;
+                    }
+                    else {
+                        printf("illegal access %x %x\n",load_addr_phy,load_addr);
+                        exit(0);
+                    }
+                    load_data = memory.at(load_addr_phy/8);
                     switch (amo_op){
                         case 0b00010 : //LR.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-LR.W : Mis-aligned memory access" << endl;
                                 STORE_ADDR_MISSALIG = true;
@@ -982,10 +1015,9 @@ int main(){
                         case 0b00011 : //SC.W
                             if (amo_reserve_valid && (reg_file[rs1]==amo_reserve_addr)){
                                 store_data = reg_file[rs2] & MASK32;
-                                store_addr = reg_file[rs1];
-                                load_data  = memory.at(store_addr/8);
+                                
 
-                                ls_success = store_word(store_addr, load_data, store_data, wb_data);
+                                ls_success = store_word(load_addr_phy, load_data, store_data, wb_data);
                                 if (!ls_success){
                                     cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                     STORE_ADDR_MISSALIG = true;
@@ -993,7 +1025,7 @@ int main(){
                                     ret_data = 1;
                                 }
                                 else {
-                                    memory.at(store_addr/8) = wb_data;
+                                    memory.at(load_addr_phy/8) = wb_data;
                                     ret_data = 0;
                                 }
                             }
@@ -1006,9 +1038,8 @@ int main(){
                             break;
 
                         case 0b00001 : //AMOSWAP.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1018,14 +1049,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = reg_file[rs2] & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b00000 : //AMOADD.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1035,14 +1065,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = ((wb_data & MASK32) + (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b00100 : //AMOXOR.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1052,14 +1081,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = ((wb_data & MASK32) ^ (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b01100 : //AMOAND.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1069,14 +1097,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = ((wb_data & MASK32) & (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b01000 : //AMOOR.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1086,14 +1113,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = ((wb_data & MASK32) | (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b10000 : //AMOMIN.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1103,14 +1129,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = min(signed_value32(wb_data & MASK32), signed_value32(reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b10100 : //AMOMAX.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1120,14 +1145,13 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = max(signed_value32(wb_data & MASK32), signed_value32(reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b11000 : //AMOMINU.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1137,24 +1161,23 @@ int main(){
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = min((wb_data & MASK32), (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
                         case 0b11100 : //AMOMAXU.W
-                            load_addr = reg_file[rs1];
-                            load_data = memory.at(load_addr/8);
-                            ls_success = load_word(load_addr,load_data, wb_data);
+                            
+                            ls_success = load_word(load_addr_phy,load_data, wb_data);
                             if (!ls_success){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
-                                mtval = load_addr;
+                                mtval = load_addr_phy;
                                 STORE_ADDR_MISSALIG = true;
                             }
                             else {
                                 ret_data = sign_extend<uint_t>((wb_data & MASK32),32);
                                 wb_data = max((wb_data & MASK32), (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
-                                memory.at(load_addr/8) = store_data;
+                                memory.at(load_addr_phy/8) = store_data;
                             }
                             break;
 
@@ -1173,11 +1196,43 @@ int main(){
                     #ifdef DEBUG
                         printf("AMO 64\n");
                     #endif
+                        load_addr = reg_file[rs1];
+                        load_addr_phy = translate(load_addr, STOR, cp);
+
+                        if (load_addr_phy==-1){
+                            //cout << "Page fault exception store"<<endl;
+                            PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
+                            // STORE_PAGE_FAULT = true;
+                            mtval = load_addr;
+                            switch(cp){
+                                    case MMODE : 
+                                        mtval = mtval;
+                                        break;
+                                    case SMODE :
+                                        stval = mtval;
+                                        mtval = 0;
+                                        break;
+                                    case UMODE :
+                                        utval = mtval;
+                                        mtval = 0;
+                                        break;
+                                }
+
+                            continue;
+                        }
+                    if(load_addr_phy>0x80000000) {
+                        load_addr_phy = load_addr_phy -0x80000000;
+                    }
+                    else {
+                       printf("illegal access %x %x\n",load_addr_phy,load_addr);
+                        exit(0);
+                    }
+
+                    wb_data = memory.at(load_addr_phy/8);
                     switch (amo_op){ 
                         case 0b00010 : //LR.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
-                            if ((load_addr%8)!=0){
+                            
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-LR.D : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1194,14 +1249,13 @@ int main(){
                         case 0b00011 : //SC.D
                             if (amo_reserve_valid64 && (reg_file[rs1]==amo_reserve_addr64)){
                                 store_data = reg_file[rs2];
-                                store_addr = reg_file[rs1];
                                 if ((store_addr%8)!=0){
                                     cout << "AMO-SC.D : Mis-aligned memory access" << endl;
                                     mtval = load_addr;
                                     STORE_ADDR_MISSALIG = true;
                                 }
                                 else {
-                                    memory.at(store_addr/8) = store_data;
+                                    memory.at(load_addr_phy/8) = store_data;
                                     ret_data = 0;
                                 }
                             }
@@ -1213,8 +1267,7 @@ int main(){
                             break;
 
                         case 0b00001 : //AMOSWAP.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1223,13 +1276,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = reg_file[rs2];
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b00000 : //AMOADD.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1238,13 +1290,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = (wb_data + reg_file[rs2]);
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b00100 : //AMOXOR.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1253,13 +1304,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = (wb_data ^ reg_file[rs2]);
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b01100 : //AMOAND.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1268,13 +1318,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = (wb_data & reg_file[rs2]);
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b01000 : //AMOOR.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1283,13 +1332,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = (wb_data | reg_file[rs2]);
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b10000 : //AMOMIN.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1298,13 +1346,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = min(signed_value(wb_data), signed_value(reg_file[rs2]));
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b10100 : //AMOMAX.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1313,13 +1360,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = max(signed_value(wb_data), signed_value(reg_file[rs2]));
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b11000 : //AMOMINU.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1328,13 +1374,12 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = min(wb_data, reg_file[rs2]);
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
                         case 0b11100 : //AMOMAXU.D
-                            load_addr = reg_file[rs1];
-                            wb_data = memory.at(load_addr/8);
+                            
                             if ((store_addr%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access" << endl;
                                 mtval = load_addr;
@@ -1343,7 +1388,7 @@ int main(){
                             else {
                                 ret_data = wb_data;
                                 wb_data = max(wb_data, reg_file[rs2]);
-                                memory.at(load_addr/8) = wb_data;
+                                memory.at(load_addr_phy/8) = wb_data;
                             }
                             break;
 
@@ -1393,7 +1438,7 @@ int main(){
                             if ( (imm11_0==CYCLE) | (imm11_0==TIME) | (imm11_0==INSTRET) ){
                                 store_data = reg_file[rs1];
                                 store_data = (store_data | csr_data);
-                                cout << hex << imm11_0 << " read : "<<store_data<<endl;
+                                // Acout << hex << imm11_0 << " read : "<<store_data<<endl;
                             }
                             else {
                                 store_data = reg_file[rs1];
