@@ -271,7 +271,7 @@ int main(){
     while (1){
 
         //cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
-        //if (PC == 0xffffffff80344b5c){
+        //if (PC == 0xffffffff802f0824){
         //    cout << "a0 : "<<hex<<reg_file.at(10)<<endl;
         //    cout << "a5 : "<<hex<<reg_file.at(15)<<endl;
 
@@ -286,7 +286,7 @@ int main(){
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));
-        cout << "PC : "<<PC<<endl;
+        //cout << "PC : "<<PC<<endl;
         //#endif
         //sleep_for(milliseconds(10));
 
@@ -331,7 +331,7 @@ int main(){
             //continue; //exception will not occur if continue is there
         }
 
-        cout << "PC_phy  : "<< hex << PC_phy << endl;
+        //cout << "PC_phy  : "<< hex << PC_phy << endl;
 
         if (PC_phy >= DRAM_BASE){ // mapping to RAM
             PC_phy = PC_phy - DRAM_BASE; // mapping to emulator array memory
