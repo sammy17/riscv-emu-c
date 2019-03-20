@@ -25,7 +25,7 @@ module ITLB
 	output wire[ADDR_WIDTH-1 : 0]	CURR_ADDR			,
 	//Signals to I-Cache
 	output  reg			PHY_ADDR_VALID			,
-	output     [56-1 : 0]	PHY_ADDR			,
+	output     [64-1 : 0]	PHY_ADDR			,
 	//Signals to/from AXI Master
 	output  			ADDR_TO_AXIM_VALID		,
 	output     [ADDR_WIDTH-1 : 0]	ADDR_TO_AXIM			,

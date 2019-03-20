@@ -103,8 +103,10 @@ module EXSTAGE(
     
     wire [31:0] rv32m_out           ;
     wire [63:0] rv64m_out           ;
-    wor        rv32m_ready         ;
-    
+    wire rv32ready;
+    wire rv64ready;
+        wire        rv32m_ready = rv32ready|rv64ready        ;
+
     wire [63:0] csr_out             ;
     wire [63:0] priv_jump_add       ; 
     wire        priv_jump           ;
@@ -122,6 +124,9 @@ module EXSTAGE(
     reg  [ 3:0] alu_cnt=alu_idle    ;
     reg  [ 2:0] fun3=no_branch      ;
     wire [63:0] jump_addr_for_non_priv_branch = (JUMP_BUS1+JUMP_BUS2);
+ 
+    wire        comp_out_w          ; 
+    
     initial
     begin
         for (j=0; j<=15 ; j = j+1)
@@ -260,7 +265,7 @@ module EXSTAGE(
         .RS1(B),
         .RS2(A),
         .OUT(rv32m_out),
-        .READY(rv32m_ready) 
+        .READY(rv32ready) 
         );    
 RV32M 
 #(.INPUT_WIDTH(64)
@@ -276,10 +281,10 @@ rv64m
         .RS1(B),
         .RS2(A),
         .OUT(rv64m_out),
-        .READY(rv32m_ready) 
+        .READY(rv64ready) 
         );
         
-    wire        comp_out_w          ; 
+    
                  
     reg  [1:0]  data_cache_control  ;
     reg         flush_out           ;

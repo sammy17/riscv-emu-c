@@ -187,7 +187,7 @@ module DTLB
     begin
         if (RST)
         begin
-			data_in_reg <=0;
+			//data_in_reg <=0;
             addr_to_axim_valid_reg  <=0;
             addr_to_axim_reg        <=0;
             state                   <=IDLE;

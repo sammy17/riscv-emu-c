@@ -444,6 +444,9 @@ module RISCV_PROCESSOR#(
        reg dcache_control_overide_with_dtlb;
        reg [63:0]    addr_to_dcache_from_dtlb;
        reg [63:0]    control_to_dcache_from_dtlb;
+       
+       
+           wire dtlb_ready;
      //reg [63:0]     mtime;
      //reg [63:0]     mtimecmp;
      //reg            timer_interrupt;
@@ -805,7 +808,7 @@ myip_v1_0_M00_AXI # (
         
 
     ); 
-    wire dtlb_ready;
+
     wire [55:0] addr_to_dat_cache_from_tlb; 
     wire [1:0] control_dcache_from_dtlb;
 	wire [63:0] data_to_dcache_from_dtlb;
