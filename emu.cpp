@@ -142,10 +142,37 @@ void early_stage_bootloader(){
 }
 
 
+static uint_t clint_read( uint_t offset)
+{
+
+    uint_t val;
+
+    switch(offset) {
+    case 0xbff8:    //rtc time
+        val = mtime;
+        break;
+    case 0x4000:    //timecmp
+        val = mtimecmp;
+        break;
+    default:
+        val = 0;
+        break;
+    }
+    return val;
+}
+
+static void clint_write(uint_t offset, uint_t val)
+{
+    switch(offset) {
+        case 0x4000:
+            mtimecmp = val;
+            break;
+        default:
+            break;
+    }
+}
+
 int main(){
-
-
-    
 
     ifstream infile("data_hex.txt");
     string line;
@@ -229,9 +256,6 @@ int main(){
     uint_t testval_pre;
     uint_t testval_pos;
 
-    uint_t &mtime = memory.at(MTIME_ADDR/8);
-    uint_t &mtimecmp = memory.at(MTIMECMP_ADDR/8);
-
     memory.at(MTIME_ADDR/8) = 0;
     memory.at(MTIMECMP_ADDR/8) = 0;
 
@@ -247,6 +271,11 @@ int main(){
     while (1){
 
         //cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
+        //if (PC == 0xffffffff80344b5c){
+        //    cout << "a0 : "<<hex<<reg_file.at(10)<<endl;
+        //    cout << "a5 : "<<hex<<reg_file.at(15)<<endl;
+
+        //}
 
         cycle_count += 1;
 
@@ -262,6 +291,8 @@ int main(){
         //sleep_for(milliseconds(10));
 
         //cout << "mstatus.mpp : "<<(uint_t)mstatus.mpp<<endl;
+
+        //cout << "mstatus.mie : "<<(uint_t)mstatus.mie<<endl;
 
         //cout << "sp : "<<reg_file.at(2)<<endl;
 
@@ -300,7 +331,7 @@ int main(){
             //continue; //exception will not occur if continue is there
         }
 
-        //cout << "PC_phy  : "<< hex << PC_phy << endl;
+        cout << "PC_phy  : "<< hex << PC_phy << endl;
 
         if (PC_phy >= DRAM_BASE){ // mapping to RAM
             PC_phy = PC_phy - DRAM_BASE; // mapping to emulator array memory
@@ -490,11 +521,18 @@ int main(){
                                 cout << "ERROR : Exceeds RAM limit" << endl;
                                 exit(0);
                             }
+                        load_data = memory.at(load_addr_phy/8);
 
                         }
                         else{ // mapping to peripheral
-                            cout << "peripheral access"<< hex << load_addr_phy << endl;
-                            exit(0);
+                            cout << "peripheral access read"<< hex << load_addr_phy << endl;
+
+                            if ((load_addr_phy >= CLINT_BASE) & (load_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
+                                load_data = clint_read(load_addr_phy-CLINT_BASE);
+                            }else {
+                                cout << "New peripheral"<< hex << load_addr_phy<<endl;
+                                exit(0);
+                            }
                         }
 
                          if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
@@ -502,7 +540,6 @@ int main(){
                             cout << "Physical memory limit exceeded : "<<hex<<load_addr_phy<<endl;
                             exit(0);
                         }
-                        load_data = memory.at(load_addr_phy/8);
                         switch(func3){
                             case 0b000 : 
                                 if (!load_byte(load_addr_phy,load_data, wb_data)){
@@ -572,10 +609,7 @@ int main(){
                                 if ((load_addr_phy%8)==0){
                                     wb_data = load_data ; 
                                     reg_file[rd] = wb_data;
-                                    if (PC==(0x20fbc+4)){
-                                        //cout << "rd : "<<rd<<endl;
-                                        //cout << "rd val : "<<reg_file[rd]<<endl;
-                                    }
+                                    
                                 } else {
                                     LD_ADDR_MISSALIG = true;
                                     mtval = load_addr;
@@ -633,11 +667,66 @@ int main(){
 
                     if (store_addr_phy >= DRAM_BASE){ // mapping to RAM
                         store_addr_phy = store_addr_phy - DRAM_BASE; // mapping to emulator array memory
+                          if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
+                                cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                                exit(0);
+                            }else{
+                                
+                                store_data = memory.at(store_addr_phy/8);
+
+
+                                switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
+                                    case 0b000 :
+                                        val = reg_file[rs2] & 0xFF;
+                                        ls_success = store_byte(store_addr_phy,store_data,val, wb_data);
+                                        break;//SB  setting LSB 8 bit
+
+                                    case 0b001 :
+                                        val = reg_file[rs2] & 0xFFFF;
+                                        ls_success = store_halfw(store_addr_phy,store_data,val, wb_data);
+                                        break;//SH setting LSB 16 bit value
+
+                                    case 0b010 :
+                                        val = reg_file[rs2] & 0xFFFFFFFF;
+                                        ls_success = store_word(store_addr_phy,store_data,val, wb_data);
+                                        break;//SW setting LSB 32 bit value
+
+                                    case 0b011 : 
+                                        if ((store_addr_phy%8)==0){
+                                            wb_data = reg_file[rs2] ; 
+                                            ls_success = true;
+                                        }else{
+                                            ls_success = false;
+                                        }
+                                        break; //SD
+
+                                    default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
+                                    bitset<3> ins(func3);
+                                    cout<<  "func3 : "<<func3<<endl;
+                                    break;
+                                }
+                                if (!ls_success){
+                                    //cout << "Mis-aligned store exception"<<endl;
+                                    //PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
+                                    STORE_ADDR_MISSALIG = true;
+                                    mtval = store_addr;
+                                }else {
+                                    memory.at(store_addr_phy/8) = wb_data;
+                                }
+                            }
                     }
                     else{ // mapping to peripheral
-                        cout << "peripheral access"<< hex << store_addr_phy << endl;
+                        cout << "peripheral access write"<< hex << store_addr_phy << endl;
+                        cout << "mtime : " <<hex<<mtime<<endl;
+                        cout << "write value : "<<hex<<reg_file[rs2]<<endl;
+                        cout  << "offset : "<<hex<<store_addr_phy-CLINT_BASE<<endl;
                         // continue;
-                        exit(0);
+                        if ((store_addr_phy >= CLINT_BASE) & (store_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
+                            clint_write(store_addr_phy-CLINT_BASE, reg_file[rs2]);
+                        }else {
+                            cout << "New peripheral"<< hex << load_addr_phy<<endl;
+                            exit(0);
+                        }
                     }
 
                     /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
@@ -648,53 +737,7 @@ int main(){
                     else {*/
                     
                     
-                    if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
-                        cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
-                        exit(0);
-                    }else{
-                        
-                        store_data = memory.at(store_addr_phy/8);
-
-
-                        switch(func3){                                                      // Setting lower n bits to 0 and adding storing value
-                            case 0b000 :
-                                val = reg_file[rs2] & 0xFF;
-                                ls_success = store_byte(store_addr_phy,store_data,val, wb_data);
-                                break;//SB  setting LSB 8 bit
-
-                            case 0b001 :
-                                val = reg_file[rs2] & 0xFFFF;
-                                ls_success = store_halfw(store_addr_phy,store_data,val, wb_data);
-                                break;//SH setting LSB 16 bit value
-
-                            case 0b010 :
-                                val = reg_file[rs2] & 0xFFFFFFFF;
-                                ls_success = store_word(store_addr_phy,store_data,val, wb_data);
-                                break;//SW setting LSB 32 bit value
-
-                            case 0b011 : 
-                                if ((store_addr_phy%8)==0){
-                                    wb_data = reg_file[rs2] ; 
-                                    ls_success = true;
-                                }else{
-                                    ls_success = false;
-                                }
-                                break; //SD
-
-                            default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
-                            bitset<3> ins(func3);
-                            cout<<  "func3 : "<<func3<<endl;
-                            break;
-                        }
-                        if (!ls_success){
-                            //cout << "Mis-aligned store exception"<<endl;
-                            //PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
-                            STORE_ADDR_MISSALIG = true;
-                            mtval = store_addr;
-                        }else {
-                            memory.at(store_addr_phy/8) = wb_data;
-                        }
-                    }
+                  
 
                 } 
                 else if(store_addr == FIFO_ADDR_TX){
@@ -1250,7 +1293,7 @@ int main(){
                         case 0b00011 : //SC.D
                             if (amo_reserve_valid64 && (reg_file[rs1]==amo_reserve_addr64)){
                                 store_data = reg_file[rs2];
-                                if ((store_addr%8)!=0){
+                                if ((load_addr_phy%8)!=0){
                                     cout << "AMO-SC.D : Mis-aligned memory access" << endl;
                                     mtval = load_addr;
                                     STORE_ADDR_MISSALIG = true;
@@ -1269,7 +1312,7 @@ int main(){
 
                         case 0b00001 : //AMOSWAP.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1283,7 +1326,7 @@ int main(){
 
                         case 0b00000 : //AMOADD.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1297,7 +1340,7 @@ int main(){
 
                         case 0b00100 : //AMOXOR.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1311,7 +1354,7 @@ int main(){
 
                         case 0b01100 : //AMOAND.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1325,7 +1368,7 @@ int main(){
 
                         case 0b01000 : //AMOOR.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1339,7 +1382,7 @@ int main(){
 
                         case 0b10000 : //AMOMIN.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1353,7 +1396,7 @@ int main(){
 
                         case 0b10100 : //AMOMAX.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1367,7 +1410,7 @@ int main(){
 
                         case 0b11000 : //AMOMINU.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1381,7 +1424,7 @@ int main(){
 
                         case 0b11100 : //AMOMAXU.D
                             
-                            if ((store_addr%8)!=0){
+                            if ((load_addr_phy%8)!=0){
                                 cout << "AMO-SC.W : Mis-aligned memory access " << hex<< load_addr_phy%8<< endl;
                                 mtval = load_addr;
                                 STORE_ADDR_MISSALIG = true;
@@ -1437,9 +1480,8 @@ int main(){
                         //cout << csr_read_success << endl;
                         if (csr_read_success) {
                             if ( (imm11_0==CYCLE) | (imm11_0==TIME) | (imm11_0==INSTRET) ){
-                                store_data = reg_file[rs1];
-                                store_data = (store_data | csr_data);
                                 // Acout << hex << imm11_0 << " read : "<<store_data<<endl;
+                                reg_file[rd] = csr_data;
                             }
                             else {
                                 store_data = reg_file[rs1];
@@ -1547,8 +1589,11 @@ int main(){
                             case 770 : //mret
                                 PC = mepc;
                                 cp = (plevel_t)mstatus.mpp;
+                                if (mstatus.mpp<3)
+                                    mstatus.mie = 1;
+                                else
+                                    mstatus.mie = mstatus.mpie;
                                 mstatus.mpp = 0b00; //setting to umode
-                                mstatus.mie = mstatus.mpie;
                                 mstatus.mpie = 1;
                                 break;
 
@@ -1676,6 +1721,9 @@ int main(){
             PC = interrupt_function(PC, CAUSE_MACHINE_EXT_INT, cp);
         }
         else if( mie.MTIE & mip.MTIP) {
+            //cout << "because of this"<<hex<<cp<<endl;
+            //cout << "mstatus.mie : "<<(uint_t)mstatus.mie<<endl; 
+            //exit(0);
             PC = interrupt_function(PC, CAUSE_MACHINE_TIMER_INT, cp);
         }
         else if( mie.MSIE & mip.MSIP) {

@@ -20,7 +20,7 @@ using namespace std;
 typedef uint64_t uint_t;
 typedef uint64_t data_t;
 
-#define MEM_SIZE 28
+#define MEM_SIZE 27
 #define XLEN     64
 #define FIFO_ADDR_RX 0xe000102c
 #define FIFO_ADDR_TX 0xe0001030
@@ -32,8 +32,30 @@ typedef uint64_t data_t;
 #define MASK64 0xFFFFFFFFFFFFFFFFllu
 #define MASK32 0xFFFFFFFFllu
 
-#define MTIME_ADDR 0x800000
-#define MTIMECMP_ADDR 0x800008
+enum plevel_t {
+    MMODE = 0b11,
+    HMODE = 0b10,
+    SMODE = 0b01,
+    UMODE = 0b00
+};
+
+vector<uint_t> memory(1<<MEM_SIZE); // main memory
+
+vector<uint_t> reg_file(32);       // register file
+
+plevel_t cp     = (plevel_t)MMODE;
+
+bool csr_read_success = false;
+
+
+#define CLINT_BASE 0x2000000
+#define CLINT_SIZE 0x00c0000
+
+#define MTIME_ADDR (CLINT_BASE+0xbff8)
+#define MTIMECMP_ADDR (CLINT_BASE+0x4000)
+
+uint_t &mtime = memory.at(MTIME_ADDR/8);
+uint_t &mtimecmp = memory.at(MTIMECMP_ADDR/8);
 
 
 #define CAUSE_MISALIGNED_FETCH 0x0
@@ -79,21 +101,10 @@ bool INS_PAGE_FAULT      = false; //instructioin page fault
 bool LD_PAGE_FAULT       = false; //load page fault
 bool STORE_PAGE_FAULT    = false; //store/amo page fault
 bool ECALL               = false;
-enum plevel_t {
-    MMODE = 0b11,
-    HMODE = 0b10,
-    SMODE = 0b01,
-    UMODE = 0b00
-};
 
 
-vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
-vector<uint_t> reg_file(32);       // register file
 
-plevel_t cp     = (plevel_t)MMODE;
-
-bool csr_read_success = false;
 
 // type defs
 enum opcode_t {
@@ -119,6 +130,7 @@ enum opcode_t {
                 fd6    = 0b1001111,
                 fd7    = 0b1010011
             };
+
 
 
 
@@ -216,7 +228,6 @@ bool store_byte(uint_t store_addr, uint_t load_data, uint_t value, uint_t &wb_da
     }
     return true;
 }
-
 
 
 bool load_word(uint_t load_addr, uint_t load_data, uint_t &wb_data){

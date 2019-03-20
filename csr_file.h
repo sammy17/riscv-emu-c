@@ -596,6 +596,7 @@ uint_t csr_read(uint_t csr_addr){
             return cycle;
             break;
         case TIME :
+            //cout << "rdtime : "<<time_csr<<endl;
             return time_csr;
             break;
         case INSTRET :
@@ -1056,7 +1057,7 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
 
     }
     else {
-        cout << "Unrecognized mode for interrupt_function" <<endl;
+        //cout << "Unrecognized mode for interrupt_function" <<endl;
         return PC;
     }
 
