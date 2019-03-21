@@ -495,24 +495,6 @@ struct mie_t{
     }
 } mie;
 
-struct sie_t{
-    uint8_t MEIE; uint8_t SEIE; uint8_t UEIE; uint8_t MTIE; uint8_t STIE; uint8_t UTIE; uint8_t MSIE; uint8_t SSIE; uint8_t USIE;
-    sie_t(){
-        MEIE = 0; SEIE = 0; UEIE = 0; MTIE = 0; STIE = 0; UTIE = 0; MSIE = 0; SSIE = 0; USIE = 0;
-    }
-    uint_t read_reg(){
-        return  (((0 & 0b1)<<11)+((SEIE & 0b1)<<9)+((UEIE & 0b1)<<8)+((0 & 0b1)<<7)+((STIE & 0b1)<<5)+((UTIE & 0b1)<<4)+((0 & 0b1)<<3)+((SSIE & 0b1)<<1)+(USIE & 0b1));
-    }
-    void write_reg(uint_t val){
-        SEIE = (val>> 9) & 0b1;
-        UEIE = (val>> 8) & 0b1;
-        STIE = (val>> 5) & 0b1;
-        UTIE = (val>> 4) & 0b1;
-        SSIE = (val>> 1) & 0b1;
-        USIE = val& 0b1;
-    }
-} sie;
-
 
 
 uint_t csr_read(uint_t csr_addr){
@@ -633,7 +615,7 @@ uint_t csr_read(uint_t csr_addr){
             return mie.read_reg();
             break;
         case SIE :
-            return sie.read_reg();
+            return mie.read_reg();
             break;
         case SCOUNTEREN :
             return scounteren;
@@ -791,7 +773,7 @@ bool csr_write(uint_t csr_addr, uint_t val){
             mie.write_reg(val);
             break;
         case SIE :
-            sie.write_reg(val);
+            mie.write_reg(val);
             break;
         case SCOUNTEREN :
             scounteren = val;
@@ -1029,7 +1011,6 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
         scause.ecode = ecode;
         sepc = PC;
 
-        //cout << "handling in smode "<<ecode<<endl;
 
         if (stvec.mode ==0b1){
             new_PC = stvec.base + 4*ecode;

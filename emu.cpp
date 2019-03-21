@@ -257,7 +257,7 @@ int main(){
     uint_t testval_pos;
 
     memory.at(MTIME_ADDR/8) = 0;
-    memory.at(MTIMECMP_ADDR/8) = 0;
+    memory.at(MTIMECMP_ADDR/8) = -1;
 
     time_csr = 0;
 
@@ -270,12 +270,12 @@ int main(){
     
     while (1){
 
-        //cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
-        //if (PC == 0xffffffff802f0824){
+        // cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
+        // if (PC == 0xffffffff80344b60){
         //    cout << "a0 : "<<hex<<reg_file.at(10)<<endl;
         //    cout << "a5 : "<<hex<<reg_file.at(15)<<endl;
 
-        //}
+        // }
 
         cycle_count += 1;
 
@@ -624,11 +624,12 @@ int main(){
                         }
                     }
                 } else if ( load_addr == FIFO_ADDR_RX ) {
+					
                     wb_data = 0 ;
                     reg_file[rd] = wb_data;
                 }
                 else if ( load_addr == FIFO_ADDR_TX ){
-                    wb_data = (uint_t)getchar() ;
+					wb_data = 64;//(uint_t)getchar() ;
                     reg_file[rd] = wb_data;
                 }
                 break;
@@ -716,10 +717,10 @@ int main(){
                             }
                     }
                     else{ // mapping to peripheral
-                        cout << "peripheral access write"<< hex << store_addr_phy << endl;
-                        cout << "mtime : " <<hex<<mtime<<endl;
-                        cout << "write value : "<<hex<<reg_file[rs2]<<endl;
-                        cout  << "offset : "<<hex<<store_addr_phy-CLINT_BASE<<endl;
+                        // cout << "peripheral access write"<< hex << store_addr_phy << endl;
+                        // cout << "mtime : " <<hex<<mtime<<endl;
+                        // cout << "write value : "<<hex<<reg_file[rs2]<<endl;
+                        // cout  << "offset : "<<hex<<store_addr_phy-CLINT_BASE<<endl;
                         // continue;
                         if ((store_addr_phy >= CLINT_BASE) & (store_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                             clint_write(store_addr_phy-CLINT_BASE, reg_file[rs2]);
@@ -1577,8 +1578,8 @@ int main(){
                     case 0b000 : 
                         switch(imm11_0){
                             case 0 : //ecall
-                                ECALL = true;
-                                //PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
+                        
+                                PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
                                 break;
 
                             case 1 : //ebreak
@@ -1589,12 +1590,10 @@ int main(){
                             case 770 : //mret
                                 PC = mepc;
                                 cp = (plevel_t)mstatus.mpp;
-                                if (mstatus.mpp<3)
-                                    mstatus.mie = 1;
-                                else
-                                    mstatus.mie = mstatus.mpie;
+
+                                mstatus.mie = 1;//mstatus.mpie;
                                 mstatus.mpp = 0b00; //setting to umode
-                                mstatus.mpie = 1;
+                                mstatus.mpie = 0;
                                 break;
 
                             case 258 : //sret
@@ -1692,22 +1691,22 @@ int main(){
 
         if (lPC==PC){
             //infinite loop
-            cout << "Infinite loop!"<<endl;
+            cout << "Infinite loop!"<<(int)mip.STIP<<endl;
             break;
         }
         //cout << "mtime    : "<<mtime<<endl;
         //cout << "mtimecmp : "<<mtimecmp<<endl;
         //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
-        if (mtime >= mtimecmp){ //timer interrupt
-            mip.MTIP = 0b1 ;
-        }
+         //timer interrupt
+            mip.MTIP = (mtime >= mtimecmp );
+
             //cout << "cp : "<< (uint_t)cp <<endl;
             //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
 
         //exception/interupt finding combo
 
         //external interupts >> software interupts >> timer interupts >> synchornous traps
-        
+      
         if(LD_ACC_FAULT) {
             cout << "This should not occur"<<endl;
             LD_ACC_FAULT = false;
@@ -1718,10 +1717,14 @@ int main(){
      
       
         else if( mie.MEIE & mip.MEIP) {
+
             PC = interrupt_function(PC, CAUSE_MACHINE_EXT_INT, cp);
         }
         else if( mie.MTIE & mip.MTIP) {
-            //cout << "because of this"<<hex<<cp<<endl;
+            //  if(mstatus.mie) {
+            //     cout<<"timer interrupt"<<hex<<(int)mip.STIP<<endl;
+            // }
+            // //cout << "because of this"<<hex<<cp<<endl;
             //cout << "mstatus.mie : "<<(uint_t)mstatus.mie<<endl; 
             //exit(0);
             PC = interrupt_function(PC, CAUSE_MACHINE_TIMER_INT, cp);
@@ -1732,6 +1735,11 @@ int main(){
         else if( mie.SEIE & mip.SEIP) {
             PC = interrupt_function(PC, CAUSE_SUPERVISOR_EXT_INT, cp);  
         }
+        // else if(ECALL) {
+        //     ECALL = false;
+        //     PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
+        //     write_tval = false;
+        // }
         else if( mie.STIE & mip.STIP) {
             PC = interrupt_function(PC, CAUSE_SUPERVISOR_TIMER_INT, cp);
         }
@@ -1754,11 +1762,7 @@ int main(){
             PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);
             write_tval = false;
         }
-        else if(ECALL) {
-            ECALL = false;
-            PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
-            write_tval = false;
-        }
+        
         else if (ILL_INS) {
             ILL_INS = false;
             PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
