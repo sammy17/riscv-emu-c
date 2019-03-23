@@ -59,7 +59,6 @@ module DECODE_UNIT(
     
     `include "PipelineParams.vh"
     
-    wire            undefined               ;
     wire [ 2:0]     feed_back_mux1_sel      ;
     wire [ 2:0]     feed_back_mux2_sel      ;
     wire [ 3:0]     alu_cnt                 ;
@@ -181,8 +180,8 @@ module DECODE_UNIT(
        
     always @(*)
     begin
-        if (1/*DATA_CACHE_READY & STALL_ENABLE*/)
-        begin                                    
+        // if (1DATA_CACHE_READY & STALL_ENABLE)
+        // begin                                    
             FEED_BACK_MUX1_SEL        =    feed_back_mux1_sel     ;         
             FEED_BACK_MUX2_SEL        =    feed_back_mux2_sel     ;         
             ALU_CNT                   =    alu_cnt                ;                    
@@ -202,7 +201,7 @@ module DECODE_UNIT(
             RD_OUT                    =    INSTRUCTION[11: 7]     ;   
             FENCE                     =    fence_w                ; 
             AMO_OP                    =    amo_op                 ;    
-        end
+        // end
     end  
                                 
     always@(*)  
@@ -210,6 +209,5 @@ module DECODE_UNIT(
         STALL_ENABLE              =    stall_enable           ;   
     end
     
-    assign undefined = (type_w==rtype) & INSTRUCTION[25] && !FLUSH;
 
 endmodule

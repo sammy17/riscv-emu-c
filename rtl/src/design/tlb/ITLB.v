@@ -41,7 +41,6 @@ module ITLB
     	input      [1		  :0]   MPP				,
     	input	 			MPRV				,
    	input 	   [1		  :0]	CURR_PREV,
-    input DCACHE_flusing,
     input OFF_TRANSLATION_FROM_TLB,
     output [1:0] OP_TYPE_OUT
 
@@ -173,7 +172,7 @@ module ITLB
             fault_type_reg          <=0;
         end
         else if (~tlb_addr_valid & ~valid_wren )begin   //check whether cache ready and make sure flag goes 0 one cycle before data get written
-            if(~addr_to_axim_valid_reg & (state == IDLE) & VIRT_ADDR_VALID & ~DCACHE_flusing)begin
+            if(~addr_to_axim_valid_reg & (state == IDLE) & VIRT_ADDR_VALID )begin
                 addr_to_axim_valid_reg    <= 1;
                 addr_to_axim_reg          <= {8'd0,satp_ppn,vpn2,3'd0}; // calculate the AXI address from SATP
                 state                     <= ITER_1;

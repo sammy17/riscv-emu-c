@@ -154,7 +154,7 @@ module PIPELINE #(
    reg access_fault_id_fb,access_fault_fb_ex;
     DECODE_UNIT decode_unit(
         .CLK                (CLK)                           ,
-        .TYPE_MEM3_WB       (type_mem3_wb)                  ,
+        .TYPE_MEM3_WB       (/*(~DATA_CACHE_READY & ~PAGE_FAULT_DAT)? */type_mem3_wb)                  ,
         .DATA_CACHE_READY   (CACHE_READY_DATA)              ,
         .INS_CACHE_READY    (CACHE_READY)                   ,
         .INSTRUCTION        (ins_if_id)                     ,
@@ -618,7 +618,7 @@ module PIPELINE #(
                 op_32_id_fb              <=op_32_wire;
                 op_32_fb_ex             <=op_32_id_fb;
 
-                page_fault_id_fb       <=PAGE_FAULT_INS;
+                page_fault_id_fb        <=PAGE_FAULT_INS;
                 page_fault_fb_ex        <= page_fault_id_fb;
 
                 access_fault_id_fb      <= ACCESS_FAULT_INS ;
@@ -744,7 +744,7 @@ module PIPELINE #(
                 if(feed_back_muxa_sel_id_fb>2) 
                      feed_back_muxa_sel_id_fb <=      feed_back_muxa_sel_id_fb+1;  
                 if(feed_back_muxb_sel_id_fb>2) 
-                     feed_back_muxb_sel_id_fb <=    feed_back_muxb_sel_id_fb+1; 
+                     feed_back_muxb_sel_id_fb <=    feed_back_muxb_sel_id_fb+1;  
                 if (feed_back_muxa_sel_id_fb==7 )
                     rs1_id_fb                <=      alu_written_back;             
                 if (feed_back_muxb_sel_id_fb==7 )
