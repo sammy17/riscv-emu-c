@@ -223,7 +223,7 @@
 struct mstatus_t{
     uint8_t uie, sie, mie, upie, spie, mpie, spp, mpp, fs, xs, mprv, sum, mxr, tvm, tw, tsr, uxl, sxl, sd;
     mstatus_t() {
-        uie = 1; sie = 1; mie = 1;
+        uie = 0; sie = 1; mie = 1;
         upie = 0; spie = 0; mpie = 0; 
         spp = 0; mpp = 0b0; 
         fs = 0; xs = 0; mprv = 0; sum = 0; mxr = 0; tvm = 0; tw = 0; tsr = 0; uxl = 2; sxl = 0; sd = 0; 
@@ -270,6 +270,8 @@ struct ustatus_t{
 
     }
     uint_t read_reg(){
+        //uie = 0;
+        //upie = 0; //usermode interrupts not supported
         return (((uint_t)sd<<63)+((uint_t)uxl<<32)+(mxr<<19)+(sum<<18)+(xs<<15)+(fs<<13)+(upie<<4)+uie);
     }
 

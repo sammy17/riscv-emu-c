@@ -1,0 +1,387 @@
+dtb pointer : 800002b8hartid pointer : 00000000bbl loader
+              vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+                  vvvvvvvvvvvvvvvvvvvvvvvvvvvv
+rrrrrrrrrrrrr       vvvvvvvvvvvvvvvvvvvvvvvvvv
+rrrrrrrrrrrrrrrr      vvvvvvvvvvvvvvvvvvvvvvvv
+rrrrrrrrrrrrrrrrrr    vvvvvvvvvvvvvvvvvvvvvvvv
+rrrrrrrrrrrrrrrrrr    vvvvvvvvvvvvvvvvvvvvvvvv
+rrrrrrrrrrrrrrrrrr    vvvvvvvvvvvvvvvvvvvvvvvv
+rrrrrrrrrrrrrrrr      vvvvvvvvvvvvvvvvvvvvvv  
+rrrrrrrrrrrrr       vvvvvvvvvvvvvvvvvvvvvv    
+rr                vvvvvvvvvvvvvvvvvvvvvv      
+rr            vvvvvvvvvvvvvvvvvvvvvvvv      rr
+rrrr      vvvvvvvvvvvvvvvvvvvvvvvvvv      rrrr
+rrrrrr      vvvvvvvvvvvvvvvvvvvvvv      rrrrrr
+rrrrrrrr      vvvvvvvvvvvvvvvvvv      rrrrrrrr
+rrrrrrrrrr      vvvvvvvvvvvvvv      rrrrrrrrrr
+rrrrrrrrrrrr      vvvvvvvvvv      rrrrrrrrrrrr
+rrrrrrrrrrrrrr      vvvvvv      rrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrr      vv      rrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrr          rrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrr      rrrrrrrrrrrrrrrrrrrr
+rrrrrrrrrrrrrrrrrrrrrr  rrrrrrrrrrrrrrrrrrrrrr
+
+       INSTRUCTION SETS WANT TO BE FREE
+printing dt
+ {
+  #address-cells = <0x00000002>;
+  #size-cells = <0x00000002>;
+  compatible = "shakti,spike-bare-dev";
+  model = "shakti,spike-bare";
+  cpus {
+    #address-cells = <0x00000001>;
+    #size-cells = <0x00000000>;
+    timebase-frequency = <0x05f5e100>;
+    cpu@0 {
+      device_type = "cpu";
+      reg = <0x00000000>;
+      status = "okay";
+      compatible = "riscv";
+      riscv,isa = "rv64ima";
+      mmu-type = "riscv,sv39";
+      clock-frequency = <0x000f4240>;
+      interrupt-controller {
+        #interrupt-cells = <0x00000001>;
+        interrupt-controller;
+        compatible = "riscv,cpu-intc";
+        phandle = <0x00000001>;
+      }
+    }
+  }
+  memory@80000000 {
+    device_type = "memory";
+    reg = <0x00000000 0x80000000 0x00000000 0x02000000>;
+  }
+  soc {
+    #address-cells = <0x00000002>;
+    #size-cells = <0x00000002>;
+    compatible = "shakti,spike-bare-soc", "simple-bus";
+    ranges;
+    virtio@40010000 {
+      compatible = "virtio,mmio";
+      reg = <0x00000000 0x40010000 0x00000000 0x00001000>;
+      interrupts-extended = <0x00000002 0x00000001>;
+    }
+  }
+  chosen {
+    bootargs = <0x636f6e73 0x6f6c653d 0x68766330 0x20726f6f 0x743d2f64 0x65762f76>;
+  }
+}
+end dt
+arg1 : 80a00000
+[    0.000000] OF: fdt: Ignoring memory range 0x80000000 - 0x80200000
+[    0.000000] No DTB passed to the kernel
+[    0.000000] Linux version 5.0.0-rc2 (dean@dean) (gcc version 8.2.0 (GCC)) #4 SMP Sun Mar 10 16:32:59 +0530 2019
+[    0.000000] initrd not found or empty - disabling initrd
+[    0.000000] Zone ranges:
+[    0.000000]   DMA32    [mem 0x0000000080200000-0x0000000081ffffff]
+[    0.000000]   Normal   [mem 0x0000000082000000-0x0000081fffffffff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x0000000080200000-0x0000000081ffffff]
+[    0.000000] Initmem setup node 0 [mem 0x0000000080200000-0x0000000081ffffff]
+[    0.000000] software IO TLB: Cannot allocate buffer
+[    0.000000] elf_hwcap is 0x1101
+[    0.000000] percpu: Embedded 16 pages/cpu @(____ptrval____) s25112 r8192 d32232 u65536
+[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 7575
+[    0.000000] Kernel command line: console=hvc0 root=/dev/vda
+[    0.000000] Dentry cache hash table entries: 4096 (order: 3, 32768 bytes)
+[    0.000000] Inode-cache hash table entries: 2048 (order: 2, 16384 bytes)
+[    0.000000] Sorting __ex_table...
+[    0.000000] Memory: 23844K/30720K available (4609K kernel code, 273K rwdata, 943K rodata, 196K init, 261K bss, 6876K reserved, 0K cma-reserved)
+[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[    0.000000] rcu: Hierarchical RCU implementation.
+[    0.000000] rcu: 	RCU event tracing is enabled.
+[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=8 to nr_cpu_ids=1.
+[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+[    0.000000] NR_IRQS: 0, nr_irqs: 0, preallocated irqs: 0
+[    0.000000] clocksource: riscv_clocksource: mask: 0xffffffffffffffff max_cycles: 0x171024e7e0, max_idle_ns: 440795205315 ns
+[    0.000034] sched_clock: 64 bits at 100MHz, resolution 10ns, wraps every 4398046511100ns
+[    0.000571] Console: colour dummy device 80x25
+[    0.004143] printk: console [hvc0] enabled
+[    0.004301] Calibrating delay loop (skipped), value calculated using timer frequency.. 200.00 BogoMIPS (lpj=400000)
+[    0.004546] pid_max: default: 32768 minimum: 301
+[    0.005324] Mount-cache hash table entries: 512 (order: 0, 4096 bytes)
+[    0.005494] Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes)
+[    0.009969] rcu: Hierarchical SRCU implementation.
+[    0.012308] ------------[ cut here ]------------
+[    0.012453] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.012640] initcall rand_initialize+0x0/0xe8 returned with disabled interrupts 
+[    0.012789] Modules linked in:
+[    0.012903] CPU: 0 PID: 1 Comm: swapper/0 Not tainted 5.0.0-rc2 #4
+[    0.013034] Call Trace:
+[    0.013135] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.013284] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.013427] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.013576] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.013722] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.013873] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.014023] [<ffffffff80000d6c>] kernel_init_freeable+0x90/0x228
+[    0.014189] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.014334] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.014504] random: get_random_bytes called from print_oops_end_marker+0x30/0x60 with crng_init=0
+[    0.014716] ---[ end trace b687545fed0a3e54 ]---
+[    0.015068] smp: Bringing up secondary CPUs ...
+[    0.015186] smp: Brought up 1 node, 1 CPU
+[    0.016687] devtmpfs: initialized
+[    0.019710] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[    0.019929] futex hash table entries: 256 (order: 2, 16384 bytes)
+[    0.020482] ------------[ cut here ]------------
+[    0.020627] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.020806] initcall virtio_init+0x0/0x40 returned with disabled interrupts 
+[    0.020950] Modules linked in:
+[    0.021068] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.021222] Call Trace:
+[    0.021323] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.021472] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.021615] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.021764] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.021910] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.022061] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.022213] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.022381] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.022526] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.022656] ---[ end trace b687545fed0a3e55 ]---
+[    0.023648] NET: Registered protocol family 16
+[    0.024583] ------------[ cut here ]------------
+[    0.024727] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.024919] initcall vtconsole_class_init+0x0/0x13c returned with disabled interrupts 
+[    0.025077] Modules linked in:
+[    0.025195] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.025349] Call Trace:
+[    0.025450] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.025599] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.025742] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.025891] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.026037] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.026188] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.026340] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.026508] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.026653] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.026783] ---[ end trace b687545fed0a3e56 ]---
+[    0.027656] OF: /soc/virtio@40010000: could not find phandle
+[    0.043405] ------------[ cut here ]------------
+[    0.043549] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.043735] initcall param_sysfs_init+0x0/0x238 returned with disabled interrupts 
+[    0.043887] Modules linked in:
+[    0.044005] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.044159] Call Trace:
+[    0.044260] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.044409] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.044552] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.044701] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.044847] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.044998] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.045151] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.045319] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.045463] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.045627] ---[ end trace b687545fed0a3e57 ]---
+[    0.045892] ------------[ cut here ]------------
+[    0.046037] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.046226] initcall user_namespace_sysctl_init+0x0/0x58 returned with disabled interrupts 
+[    0.046391] Modules linked in:
+[    0.046509] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.046663] Call Trace:
+[    0.046764] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.046913] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.047056] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.047205] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.047351] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.047502] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.047655] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.047823] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.047967] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.048098] ---[ end trace b687545fed0a3e58 ]---
+[    0.049696] ------------[ cut here ]------------
+[    0.049841] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.050026] initcall init_bio+0x0/0xec returned with disabled interrupts 
+[    0.050165] Modules linked in:
+[    0.050282] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.050437] Call Trace:
+[    0.050538] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.050687] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.050830] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.050979] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.051125] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.051276] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.051428] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.051596] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.051740] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.051871] ---[ end trace b687545fed0a3e59 ]---
+[    0.052821] vgaarb: loaded
+[    0.054947] ------------[ cut here ]------------
+[    0.055092] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.055279] initcall net_dev_init+0x0/0x264 returned with disabled interrupts 
+[    0.055426] Modules linked in:
+[    0.055544] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.055698] Call Trace:
+[    0.055799] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.055948] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.056091] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.056240] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.056386] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.056537] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.056690] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.056858] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.057002] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.057133] ---[ end trace b687545fed0a3e5a ]---
+[    0.057568] clocksource: Switched to clocksource riscv_clocksource
+[    0.057729] ------------[ cut here ]------------
+[    0.057873] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.058065] initcall clocksource_done_booting+0x0/0x64 returned with disabled interrupts 
+[    0.058227] Modules linked in:
+[    0.058345] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.058499] Call Trace:
+[    0.058600] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.058749] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.058892] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.059041] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.059187] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.059338] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.059491] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.059658] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.059803] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.059933] ---[ end trace b687545fed0a3e5b ]---
+[    0.084131] NET: Registered protocol family 2
+[    0.087287] tcp_listen_portaddr_hash hash table entries: 256 (order: 0, 4096 bytes)
+[    0.087516] TCP established hash table entries: 512 (order: 0, 4096 bytes)
+[    0.087745] TCP bind hash table entries: 512 (order: 1, 8192 bytes)
+[    0.087954] TCP: Hash tables configured (established 512 bind 512)
+[    0.088324] UDP hash table entries: 256 (order: 1, 8192 bytes)
+[    0.088555] UDP-Lite hash table entries: 256 (order: 1, 8192 bytes)
+[    0.089226] NET: Registered protocol family 1
+[    0.091983] workingset: timestamp_bits=62 max_order=13 bucket_order=0
+[    0.129486] ------------[ cut here ]------------
+[    0.129631] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.129814] initcall slab_sysfs_init+0x0/0x158 returned with disabled interrupts 
+[    0.129964] Modules linked in:
+[    0.130082] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.130237] Call Trace:
+[    0.130337] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.130487] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.130630] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.130779] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.130925] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.131076] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.131228] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.131396] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.131541] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.131671] ---[ end trace b687545fed0a3e5c ]---
+[    0.131824] ------------[ cut here ]------------
+[    0.131969] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.132150] initcall fcntl_init+0x0/0x4c returned with disabled interrupts 
+[    0.132291] Modules linked in:
+[    0.132409] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.132564] Call Trace:
+[    0.132664] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.132814] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.132957] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.133106] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.133252] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.133403] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.133555] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.133723] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.133868] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.134028] ---[ end trace b687545fed0a3e5d ]---
+[    0.134150] ------------[ cut here ]------------
+[    0.134295] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.134479] initcall proc_filesystems_init+0x0/0x48 returned with disabled interrupts 
+[    0.134637] Modules linked in:
+[    0.134755] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.134910] Call Trace:
+[    0.135011] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.135160] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.135303] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.135452] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.135598] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.135749] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.135901] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.136069] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.136214] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.136344] ---[ end trace b687545fed0a3e5e ]---
+[    0.137854] ------------[ cut here ]------------
+[    0.137999] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.138182] initcall mbcache_init+0x0/0x58 returned with disabled interrupts 
+[    0.138327] Modules linked in:
+[    0.138445] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.138599] Call Trace:
+[    0.138700] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.138849] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.138992] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.139141] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.139287] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.139438] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.139591] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.139759] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.139903] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.140034] ---[ end trace b687545fed0a3e5f ]---
+[    0.143076] ------------[ cut here ]------------
+[    0.143221] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.143405] initcall ext4_init_fs+0x0/0x1f0 returned with disabled interrupts 
+[    0.143552] Modules linked in:
+[    0.143670] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.143824] Call Trace:
+[    0.143925] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.144074] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.144217] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.144367] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.144513] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.144663] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.144816] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.144984] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.145128] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.145259] ---[ end trace b687545fed0a3e60 ]---
+[    0.145887] ------------[ cut here ]------------
+[    0.146032] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.146216] initcall init_ext2_fs+0x0/0x98 returned with disabled interrupts 
+[    0.146361] Modules linked in:
+[    0.146479] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.146634] Call Trace:
+[    0.146734] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.146884] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.147027] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.147176] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.147322] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.147473] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.147625] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.147793] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.147937] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.148068] ---[ end trace b687545fed0a3e61 ]---
+[    0.150388] ------------[ cut here ]------------
+[    0.150533] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.150718] initcall journal_init+0x0/0x154 returned with disabled interrupts 
+[    0.150864] Modules linked in:
+[    0.150982] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.151137] Call Trace:
+[    0.151238] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.151387] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.151530] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.151679] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.151825] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.151976] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.152128] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.152296] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.152441] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.152571] ---[ end trace b687545fed0a3e62 ]---
+[    0.156685] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 254)
+[    0.156846] io scheduler mq-deadline registered
+[    0.156958] io scheduler kyber registered
+[    0.157573] ------------[ cut here ]------------
+[    0.157717] WARNING: CPU: 0 PID: 1 at init/main.c:901 do_one_initcall+0x174/0x180
+[    0.157908] initcall gpio_clk_driver_init+0x0/0x34 returned with disabled interrupts 
+[    0.158065] Modules linked in:
+[    0.158182] CPU: 0 PID: 1 Comm: swapper/0 Tainted: G        W         5.0.0-rc2 #4
+[    0.158337] Call Trace:
+[    0.158438] [<ffffffff80033f50>] walk_stackframe+0x0/0xfc
+[    0.158587] [<ffffffff80034184>] show_stack+0x3c/0x50
+[    0.158730] [<ffffffff804911e0>] dump_stack+0x84/0xac
+[    0.158879] [<ffffffff8003a0d4>] __warn+0xd0/0x124
+[    0.159025] [<ffffffff80039cec>] warn_slowpath_fmt+0x44/0x54
+[    0.159176] [<ffffffff80031434>] do_one_initcall+0x174/0x180
+[    0.159329] [<ffffffff80000e38>] kernel_init_freeable+0x15c/0x228
+[    0.159496] [<ffffffff804ab9e8>] kernel_init+0x1c/0x124
+[    0.159641] [<ffffffff80032820>] ret_from_exception+0x0/0x10
+[    0.159772] ---[ end trace b687545fed0a3e63 ]---
+peripheral access read40010000
+New peripheral40010000
