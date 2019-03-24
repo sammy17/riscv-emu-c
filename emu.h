@@ -2,7 +2,7 @@
 #define _EMU_H_
 
 #include <stdio.h>
-#include <iostream>
+
 #include <string>
 #include <fstream>
 #include <vector>
@@ -12,7 +12,7 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
-
+int emu_main();
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;

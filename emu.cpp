@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <iostream>
-#include <string>
 #include <fstream>
 #include <vector>
 #include <bits/stdc++.h>
@@ -9,12 +8,37 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
-
-
+#include "temu/cutils.h"
+#include "temu/iomem.h"
+#include "temu/virtio.h"
+#include "temu/machine.h"
+#ifdef CONFIG_FS_NET
+#include "temu/fs_utils.h"
+#include "temu/fs_wget.h"
+#endif
+#ifdef CONFIG_SLIRP
+#include "temu/slirp/libslirp.h"
+#endif
 #include "csr_file.h"
 #include "emu.h"
 
-
+#include <stdarg.h>
+#include <string.h>
+#include <inttypes.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <time.h>
+#include <getopt.h>
+#ifndef _WIN32
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <linux/if_tun.h>
+#endif
+#include <sys/stat.h>
+#include <signal.h>
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
@@ -221,8 +245,18 @@ static void virtio_write(uint_t offset, uint_t val)
 
 }
 
+typedef enum {
+    BF_MODE_RO,
+    BF_MODE_RW,
+    BF_MODE_SNAPSHOT,
+} BlockDeviceModeEnum;
+BlockDevice *drive;
+char *fname;
+BlockDeviceModeEnum drive_mode;
 
 int main(){
+    fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
+    drive=block_device_init(fname, drive_mode);
 
     ifstream infile("data_hex.txt");
     string line;

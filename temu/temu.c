@@ -42,6 +42,7 @@
 #include <signal.h>
 
 #include "cutils.h"
+// #include "../emu.h"
 #include "iomem.h"
 #include "virtio.h"
 #include "machine.h"
@@ -743,6 +744,9 @@ int temu_main(int argc, char **argv)
 #endif
         {
             drive = block_device_init(fname, drive_mode);
+            // printf("block device init\n");
+            // emu_main();
+            // exit(0);
         }
         free(fname);
         p->tab_drive[i].block_dev = drive;
