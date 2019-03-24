@@ -50,6 +50,10 @@ bool csr_read_success = false;
 
 #define CLINT_BASE 0x2000000
 #define CLINT_SIZE 0x00c0000
+#define PLIC_BASE 0x40100000
+#define PLIC_SIZE 0x400000
+#define VIRTIO_BASE 0x40010000
+#define VIRTIO_SIZE 0x1000
 
 #define MTIME_ADDR (CLINT_BASE+0xbff8)
 #define MTIMECMP_ADDR (CLINT_BASE+0x4000)

@@ -14,6 +14,7 @@
 #include "csr_file.h"
 #include "emu.h"
 
+
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
@@ -171,6 +172,55 @@ static void clint_write(uint_t offset, uint_t val)
             break;
     }
 }
+static uint_t plic_read( uint_t offset)
+{
+    return 0;
+    uint_t val;
+
+    switch(offset) {
+    case 0xbff8:    //rtc time
+        val = mtime;
+        break;
+    case 0x4000:    //timecmp
+        val = mtimecmp;
+        break;
+    default:
+        val = 0;
+        break;
+    }
+    return val;
+}
+
+static void plic_write(uint_t offset, uint_t val)
+{
+
+
+}
+static uint_t virtio_read( uint_t offset)
+{
+    return 0;
+    uint_t val;
+
+    switch(offset) {
+    case 0xbff8:    //rtc time
+        val = mtime;
+        break;
+    case 0x4000:    //timecmp
+        val = mtimecmp;
+        break;
+    default:
+        val = 0;
+        break;
+    }
+    return val;
+}
+
+static void virtio_write(uint_t offset, uint_t val)
+{
+
+
+}
+
 
 int main(){
 
@@ -529,17 +579,22 @@ int main(){
 
                             if ((load_addr_phy >= CLINT_BASE) & (load_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                                 load_data = clint_read(load_addr_phy-CLINT_BASE);
+                            }
+                            else if ((load_addr_phy >= PLIC_BASE) & (load_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
+                                load_data = plic_read(load_addr_phy-PLIC_BASE);
+                            }else if ((load_addr_phy >= VIRTIO_BASE) & (load_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
+                                load_data = virtio_read(load_addr_phy-VIRTIO_BASE);
                             }else {
                                 cout << "New peripheral"<< hex << load_addr_phy<<endl;
                                 exit(0);
                             }
                         }
 
-                         if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
-                            //cout << "Physical memory limit          : "<<hex<<((1llu)<<MEM_SIZE)<<endl;
-                            cout << "Physical memory limit exceeded : "<<hex<<load_addr_phy<<endl;
-                            exit(0);
-                        }
+                        //  if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
+                        //     //cout << "Physical memory limit          : "<<hex<<((1llu)<<MEM_SIZE)<<endl;
+                        //     cout << "Physical memory limit exceeded : "<<hex<<load_addr_phy<<endl;
+                        //     exit(0);
+                        // }
                         switch(func3){
                             case 0b000 : 
                                 if (!load_byte(load_addr_phy,load_data, wb_data)){
@@ -724,6 +779,11 @@ int main(){
                         // continue;
                         if ((store_addr_phy >= CLINT_BASE) & (store_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                             clint_write(store_addr_phy-CLINT_BASE, reg_file[rs2]);
+                        }
+                        else if ((store_addr_phy >= PLIC_BASE) & (store_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
+                            plic_write(store_addr_phy-PLIC_BASE, reg_file[rs2]);
+                        }else if ((store_addr_phy >= VIRTIO_BASE) & (store_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
+                            virtio_write(store_addr_phy-VIRTIO_BASE, reg_file[rs2]);
                         }else {
                             cout << "New peripheral"<< hex << load_addr_phy<<endl;
                             exit(0);
@@ -1698,7 +1758,7 @@ int main(){
         //cout << "mtimecmp : "<<mtimecmp<<endl;
         //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
          //timer interrupt
-            mip.MTIP = (mtime >= mtimecmp );
+            // mip.MTIP = (mtime >= mtimecmp );
 
             //cout << "cp : "<< (uint_t)cp <<endl;
             //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
