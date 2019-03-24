@@ -21,6 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifndef __MACHINE_H_
+#define __MACHINE_H_
+
 #include "json.h"
 
 typedef struct FBDevice FBDevice;
@@ -193,3 +196,5 @@ BlockDevice *block_device_init_http(const char *url,
                                     int max_cache_size_kb,
                                     void (*start_cb)(void *opaque),
                                     void *start_opaque);
+
+#endif

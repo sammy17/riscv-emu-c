@@ -8,6 +8,9 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
+
+extern "C" {
+#include "temu/temu.h"
 #include "temu/cutils.h"
 #include "temu/iomem.h"
 #include "temu/virtio.h"
@@ -19,6 +22,8 @@
 #ifdef CONFIG_SLIRP
 #include "temu/slirp/libslirp.h"
 #endif
+}
+
 #include "csr_file.h"
 #include "emu.h"
 
@@ -244,19 +249,21 @@ static void virtio_write(uint_t offset, uint_t val)
 
 
 }
-
+/*
 typedef enum {
     BF_MODE_RO,
     BF_MODE_RW,
     BF_MODE_SNAPSHOT,
 } BlockDeviceModeEnum;
+*/
 BlockDevice *drive;
 char *fname;
 BlockDeviceModeEnum drive_mode;
 
+
 int main(){
     fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
-    drive=block_device_init(fname, drive_mode);
+    drive = block_device_init(fname, drive_mode);
 
     ifstream infile("data_hex.txt");
     string line;

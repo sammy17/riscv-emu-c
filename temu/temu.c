@@ -1,78 +1,14 @@
-/*
- * TinyEMU
- * 
- * Copyright (c) 2016-2018 Fabrice Bellard
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <string.h>
-#include <inttypes.h>
-#include <assert.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <getopt.h>
-#ifndef _WIN32
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <linux/if_tun.h>
-#endif
-#include <sys/stat.h>
-#include <signal.h>
-
-#include "cutils.h"
-// #include "../emu.h"
-#include "iomem.h"
-#include "virtio.h"
-#include "machine.h"
-#ifdef CONFIG_FS_NET
-#include "fs_utils.h"
-#include "fs_wget.h"
-#endif
-#ifdef CONFIG_SLIRP
-#include "slirp/libslirp.h"
-#endif
+#include "temu.h"
 
 #ifndef _WIN32
 
-typedef struct {
-    int stdin_fd;
-    int console_esc_state;
-    BOOL resize_pending;
-} STDIODevice;
-
-static struct termios oldtty;
-static int old_fd0_flags;
-static STDIODevice *global_stdio_device;
-
-static void term_exit(void)
+void term_exit(void)
 {
     tcsetattr (0, TCSANOW, &oldtty);
     fcntl(0, F_SETFL, old_fd0_flags);
 }
 
-static void term_init(BOOL allow_ctrlc)
+void term_init(BOOL allow_ctrlc)
 {
     struct termios tty;
 
@@ -97,15 +33,15 @@ static void term_init(BOOL allow_ctrlc)
     atexit(term_exit);
 }
 
-static void console_write(void *opaque, const uint8_t *buf, int len)
+void console_write(void *opaque, const uint8_t *buf, int len)
 {
     fwrite(buf, 1, len, stdout);
     fflush(stdout);
 }
 
-static int console_read(void *opaque, uint8_t *buf, int len)
+int console_read(void *opaque, uint8_t *buf, int len)
 {
-    STDIODevice *s = opaque;
+    STDIODevice *s = (STDIODevice*) opaque;
     int ret, i, j;
     uint8_t ch;
     
@@ -153,13 +89,13 @@ static int console_read(void *opaque, uint8_t *buf, int len)
     return j;
 }
 
-static void term_resize_handler(int sig)
+void term_resize_handler(int sig)
 {
     if (global_stdio_device)
         global_stdio_device->resize_pending = TRUE;
 }
 
-static void console_get_size(STDIODevice *s, int *pw, int *ph)
+void console_get_size(STDIODevice *s, int *pw, int *ph)
 {
     struct winsize ws;
     int width, height;
@@ -183,8 +119,8 @@ CharacterDevice *console_init(BOOL allow_ctrlc)
 
     term_init(allow_ctrlc);
 
-    dev = mallocz(sizeof(*dev));
-    s = mallocz(sizeof(*s));
+    dev = (CharacterDevice*)mallocz(sizeof(*dev));
+    s = (STDIODevice*)mallocz(sizeof(*s));
     s->stdin_fd = 0;
     /* Note: the glibc does not properly tests the return value of
        write() in printf, so some messages on stdout may be lost */
@@ -207,38 +143,24 @@ CharacterDevice *console_init(BOOL allow_ctrlc)
 
 #endif /* !_WIN32 */
 
-typedef enum {
-    BF_MODE_RO,
-    BF_MODE_RW,
-    BF_MODE_SNAPSHOT,
-} BlockDeviceModeEnum;
 
-#define SECTOR_SIZE 512
-
-typedef struct BlockDeviceFile {
-    FILE *f;
-    int64_t nb_sectors;
-    BlockDeviceModeEnum mode;
-    uint8_t **sector_table;
-} BlockDeviceFile;
-
-static int64_t bf_get_sector_count(BlockDevice *bs)
+int64_t bf_get_sector_count(BlockDevice *bs)
 {
-    BlockDeviceFile *bf = bs->opaque;
+    BlockDeviceFile *bf = (BlockDeviceFile*)(bs->opaque);
     return bf->nb_sectors;
 }
 
 //#define DUMP_BLOCK_READ
 
-static int bf_read_async(BlockDevice *bs,
+int bf_read_async(BlockDevice *bs,
                          uint64_t sector_num, uint8_t *buf, int n,
                          BlockDeviceCompletionFunc *cb, void *opaque)
 {
-    BlockDeviceFile *bf = bs->opaque;
+    BlockDeviceFile *bf = (BlockDeviceFile*)(bs->opaque);
     //    printf("bf_read_async: sector_num=%" PRId64 " n=%d\n", sector_num, n);
 #ifdef DUMP_BLOCK_READ
     {
-        static FILE *f;
+        FILE *f;
         if (!f)
             f = fopen("/tmp/read_sect.txt", "wb");
         fprintf(f, "%" PRId64 " %d\n", sector_num, n);
@@ -266,11 +188,11 @@ static int bf_read_async(BlockDevice *bs,
     return 0;
 }
 
-static int bf_write_async(BlockDevice *bs,
+int bf_write_async(BlockDevice *bs,
                           uint64_t sector_num, const uint8_t *buf, int n,
                           BlockDeviceCompletionFunc *cb, void *opaque)
 {
-    BlockDeviceFile *bf = bs->opaque;
+    BlockDeviceFile *bf = (BlockDeviceFile*)(bs->opaque);
     int ret;
 
     switch(bf->mode) {
@@ -289,7 +211,7 @@ static int bf_write_async(BlockDevice *bs,
                 return -1;
             for(i = 0; i < n; i++) {
                 if (!bf->sector_table[sector_num]) {
-                    bf->sector_table[sector_num] = malloc(SECTOR_SIZE);
+                    bf->sector_table[sector_num] = (uint8_t*)malloc(SECTOR_SIZE);
                 }
                 memcpy(bf->sector_table[sector_num], buf, SECTOR_SIZE);
                 sector_num++;
@@ -305,8 +227,7 @@ static int bf_write_async(BlockDevice *bs,
     return ret;
 }
 
-static BlockDevice *block_device_init(const char *filename,
-                                      BlockDeviceModeEnum mode)
+BlockDevice *block_device_init(const char *filename, BlockDeviceModeEnum mode)
 {
     BlockDevice *bs;
     BlockDeviceFile *bf;
@@ -328,15 +249,15 @@ static BlockDevice *block_device_init(const char *filename,
     fseek(f, 0, SEEK_END);
     file_size = ftello(f);
 
-    bs = mallocz(sizeof(*bs));
-    bf = mallocz(sizeof(*bf));
+    bs = (BlockDevice*)mallocz(sizeof(*bs));
+    bf = (BlockDeviceFile*)mallocz(sizeof(*bf));
 
     bf->mode = mode;
     bf->nb_sectors = file_size / 512;
     bf->f = f;
 
     if (mode == BF_MODE_SNAPSHOT) {
-        bf->sector_table = mallocz(sizeof(bf->sector_table[0]) *
+        bf->sector_table = (uint8_t**)mallocz(sizeof(bf->sector_table[0]) *
                                    bf->nb_sectors);
     }
     
@@ -349,23 +270,20 @@ static BlockDevice *block_device_init(const char *filename,
 
 #ifndef _WIN32
 
-typedef struct {
-    int fd;
-    BOOL select_filled;
-} TunState;
 
-static void tun_write_packet(EthernetDevice *net,
+
+void tun_write_packet(EthernetDevice *net,
                              const uint8_t *buf, int len)
 {
-    TunState *s = net->opaque;
+    TunState *s = (TunState*)(net->opaque);
     write(s->fd, buf, len);
 }
 
-static void tun_select_fill(EthernetDevice *net, int *pfd_max,
+void tun_select_fill(EthernetDevice *net, int *pfd_max,
                             fd_set *rfds, fd_set *wfds, fd_set *efds,
                             int *pdelay)
 {
-    TunState *s = net->opaque;
+    TunState *s = (TunState*)(net->opaque);
     int net_fd = s->fd;
 
     s->select_filled = net->device_can_write_packet(net);
@@ -375,11 +293,11 @@ static void tun_select_fill(EthernetDevice *net, int *pfd_max,
     }
 }
 
-static void tun_select_poll(EthernetDevice *net, 
+void tun_select_poll(EthernetDevice *net, 
                             fd_set *rfds, fd_set *wfds, fd_set *efds,
                             int select_ret)
 {
-    TunState *s = net->opaque;
+    TunState *s = (TunState*)(net->opaque);
     int net_fd = s->fd;
     uint8_t buf[2048];
     int ret;
@@ -412,7 +330,7 @@ static void tun_select_poll(EthernetDevice *net,
    ifconfig eth0 192.168.3.2
    route add -net 0.0.0.0 netmask 0.0.0.0 gw 192.168.3.1
 */
-static EthernetDevice *tun_open(const char *ifname)
+EthernetDevice *tun_open(const char *ifname)
 {
     struct ifreq ifr;
     int fd, ret;
@@ -435,14 +353,14 @@ static EthernetDevice *tun_open(const char *ifname)
     }
     fcntl(fd, F_SETFL, O_NONBLOCK);
 
-    net = mallocz(sizeof(*net));
+    net = (EthernetDevice*)mallocz(sizeof(*net));
     net->mac_addr[0] = 0x02;
     net->mac_addr[1] = 0x00;
     net->mac_addr[2] = 0x00;
     net->mac_addr[3] = 0x00;
     net->mac_addr[4] = 0x00;
     net->mac_addr[5] = 0x01;
-    s = mallocz(sizeof(*s));
+    s = (TunState*)mallocz(sizeof(*s));
     s->fd = fd;
     net->opaque = s;
     net->write_packet = tun_write_packet;
@@ -458,9 +376,8 @@ static EthernetDevice *tun_open(const char *ifname)
 /*******************************************************/
 /* slirp */
 
-static Slirp *slirp_state;
 
-static void slirp_write_packet(EthernetDevice *net,
+void slirp_write_packet(EthernetDevice *net,
                                const uint8_t *buf, int len)
 {
     Slirp *slirp_state = net->opaque;
@@ -479,7 +396,7 @@ void slirp_output(void *opaque, const uint8_t *pkt, int pkt_len)
     return net->device_write_packet(net, pkt, pkt_len);
 }
 
-static void slirp_select_fill1(EthernetDevice *net, int *pfd_max,
+void slirp_select_fill1(EthernetDevice *net, int *pfd_max,
                                fd_set *rfds, fd_set *wfds, fd_set *efds,
                                int *pdelay)
 {
@@ -487,7 +404,7 @@ static void slirp_select_fill1(EthernetDevice *net, int *pfd_max,
     slirp_select_fill(slirp_state, pfd_max, rfds, wfds, efds);
 }
 
-static void slirp_select_poll1(EthernetDevice *net, 
+void slirp_select_poll1(EthernetDevice *net, 
                                fd_set *rfds, fd_set *wfds, fd_set *efds,
                                int select_ret)
 {
@@ -495,7 +412,7 @@ static void slirp_select_poll1(EthernetDevice *net,
     slirp_select_poll(slirp_state, rfds, wfds, efds, (select_ret <= 0));
 }
 
-static EthernetDevice *slirp_open(void)
+EthernetDevice *slirp_open(void)
 {
     EthernetDevice *net;
     struct in_addr net_addr  = { .s_addr = htonl(0x0a000200) }; /* 10.0.2.0 */
@@ -553,7 +470,7 @@ void virt_machine_run(VirtMachine *m)
     fd_max = -1;
 #ifndef _WIN32
     if (m->console_dev && virtio_console_can_write_data(m->console_dev)) {
-        STDIODevice *s = m->console->opaque;
+        STDIODevice *s = (STDIODevice*)(m->console->opaque);
         stdin_fd = s->stdin_fd;
         FD_SET(stdin_fd, &rfds);
         fd_max = stdin_fd;
@@ -602,20 +519,10 @@ void virt_machine_run(VirtMachine *m)
 
 /*******************************************************/
 
-static struct option options[] = {
-    { "help", no_argument, NULL, 'h' },
-    { "ctrlc", no_argument },
-    { "rw", no_argument },
-    { "ro", no_argument },
-    { "append", required_argument },
-    { "no-accel", no_argument },
-    { "build-preload", required_argument },
-    { NULL },
-};
 
 void help(void)
 {
-    printf("temu version " CONFIG_VERSION ", Copyright (c) 2016-2018 Fabrice Bellard\n"
+    printf("temu version XXX, Copyright (c) 2016-2018 Fabrice Bellard\n"
            "usage: riscvemu [options] config_file\n"
            "options are:\n"
            "-m ram_size       set the RAM size in MB\n"
@@ -631,14 +538,14 @@ void help(void)
 }
 
 #ifdef CONFIG_FS_NET
-static BOOL net_completed;
 
-static void net_start_cb(void *arg)
+
+void net_start_cb(void *arg)
 {
     net_completed = TRUE;
 }
 
-static BOOL net_poll_cb(void *arg)
+BOOL net_poll_cb(void *arg)
 {
     return net_completed;
 }
