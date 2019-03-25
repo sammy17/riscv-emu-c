@@ -255,19 +255,24 @@ typedef enum {
     BF_MODE_SNAPSHOT,
 } BlockDeviceModeEnum;
 */
-BlockDevice *drive;
+BlockDevice drive1, *drive=&drive1;
 char *fname;
 BlockDeviceModeEnum drive_mode;
-VIRTIOBusDef *vbus;
-  IRQSignal plic_irq;
-   VIRTIODevice *block_dev;
+
 int main(){
-    fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
+ VIRTIOBusDef vbus_sf;
+VIRTIOBusDef *vbus= &vbus_sf;
+IRQSignal plic_irq;
+   fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
+	VIRTIODevice *block_dev;//=&block_dev_sf;
     drive = block_device_init(fname, drive_mode);
     ////////////////////////////////////////////////////////
     vbus->addr = 0x40010000;
     vbus->irq = &plic_irq;
-    block_dev=virtio_block_init(vbus, drive);
+  	//block_dev =virtio_block_init(vbus, drive);
+	//cout <<" value" <<hex<<virtio_mmio_read(virtio_block_init(vbus, drive), 0,2 );
+	cout<<"no segmentation fault"<<endl;
+	exit(0);
     //////////////////////////////////////////////////////
     ifstream infile("data_hex.txt");
     string line;

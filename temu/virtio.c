@@ -152,9 +152,7 @@ struct VIRTIODevice {
     uint8_t config_space[MAX_CONFIG_SPACE_SIZE];
 };
 
-static uint32_t virtio_mmio_read(void *opaque, uint32_t offset1, int size_log2);
-static void virtio_mmio_write(void *opaque, uint32_t offset,
-                              uint32_t val, int size_log2);
+
 static uint32_t virtio_pci_read(void *opaque, uint32_t offset, int size_log2);
 static void virtio_pci_write(void *opaque, uint32_t offset,
                              uint32_t val, int size_log2);
@@ -603,7 +601,7 @@ static void virtio_config_write(VIRTIODevice *s, uint32_t offset,
     }
 }
 
-static uint32_t virtio_mmio_read(void *opaque, uint32_t offset, int size_log2)
+uint32_t virtio_mmio_read(void *opaque, uint32_t offset, int size_log2)
 {
     VIRTIODevice *s = opaque;
     uint32_t val;
@@ -716,7 +714,7 @@ static void set_low32(virtio_phys_addr_t *paddr, uint32_t val)
 }
 #endif
 
-static void virtio_mmio_write(void *opaque, uint32_t offset,
+ void virtio_mmio_write(void *opaque, uint32_t offset,
                               uint32_t val, int size_log2)
 {
     VIRTIODevice *s = opaque;
