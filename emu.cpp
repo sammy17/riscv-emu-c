@@ -201,21 +201,20 @@ static void clint_write(uint_t offset, uint_t val)
             break;
     }
 }
+#define PLIC_HART_BASE 0x200000
+#define PLIC_HART_SIZE 0x1000
 static uint_t plic_read( uint_t offset)
 {
     return 0;
     uint_t val;
 
     switch(offset) {
-    case 0xbff8:    //rtc time
-        val = mtime;
-        break;
-    case 0x4000:    //timecmp
-        val = mtimecmp;
-        break;
-    default:
-        val = 0;
-        break;
+        case PLIC_HART_BASE:
+            val = 0;
+            break;
+        case PLIC_HART_BASE + 4:
+            val =1;
+            break;
     }
     return val;
 }
@@ -259,12 +258,17 @@ typedef enum {
 BlockDevice *drive;
 char *fname;
 BlockDeviceModeEnum drive_mode;
-
-
+VIRTIOBusDef *vbus;
+  IRQSignal plic_irq;
+   VIRTIODevice *block_dev;
 int main(){
     fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
     drive = block_device_init(fname, drive_mode);
-
+    ////////////////////////////////////////////////////////
+    vbus->addr = 0x40010000;
+    vbus->irq = &plic_irq;
+    block_dev=virtio_block_init(vbus, drive);
+    //////////////////////////////////////////////////////
     ifstream infile("data_hex.txt");
     string line;
 
