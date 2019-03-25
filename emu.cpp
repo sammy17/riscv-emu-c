@@ -269,7 +269,7 @@ IRQSignal plic_irq;
     ////////////////////////////////////////////////////////
     vbus->addr = 0x40010000;
     vbus->irq = &plic_irq;
-  	//block_dev =virtio_block_init(vbus, drive);
+  	virtio_block_init(vbus, drive);
 	//cout <<" value" <<hex<<virtio_mmio_read(virtio_block_init(vbus, drive), 0,2 );
 	cout<<"no segmentation fault"<<endl;
 	exit(0);

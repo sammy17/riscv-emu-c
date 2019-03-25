@@ -278,11 +278,11 @@ static void virtio_init(VIRTIODevice *s, VIRTIOBusDef *bus,
                          s, virtio_pci_bar_set);
     } else {
         /* MMIO case */
-        s->mem_map = bus->mem_map;
+        // s->mem_map = bus->mem_map;
         s->irq = bus->irq;
-        s->mem_range = cpu_register_device(s->mem_map, bus->addr, VIRTIO_PAGE_SIZE,
-                                           s, virtio_mmio_read, virtio_mmio_write,
-                                           DEVIO_SIZE8 | DEVIO_SIZE16 | DEVIO_SIZE32);
+        // s->mem_range = cpu_register_device(s->mem_map, bus->addr, VIRTIO_PAGE_SIZE,
+                                           // s, virtio_mmio_read, virtio_mmio_write,
+                                           // DEVIO_SIZE8 | DEVIO_SIZE16 | DEVIO_SIZE32);
         s->get_ram_ptr = virtio_mmio_get_ram_ptr;
     }
 
