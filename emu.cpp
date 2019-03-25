@@ -271,7 +271,7 @@ IRQSignal plic_irq;
     vbus->irq = &plic_irq;
   	block_dev=virtio_block_init(vbus, drive);
 	cout <<" value" <<hex<<virtio_mmio_read(block_dev,0 ,2 )<<endl;
-	exit(0);
+	//exit(0);
 //	exit(0);
     //////////////////////////////////////////////////////
     ifstream infile("data_hex.txt");
@@ -633,7 +633,9 @@ IRQSignal plic_irq;
                             else if ((load_addr_phy >= PLIC_BASE) & (load_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
                                 load_data = plic_read(load_addr_phy-PLIC_BASE);
                             }else if ((load_addr_phy >= VIRTIO_BASE) & (load_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
-                                load_data = virtio_read(load_addr_phy-VIRTIO_BASE);
+								load_addr_phy = load_addr_phy/8;
+								load_addr_phy = load_addr_phy *8;
+                                load_data = (virtio_mmio_read (block_dev,0,2)<<32)+ (virtio_mmio_read (block_dev,0,2));
                             }else {
                                 cout << "New peripheral"<< hex << load_addr_phy<<endl;
                                 exit(0);
