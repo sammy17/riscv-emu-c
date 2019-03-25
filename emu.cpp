@@ -259,20 +259,20 @@ BlockDevice drive1, *drive=&drive1;
 char *fname;
 BlockDeviceModeEnum drive_mode;
 
+	VIRTIODevice *block_dev;//=&block_dev_sf;
 int main(){
  VIRTIOBusDef vbus_sf;
 VIRTIOBusDef *vbus= &vbus_sf;
 IRQSignal plic_irq;
    fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
-	VIRTIODevice *block_dev;//=&block_dev_sf;
     drive = block_device_init(fname, drive_mode);
     ////////////////////////////////////////////////////////
     vbus->addr = 0x40010000;
     vbus->irq = &plic_irq;
-  	virtio_block_init(vbus, drive);
-	//cout <<" value" <<hex<<virtio_mmio_read(virtio_block_init(vbus, drive), 0,2 );
-	cout<<"no segmentation fault"<<endl;
+  	block_dev=virtio_block_init(vbus, drive);
+	cout <<" value" <<hex<<virtio_mmio_read(block_dev,0 ,2 )<<endl;
 	exit(0);
+//	exit(0);
     //////////////////////////////////////////////////////
     ifstream infile("data_hex.txt");
     string line;
