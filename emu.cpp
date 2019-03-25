@@ -635,7 +635,7 @@ IRQSignal plic_irq;
                             }else if ((load_addr_phy >= VIRTIO_BASE) & (load_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
 								load_addr_phy = load_addr_phy/8;
 								load_addr_phy = load_addr_phy *8;
-                                load_data = (virtio_mmio_read (block_dev,0,2)<<32)+ (virtio_mmio_read (block_dev,0,2));
+                                load_data = (virtio_mmio_read (block_dev,load_addr_phy -VIRTIO_BASE+4,2)<<32)+ (virtio_mmio_read (block_dev,load_addr_phy -VIRTIO_BASE,2));
                             }else {
                                 cout << "New peripheral"<< hex << load_addr_phy<<endl;
                                 exit(0);
