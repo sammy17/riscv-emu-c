@@ -582,9 +582,9 @@ PIC2State *pic2_init(PhysMemoryMap *port_map, uint32_t addr0, uint32_t addr1,
     
     s = mallocz(sizeof(*s));
 
-    for(i = 0; i < 16; i++) {
-        irq_init(&irqs[i], pic2_set_irq, s, i);
-    }
+    // for(i = 0; i < 16; i++) {
+    //     irq_init(&irqs[i], pic2_set_irq, s, i);
+    // }
     s->cpu_set_irq = cpu_set_irq;
     s->opaque = opaque;
     s->pics[0] = pic_init(port_map, addr0, elcr_addr0, 0xf8, pic2_update_irq, s);
@@ -1733,9 +1733,9 @@ static void kvm_init(PCMachine *s)
         exit(1);
     }
 
-    for(i = 0; i < 16; i++) {
-        irq_init(&s->pic_irq[i], kvm_pic_set_irq, s, i);
-    }
+    // for(i = 0; i < 16; i++) {
+    //     irq_init(&s->pic_irq[i], kvm_pic_set_irq, s, i);
+    // }
 
     act.sa_handler = sigalrm_handler;
     sigemptyset(&act.sa_mask);

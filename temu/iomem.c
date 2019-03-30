@@ -256,9 +256,11 @@ uint8_t *phys_mem_get_ram_ptr(PhysMemoryMap *map, uint64_t paddr, BOOL is_rw)
 
 /* IRQ support */
 
-void irq_init(IRQSignal *irq, SetIRQFunc *set_irq, void *opaque, int irq_num)
+void irq_init(IRQSignal *irq, SetIRQFunc *set_irq, int irq_num)
 {
     irq->set_irq = set_irq;
-    irq->opaque = opaque;
+    // irq->opaque = opaque;
     irq->irq_num = irq_num;
 }
+
+

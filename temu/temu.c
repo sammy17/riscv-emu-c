@@ -640,18 +640,9 @@ int temu_main(int argc, char **argv)
         BlockDevice *drive;
         char *fname;
         fname = get_file_path(p->cfg_filename, p->tab_drive[i].filename);
-#ifdef CONFIG_FS_NET
-        if (is_url(fname)) {
-            net_completed = FALSE;
-            drive = block_device_init_http(fname, 128 * 1024,
-                                           net_start_cb, NULL);
-            /* wait until the drive is initialized */
-            fs_net_event_loop(net_poll_cb, NULL);
-        } else
-#endif
         {
             drive = block_device_init(fname, drive_mode);
-            // printf("block device init\n");
+            printf("block device init\n");
             // emu_main();
             // exit(0);
         }
@@ -663,21 +654,7 @@ int temu_main(int argc, char **argv)
         FSDevice *fs;
         const char *path;
         path = p->tab_fs[i].filename;
-#ifdef CONFIG_FS_NET
-        if (is_url(path)) {
-            fs = fs_net_init(path, NULL, NULL);
-            if (!fs)
-                exit(1);
-            if (build_preload_file)
-                fs_dump_cache_load(fs, build_preload_file);
-            fs_net_event_loop(NULL, NULL);
-        } else
-#endif
         {
-#ifdef _WIN32
-            fprintf(stderr, "Filesystem access not supported yet\n");
-            exit(1);
-#else
             char *fname;
             fname = get_file_path(p->cfg_filename, path);
             fs = fs_disk_init(fname);
@@ -686,7 +663,6 @@ int temu_main(int argc, char **argv)
                 exit(1);
             }
             free(fname);
-#endif
         }
         p->tab_fs[i].fs_dev = fs;
     }

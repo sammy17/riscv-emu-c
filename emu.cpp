@@ -49,7 +49,8 @@ using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
 
     
-
+bool plic_served_irq = false; 
+bool plic_pending_irq = false;
 
 //#define DEBUG
 
@@ -201,29 +202,7 @@ static void clint_write(uint_t offset, uint_t val)
             break;
     }
 }
-#define PLIC_HART_BASE 0x200000
-#define PLIC_HART_SIZE 0x1000
-static uint_t plic_read( uint_t offset)
-{
-    return 0;
-    uint_t val;
 
-    switch(offset) {
-        case PLIC_HART_BASE:
-            val = 0;
-            break;
-        case PLIC_HART_BASE + 4:
-            val =1;
-            break;
-    }
-    return val;
-}
-
-static void plic_write(uint_t offset, uint_t val)
-{
-
-
-}
 static uint_t virtio_read( uint_t offset)
 {
     return 0;
@@ -255,24 +234,190 @@ typedef enum {
     BF_MODE_SNAPSHOT,
 } BlockDeviceModeEnum;
 */
-BlockDevice drive1, *drive=&drive1;
-char *fname;
-BlockDeviceModeEnum drive_mode;
 
-	VIRTIODevice *block_dev;//=&block_dev_sf;
+BlockDevice drive1, *drive=&drive1;
+
+char *fname;
+
+//BlockDeviceModeEnum drive_mode;
+
+VIRTIODevice *block_dev;//=&block_dev_sf;
+
+#define PLIC_HART_BASE 0x200000
+#define PLIC_HART_SIZE 0x1000
+static uint_t plic_read( uint_t offset)
+{
+    return 0;
+    uint_t val;
+
+    switch(offset) {
+        case PLIC_HART_BASE:
+            val = 0;
+            break;
+        case PLIC_HART_BASE + 4:
+            if (mip.SEIP==1){
+                plic_served_irq = true;
+                val =1;
+                mip.SEIP = 0;
+            }
+            else 
+                val = 0;
+            break;
+    }
+    return val;
+}
+
+static void plic_write(uint_t offset, uint_t val)
+{
+
+    switch(offset) {
+  
+        case PLIC_HART_BASE + 4:
+            plic_served_irq = false;
+            if (plic_pending_irq)
+                mip.SEIP = 1;
+            else
+                mip.SEIP = 0;
+            break;
+    }
+
+}
+
+
+
+
+void plic_set_irq_emu(int irq_num, int state)
+{
+    uint32_t mask;
+
+    mask = 1 << (irq_num - 1);
+    if (state){
+        plic_pending_irq = true;
+        if (~plic_served_irq)
+            mip.SEIP = 1;
+        else
+            mip.SEIP = 0;
+    }
+    else{
+        plic_pending_irq = false;
+        mip.SEIP = 0;
+    }
+    //plic_update_mip(s);
+}
+
+
 int main(){
- VIRTIOBusDef vbus_sf;
-VIRTIOBusDef *vbus= &vbus_sf;
-IRQSignal plic_irq;
-   fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
-    drive = block_device_init(fname, drive_mode);
-    ////////////////////////////////////////////////////////
-    vbus->addr = 0x40010000;
+
+    /////////////////////////////// tinyemu init begin //////////////////////////////////
+    VirtMachine *s;
+    const char *path, *cmdline, *build_preload_file;
+    int c, option_index, ii, ram_size, accel_enable;
+    BOOL allow_ctrlc;
+    BlockDeviceModeEnum drive_mode;
+    VirtMachineParams p_s, *p = &p_s;
+
+    ram_size = -1;
+    allow_ctrlc = FALSE;
+    (void)allow_ctrlc;
+    drive_mode = BF_MODE_SNAPSHOT;
+    accel_enable = -1;
+    cmdline = NULL;
+    build_preload_file = NULL;
+
+    allow_ctrlc = TRUE;
+    drive_mode = BF_MODE_RW;
+    cmdline = "";    // append argument 
+    ram_size = 512;
+
+
+    //path = argv[optind++];
+    virt_machine_set_defaults(p);
+    virt_machine_load_config_file(p, "./temu/riscv64.cfg", NULL, NULL);   // loading from config file commented, default config used
+
+    if (ram_size > 0) {
+        p->ram_size = (uint64_t)ram_size << 20;
+    }
+    if (accel_enable != -1)
+        p->accel_enable = accel_enable;
+    if (cmdline) {
+        vm_add_cmdline(p, cmdline);
+    }
+
+    /* open the files & devices */
+    printf("Drive count : %d\n",(uint32_t)(p->drive_count));
+    for(ii = 0; ii < p->drive_count; ii++) {
+
+        BlockDevice *drive;
+        char *fname;
+        fname = get_file_path(p->cfg_filename, p->tab_drive[ii].filename);
+        {
+            drive = block_device_init(fname, drive_mode);
+            printf("block device init\n");
+            // emu_main();
+            // exit(0);
+        }
+        free(fname);
+        p->tab_drive[ii].block_dev = drive;
+    }
+
+    for(int iii = 0; iii < p->fs_count; iii++) {
+        FSDevice *fs;
+        const char *path;
+        path = p->tab_fs[iii].filename;
+        {
+            char *fname;
+            fname = get_file_path(p->cfg_filename, path);
+            fs = fs_disk_init(fname);
+            if (!fs) {
+                fprintf(stderr, "%s: must be a directory\n", fname);
+                exit(1);
+            }
+            free(fname);
+        }
+        p->tab_fs[iii].fs_dev = fs;
+    }
+
+    p->console = console_init(allow_ctrlc);
+
+    p->rtc_real_time = TRUE;
+
+    //s = virt_machine_init(p);
+    //if (!s)
+    //    exit(1);
+
+    IRQSignal plic_irq;
+
+    irq_init(&plic_irq, plic_set_irq_emu, 1);
+
+    VIRTIOBusDef vbus_sf;
+    VIRTIOBusDef *vbus= &vbus_sf;
+
+    memset(vbus, 0, sizeof(*vbus));
+
+    //for(i = 0; i < p->drive_count; i++) {
     vbus->irq = &plic_irq;
-  	block_dev=virtio_block_init(vbus, drive);
-	cout <<" value" <<hex<<virtio_mmio_read(block_dev,0 ,2 )<<endl;
-	//exit(0);
-//	exit(0);
+    block_dev = virtio_block_init(vbus, p->tab_drive[0].block_dev);
+
+        //irq_num++;
+        //s->virtio_count++;
+    
+    
+    virt_machine_free_config(p);
+
+    /////////////////////////////// tinyemu init end //////////////////////////////////
+//    VIRTIOBusDef vbus_sf;
+//    VIRTIOBusDef *vbus= &vbus_sf;
+//    IRQSignal plic_irq;
+//    //fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
+//    fname="/home/dean/Linux-ext/buildroot/buildroot-2019.02/output/images/rootfs.ext2";
+//    drive = block_device_init(fname, drive_mode);
+//    ////////////////////////////////////////////////////////
+//    vbus->addr = 0x40010000;
+//    vbus->irq = &plic_irq;
+//    block_dev=virtio_block_init(vbus, drive);
+//    cout <<" value" <<hex<<virtio_mmio_read(block_dev,0 ,2 )<<endl;
+    //exit(0);
+//  exit(0);
     //////////////////////////////////////////////////////
     ifstream infile("data_hex.txt");
     string line;
@@ -314,6 +459,8 @@ IRQSignal plic_irq;
     plevel_t LR_cp;
     uint_t LR_count = 0;
     bool csr_bool = false;
+
+    uint_t load_addr_phy_virt = 0;
 
     bool write_tval = false;
 
@@ -594,7 +741,7 @@ IRQSignal plic_irq;
                         if (load_addr_phy==-1){
                             mtval = load_addr;
                             // LD_PAGE_FAULT = true;
-							
+                            
                                  //cout << "Page fault exception load : "<< hex << load_addr << "PC: " <<hex << PC<< " Physical PC : " <<hex <<PC_phy<< endl; 
                                PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
                                 switch(cp){
@@ -631,11 +778,11 @@ IRQSignal plic_irq;
                                 load_data = clint_read(load_addr_phy-CLINT_BASE);
                             }
                             else if ((load_addr_phy >= PLIC_BASE) & (load_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
-                                load_data = plic_read(load_addr_phy-PLIC_BASE);
+                                load_data = ((uint_t)plic_read(load_addr_phy-PLIC_BASE))<<(32*((load_addr_phy%8)!=0));
                             }else if ((load_addr_phy >= VIRTIO_BASE) & (load_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
-								load_addr_phy = load_addr_phy/8;
-								load_addr_phy = load_addr_phy *8;
-                                load_data = (virtio_mmio_read (block_dev,load_addr_phy -VIRTIO_BASE+4,2)<<32)+ (virtio_mmio_read (block_dev,load_addr_phy -VIRTIO_BASE,2));
+                                load_addr_phy_virt = load_addr_phy/8;
+                                load_addr_phy_virt = load_addr_phy_virt *8;
+                                load_data =( (uint_t)virtio_mmio_read(block_dev,load_addr_phy_virt -VIRTIO_BASE+4,2)<<32)+ (virtio_mmio_read (block_dev,load_addr_phy_virt -VIRTIO_BASE,2));
                             }else {
                                 cout << "New peripheral"<< hex << load_addr_phy<<endl;
                                 exit(0);
@@ -731,12 +878,12 @@ IRQSignal plic_irq;
                         }
                     }
                 } else if ( load_addr == FIFO_ADDR_RX ) {
-					
+                    
                     wb_data = 0 ;
                     reg_file[rd] = wb_data;
                 }
                 else if ( load_addr == FIFO_ADDR_TX ){
-					wb_data = 64;//(uint_t)getchar() ;
+                    wb_data = 64;//(uint_t)getchar() ;
                     reg_file[rd] = wb_data;
                 }
                 break;
@@ -829,13 +976,15 @@ IRQSignal plic_irq;
                         // cout << "write value : "<<hex<<reg_file[rs2]<<endl;
                         // cout  << "offset : "<<hex<<store_addr_phy-CLINT_BASE<<endl;
                         // continue;
+                        cout << "peripheral access write addr "<< hex << store_addr_phy << endl;
+                        cout << "peripheral access write data "<< hex << reg_file[rs2] << endl;
                         if ((store_addr_phy >= CLINT_BASE) & (store_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                             clint_write(store_addr_phy-CLINT_BASE, reg_file[rs2]);
                         }
                         else if ((store_addr_phy >= PLIC_BASE) & (store_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
                             plic_write(store_addr_phy-PLIC_BASE, reg_file[rs2]);
                         }else if ((store_addr_phy >= VIRTIO_BASE) & (store_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
-                            virtio_write(store_addr_phy-VIRTIO_BASE, reg_file[rs2]);
+                            virtio_mmio_write(block_dev, store_addr_phy-VIRTIO_BASE, (reg_file[rs2] & 0xFFFFFFFF), 2);
                         }else {
                             cout << "New peripheral"<< hex << load_addr_phy<<endl;
                             exit(0);

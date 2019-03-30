@@ -59,6 +59,10 @@ typedef struct VIRTIODevice VIRTIODevice;
 
 void virtio_set_debug(VIRTIODevice *s, int debug_flags);
 
+
+uint32_t virtio_mmio_read(void *opaque, uint32_t offset1, int size_log2);
+void virtio_mmio_write(void *opaque, uint32_t offset,uint32_t val, int size_log2);
+
 /* block device */
 
 typedef void BlockDeviceCompletionFunc(void *opaque, int ret);
@@ -144,6 +148,3 @@ VIRTIODevice *virtio_9p_init(VIRTIOBusDef *bus, FSDevice *fs,
                              const char *mount_tag);
 
 #endif /* VIRTIO_H */
-uint32_t virtio_mmio_read(void *opaque, uint32_t offset1, int size_log2);
-void virtio_mmio_write(void *opaque, uint32_t offset,
-                              uint32_t val, int size_log2);

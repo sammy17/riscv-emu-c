@@ -1,4 +1,4 @@
-all : run
+all : comp_with_temu
 
 comp :
 	g++ emu.cpp -o emu -std=c++11

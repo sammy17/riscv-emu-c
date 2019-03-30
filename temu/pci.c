@@ -128,8 +128,8 @@ PCIDevice *pci_register_device(PCIBus *b, const char *name, int devfn,
     d->config[0x0e] = 0x00; /* header type */
     d->next_cap_offset = 0x40;
     
-    for(i = 0; i < 4; i++)
-        irq_init(&d->irq[i], pci_device_set_irq, d, i);
+    // for(i = 0; i < 4; i++)
+    //     irq_init(&d->irq[i] pci_device_set_irq, d, i);
     b->device[devfn] = d;
 
     return d;
@@ -529,9 +529,9 @@ I440FXState *i440fx_init(PCIBus **pbus, int *ppiix3_devfn,
     b->port_map = port_map;
 
     s->pic_irqs = pic_irqs;
-    for(i = 0; i < 4; i++) {
-        irq_init(&b->irq[i], i440fx_set_irq, s, i);
-    }
+    // for(i = 0; i < 4; i++) {
+    //     irq_init(&b->irq[i], i440fx_set_irq, s, i);
+    // }
     
     cpu_register_device(port_map, 0xcf8, 1, s, i440fx_read_addr, i440fx_write_addr, 
                         DEVIO_SIZE32);

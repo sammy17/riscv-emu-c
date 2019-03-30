@@ -32,6 +32,9 @@
 #include "list.h"
 #include "virtio.h"
 
+
+#include "../memory.h"
+
 //#define DEBUG_VIRTIO
 
 /* MMIO addresses - from the Linux kernel */
@@ -278,11 +281,11 @@ static void virtio_init(VIRTIODevice *s, VIRTIOBusDef *bus,
                          s, virtio_pci_bar_set);
     } else {
         /* MMIO case */
-      //  s->mem_map = bus->mem_map;
+        s->mem_map = bus->mem_map;
         s->irq = bus->irq;
-        // s->mem_range = cpu_register_device(s->mem_map, bus->addr, VIRTIO_PAGE_SIZE,
-        //                                    s, virtio_mmio_read, virtio_mmio_write,
-        //                                    DEVIO_SIZE8 | DEVIO_SIZE16 | DEVIO_SIZE32);
+        //s->mem_range = cpu_register_device(s->mem_map, bus->addr, VIRTIO_PAGE_SIZE,
+        //                                   s, virtio_mmio_read, virtio_mmio_write,
+        //0                                   DEVIO_SIZE8 | DEVIO_SIZE16 | DEVIO_SIZE32);
         s->get_ram_ptr = virtio_mmio_get_ram_ptr;
     }
 
@@ -299,6 +302,7 @@ static uint16_t virtio_read16(VIRTIODevice *s, virtio_phys_addr_t addr)
     if (addr & 1)
         return 0; /* unaligned access are not supported */
     ptr = s->get_ram_ptr(s, addr, FALSE);
+
     if (!ptr)
         return 0;
     return *(uint16_t *)ptr;
@@ -352,7 +356,7 @@ static int virtio_memcpy_to_ram(VIRTIODevice *s, virtio_phys_addr_t addr,
 {
     uint8_t *ptr;
     int l;
-
+    exit(0);
     while (count > 0) {
         l = min_int(count, VIRTIO_PAGE_SIZE - (addr & (VIRTIO_PAGE_SIZE - 1)));
         ptr = s->get_ram_ptr(s, addr, TRUE);
@@ -518,11 +522,12 @@ static void queue_notify(VIRTIODevice *s, int queue_idx)
     QueueState *qs = &s->queue[queue_idx];
     uint16_t avail_idx;
     int desc_idx, read_size, write_size;
-
+    printf("Hello im here\n");
     if (qs->manual_recv)
         return;
 
     avail_idx = virtio_read16(s, qs->avail_addr + 2);
+    printf("Hello im here1\n");
     while (qs->last_avail_idx != avail_idx) {
         desc_idx = virtio_read16(s, qs->avail_addr + 4 + 
                                  (qs->last_avail_idx & (qs->num - 1)) * 2);
@@ -533,10 +538,12 @@ static void queue_notify(VIRTIODevice *s, int queue_idx)
                        queue_idx, read_size, write_size);
             }
 #endif
+            printf("Hello im here2\n");
             if (s->device_recv(s, queue_idx, desc_idx,
                                read_size, write_size) < 0)
                 break;
         }
+        printf("Hello im here3\n");
         qs->last_avail_idx++;
     }
 }
@@ -714,7 +721,7 @@ static void set_low32(virtio_phys_addr_t *paddr, uint32_t val)
 }
 #endif
 
- void virtio_mmio_write(void *opaque, uint32_t offset,
+void virtio_mmio_write(void *opaque, uint32_t offset,
                               uint32_t val, int size_log2)
 {
     VIRTIODevice *s = opaque;

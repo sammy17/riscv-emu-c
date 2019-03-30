@@ -849,9 +849,9 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
                         clint_read, clint_write, DEVIO_SIZE32);
     cpu_register_device(s->mem_map, PLIC_BASE_ADDR, PLIC_SIZE, s,
                         plic_read, plic_write, DEVIO_SIZE32);
-    for(i = 1; i < 32; i++) {
-        irq_init(&s->plic_irq[i], plic_set_irq, s, i);
-    }
+    // for(i = 1; i < 32; i++) {
+    //     irq_init(&s->plic_irq[i], plic_set_irq, s, i);
+    // }
 
     cpu_register_device(s->mem_map, HTIF_BASE_ADDR, 16,
                         s, htif_read, htif_write, DEVIO_SIZE32);
@@ -941,14 +941,14 @@ static VirtMachine *riscv_machine_init(const VirtMachineParams *p)
         }
     }
     
-    if (!p->files[VM_FILE_BIOS].buf) {
-        vm_error("No bios found");
-    }
+   //if (!p->files[VM_FILE_BIOS].buf) {
+   //    vm_error("No bios found");
+   //}
 
-    copy_bios(s, p->files[VM_FILE_BIOS].buf, p->files[VM_FILE_BIOS].len,
-              p->files[VM_FILE_KERNEL].buf, p->files[VM_FILE_KERNEL].len,
-              p->cmdline);
-    
+   //copy_bios(s, p->files[VM_FILE_BIOS].buf, p->files[VM_FILE_BIOS].len,
+   //          p->files[VM_FILE_KERNEL].buf, p->files[VM_FILE_KERNEL].len,
+   //          p->cmdline);
+   //
     return (VirtMachine *)s;
 }
 
