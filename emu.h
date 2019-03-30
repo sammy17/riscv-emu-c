@@ -12,10 +12,14 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
+#include <memory.h>
+
 int emu_main();
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
+
+
 
 typedef uint64_t uint_t;
 typedef uint64_t data_t;

@@ -227,6 +227,52 @@ static void virtio_write(uint_t offset, uint_t val)
 
 
 }
+
+extern "C" uint32_t mem_read32(uint64_t addr){
+    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    load_word(addr, load_data, wb_data);
+
+    return (uint32_t)wb_data;
+}
+
+extern "C" void mem_write32(uint64_t addr, uint64_t data){
+    uint64_t store_data = 0;
+    store_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    store_word(addr, store_data, data, wb_data);
+    memory.at((addr - DRAM_BASE)/8) = ( 0xFFFFFFFF & wb_data);
+}
+
+extern "C" uint16_t mem_read16(uint64_t addr){
+    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    load_halfw(addr, load_data, wb_data);
+    return (uint16_t)wb_data;
+}
+
+extern "C" void mem_write16(uint64_t addr, uint64_t data){
+    uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    store_halfw(addr, store_data, data, wb_data);
+    memory.at((addr - DRAM_BASE)/8) = ( 0xFFFFFFFF & wb_data);
+}
+
+extern "C" uint8_t mem_read8(uint64_t addr){
+    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    load_byte(addr, load_data, wb_data);
+    return (uint8_t)wb_data;
+}
+
+extern "C" void mem_write8(uint64_t addr, uint64_t data){
+    uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    store_byte(addr, store_data, data, wb_data);
+    memory.at((addr - DRAM_BASE)/8) = ( 0xFF & wb_data);
+}
+
+
 /*
 typedef enum {
     BF_MODE_RO,
@@ -247,7 +293,7 @@ VIRTIODevice *block_dev;//=&block_dev_sf;
 #define PLIC_HART_SIZE 0x1000
 static uint_t plic_read( uint_t offset)
 {
-    return 0;
+    
     uint_t val;
 
     switch(offset) {
@@ -255,7 +301,9 @@ static uint_t plic_read( uint_t offset)
             val = 0;
             break;
         case PLIC_HART_BASE + 4:
+         
             if (mip.SEIP==1){
+                
                 plic_served_irq = true;
                 val =1;
                 mip.SEIP = 0;
