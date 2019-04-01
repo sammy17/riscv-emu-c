@@ -197,6 +197,7 @@ static void clint_write(uint_t offset, uint_t val)
     switch(offset) {
         case 0x4000:
             mtimecmp = val;
+			mip.STIP=0;
             break;
         default:
             break;
@@ -241,7 +242,7 @@ extern "C" void mem_write32(uint64_t addr, uint64_t data){
     store_data = memory.at((addr - DRAM_BASE)/8);
     uint64_t wb_data = 0;
     store_word(addr, store_data, data, wb_data);
-    memory.at((addr - DRAM_BASE)/8) = ( 0xFFFFFFFF & wb_data);
+    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
 }
 
 extern "C" uint16_t mem_read16(uint64_t addr){
@@ -255,7 +256,7 @@ extern "C" void mem_write16(uint64_t addr, uint64_t data){
     uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
     uint64_t wb_data = 0;
     store_halfw(addr, store_data, data, wb_data);
-    memory.at((addr - DRAM_BASE)/8) = ( 0xFFFFFFFF & wb_data);
+    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
 }
 
 extern "C" uint8_t mem_read8(uint64_t addr){
@@ -269,7 +270,7 @@ extern "C" void mem_write8(uint64_t addr, uint64_t data){
     uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
     uint64_t wb_data = 0;
     store_byte(addr, store_data, data, wb_data);
-    memory.at((addr - DRAM_BASE)/8) = ( 0xFF & wb_data);
+    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
 }
 
 
@@ -311,6 +312,9 @@ static uint_t plic_read( uint_t offset)
             else 
                 val = 0;
             break;
+		default:
+			val =0;
+			break;
     }
     return val;
 }
@@ -326,6 +330,8 @@ static void plic_write(uint_t offset, uint_t val)
                 mip.SEIP = 1;
             else
                 mip.SEIP = 0;
+            break;
+        default:
             break;
     }
 
@@ -820,7 +826,7 @@ int main(){
 
                         }
                         else{ // mapping to peripheral
-                            cout << "peripheral access read"<< hex << load_addr_phy << endl;
+                            //cout << "peripheral access read"<< hex << load_addr_phy << endl;
 
                             if ((load_addr_phy >= CLINT_BASE) & (load_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                                 load_data = clint_read(load_addr_phy-CLINT_BASE);
@@ -1024,8 +1030,8 @@ int main(){
                         // cout << "write value : "<<hex<<reg_file[rs2]<<endl;
                         // cout  << "offset : "<<hex<<store_addr_phy-CLINT_BASE<<endl;
                         // continue;
-                        cout << "peripheral access write addr "<< hex << store_addr_phy << endl;
-                        cout << "peripheral access write data "<< hex << reg_file[rs2] << endl;
+                        //cout << "peripheral access write addr "<< hex << store_addr_phy << endl;
+                        //cout << "peripheral access write data "<< hex << reg_file[rs2] << endl;
                         if ((store_addr_phy >= CLINT_BASE) & (store_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                             clint_write(store_addr_phy-CLINT_BASE, reg_file[rs2]);
                         }
@@ -1907,12 +1913,17 @@ int main(){
 
                             case 258 : //sret
                                 PC = sepc;
+								
+								//cout<<"sret"<<hex<<(int)sstatus.spie<<endl;
                                 cp = (plevel_t)mstatus.spp;
                                 mstatus.mpp = 0b00; //setting to umode
                                 mstatus.spp = 0b0;
                                 sstatus.sie = sstatus.spie;
                                 sstatus.spie = 1;
+								//cout<<"sret"<<hex<<(int)sstatus.sie<<endl;
                                 break;
+						
+
 
                             case 2 : //uret
                                 PC = uepc;
@@ -2007,7 +2018,7 @@ int main(){
         //cout << "mtimecmp : "<<mtimecmp<<endl;
         //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
          //timer interrupt
-            // mip.MTIP = (mtime >= mtimecmp );
+            mip.STIP = (mtime >= mtimecmp );
 
             //cout << "cp : "<< (uint_t)cp <<endl;
             //cout << "sie : "<<(uint_t)mstatus.sie<<endl;

@@ -533,12 +533,10 @@ static void queue_notify(VIRTIODevice *s, int queue_idx)
     QueueState *qs = &s->queue[queue_idx];
     uint16_t avail_idx;
     int desc_idx, read_size, write_size;
-    printf("Hello im here\n");
     if (qs->manual_recv)
         return;
 
     avail_idx = virtio_read16(s, qs->avail_addr + 2);
-    printf("Hello im here1\n");
     while (qs->last_avail_idx != avail_idx) {
         desc_idx = virtio_read16(s, qs->avail_addr + 4 + 
                                  (qs->last_avail_idx & (qs->num - 1)) * 2);
@@ -549,12 +547,10 @@ static void queue_notify(VIRTIODevice *s, int queue_idx)
                        queue_idx, read_size, write_size);
             }
 #endif
-            printf("Hello im here2\n");
             if (s->device_recv(s, queue_idx, desc_idx,
                                read_size, write_size) < 0)
                 break;
         }
-        printf("Hello im here3\n");
         qs->last_avail_idx++;
     }
 }

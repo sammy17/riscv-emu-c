@@ -296,6 +296,7 @@ static void plic_write(void *opaque, uint32_t offset, uint32_t val,
         }
         break;
     default:
+
         break;
     }
 }

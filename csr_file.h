@@ -234,7 +234,7 @@ struct mstatus_t{
 
     void write_reg(uint_t val){
         uie = (val & 0b1); sie = ((val>>1)& 0b1); mie = ((val>>3)& 0b1);
-        upie= ((val>>5)& 0b1); spie= ((val>>6)& 0b1); mpie= ((val>>7)& 0b1); 
+        upie= ((val>>4)& 0b1); spie= ((val>>5)& 0b1); mpie= ((val>>7)& 0b1); 
         spp= ((val>>8)& 0b1); mpp = ((val>>11)& 0b11); //0b11; removed hard wire to 11 
         fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); mprv= ((val>>17)& 0b1); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); tvm= ((val>>20)& 0b1); tw= ((val>>21)& 0b1); tsr= ((val>>22)& 0b1); uxl= ((val>>32)& 0b11); sxl= ((val>>34)& 0b11); sd= ((val>>63)& 0b1); 
     }
@@ -254,8 +254,12 @@ struct sstatus_t{
     }
 
     void write_reg(uint_t val){
+
+		if (((val>>5) & 0b1)!=spie){
+			cout << "spie write" << hex << ((val>>6) & 0b1)<<endl;
+		}
         uie = (val & 0b1); sie = ((val>>1)& 0b1); 
-        upie= ((val>>5)& 0b1); spie= ((val>>6)& 0b1);
+        upie= ((val>>4)& 0b1); spie= ((val>>5)& 0b1);
         spp= ((val>>8)& 0b1); 
         fs= ((val>>13)& 0b11); xs= ((val>>15)& 0b11); sum= ((val>>18)& 0b1); mxr= ((val>>19)& 0b1); uxl= ((val>>32)& 0b11);  sd= ((val>>63)& 0b1); 
     }
@@ -518,6 +522,7 @@ uint_t csr_read(uint_t csr_addr){
         case SSTATUS :
             if ((cp==MMODE) | (cp==SMODE)){
                 csr_read_success = true;
+            	
                 return sstatus.read_reg();
             }else{
                 cout << "writing to sstatus only allowed in MMODE and SMODE"<<endl;
@@ -611,6 +616,9 @@ uint_t csr_read(uint_t csr_addr){
             return utval;
             break;
         case MIP :
+            return mip.read_reg();
+            break;
+        case SIP :
             return mip.read_reg();
             break;
         case MIE :
@@ -769,6 +777,9 @@ bool csr_write(uint_t csr_addr, uint_t val){
             utval = val;
             break;
         case MIP :
+            mip.write_reg(val);
+            break;
+        case SIP :
             mip.write_reg(val);
             break;
         case MIE :
@@ -930,7 +941,6 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         scause.interrupt = 0;
         scause.ecode = ecode;
         sepc = PC-4;
-        //cout << "handling in smode "<<ecode<<endl;
 
         new_PC = stvec.base; 
     }
@@ -1012,8 +1022,7 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
         scause.interrupt = 1;
         scause.ecode = ecode;
         sepc = PC;
-
-
+        //cout << "handling in smode "<<(int) sstatus.spie <<endl;
         if (stvec.mode ==0b1){
             new_PC = stvec.base + 4*ecode;
             //cout << "stvec mode 1" << endl;
