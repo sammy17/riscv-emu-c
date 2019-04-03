@@ -1242,63 +1242,88 @@ uint_t translate(uint_t virtual_addr, ttype_t translation_type, plevel_t current
                 }
             }
 
-            if ( (translation_type==STOR) & ((pte_final.A==0) |  (pte_final.D==0) ) ){ // page fault according to spec - point 7
-                 cout<<"dirty bit not set"<<endl;
-                return -1;
-            } else if ((translation_type==INST|translation_type==LOAD) & (pte_final.A==0)){
-                 cout<<"access bit not set"<<endl;
-                return -1;
-            }
-            return phy_addr.read_reg();
-/*
+            // if ( (translation_type==STOR) & ((pte_final.A==0) |  (pte_final.D==0) ) ){ // page fault according to spec - point 7
+            //      //cout<<"dirty bit not set"<<endl;
+            //     return -1;
+            // } else if ((translation_type==INST|translation_type==LOAD) & (pte_final.A==0)){
+            //      //cout<<"access bit not set"<<endl;
+            //     return -1;
+            // }
+            // return phy_addr.read_reg();
+
             switch(translation_type){
                 case INST : 
+                    
                     if (pte_final.X==0) // fetch page is not executable
                         return -1;
 
-                    if (current_privilage==UMODE){
-                        if (pte_final.U==0) // mode is U but access in not
-                            return -1;
-                    }
-                    else if (current_privilage==SMODE){
-                        if (pte_final.U==1)  // cant execute user pages in smode
-                            return -1;
-                    }
+                    // if (current_privilage==UMODE){
+                    //     if (pte_final.U==0) // mode is U but access in not
+                    //         return -1;
+                    // }
+                    // else if (current_privilage==SMODE){
+                    //     if (pte_final.U==1)  // cant execute user pages in smode
+                    //         return -1;
+                    // }
+                    if(pte_final.A==0) 
+                        return -1;
                     return phy_addr.read_reg();
 
                     break;
 
                 case LOAD :
-                
-                    if (pte_final.R==0) // leaf page is not readable
-                        return -1;
+                    
+                    if (pte_final.R==0 & (sstatus.mxr==0)) // leaf page is not readable
+                        {
+                            // cout<<"not readable"<<endl;
+                            return -1;
+                        }
 
                     if (current_privilage==UMODE){
                         if (pte_final.U==0) // mode is U but access in not
+                              {
+                            // cout<<"U readable"<<endl;
                             return -1;
+                        }
                     }
                     else if (current_privilage==SMODE){
                         if ((pte_final.U==1) & (sstatus.sum==0))  
+                              {
+                            // cout<<"sum readable"<<endl;
                             return -1;
+                        }
                     }
 
-                    if ( (pte_final.X==1) & (sstatus.mxr==0) ) //load from executable pages are not enabled
-                        return -1;
-                    
+                    // if ( (pte_final.X==1) & (sstatus.mxr==0) ) //load from executable pages are not enabled
+                    //         {
+                    //         cout<<"mxr readable"<<endl;
+                    //         return -1;
+                    //     }
+                    if(pte_final.A==0) 
+                           {
+                            // cout<<"A readable"<<endl;
+                            return -1;
+                        }
+
                     return phy_addr.read_reg();
                     break;
 
                 case STOR : 
+
                     if (pte_final.W==0) // leaf page is not writable
                         return -1;
-
+                    if(pte_final.A==0) 
+                        return -1;
+                    if(pte_final.D==0) 
+                        return -1;
                     return phy_addr.read_reg();
                     break;
             }
-*/
+
             break;
         case 9 : //Sv48
             cout << "Sv48 mode not implemented"<<endl;
+			exit(0);
             break;
         default :
             cout << "Invalid or not-implemented translation mode : "<< satp.MODE <<endl;

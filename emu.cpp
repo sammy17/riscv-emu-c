@@ -8,6 +8,7 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
+#include <curses.h>
 
 extern "C" {
 #include "temu/temu.h"
@@ -223,11 +224,9 @@ static uint_t virtio_read( uint_t offset)
     return val;
 }
 
-static void virtio_write(uint_t offset, uint_t val)
-{
 
 
-}
+
 
 extern "C" uint32_t mem_read32(uint64_t addr){
     uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
@@ -559,7 +558,7 @@ int main(){
 
     memory.at(MTIME_ADDR/8) = 0;
     memory.at(MTIMECMP_ADDR/8) = -1;
-
+    uint32_t imm=0;
     time_csr = 0;
 
     //early_stage_bootloader();
@@ -607,28 +606,28 @@ int main(){
 
         PC_phy = translate(PC, INST, cp);
             // cout << "PC : "<< hex << PC <<"PC_phy : "<<hex<<PC_phy<< endl;
+			if(cp ==0 & PC==0  ) 
+			{
+				cout <<"instruction " << hex<<instruction<<endl;
+				exit(0);
+				}
+				else if (cp ==0 & PC_phy != -1 ) 
+					{
+						
+						}
+
 
         if (PC_phy==-1){
             //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
             //cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
             //INS_PAGE_FAULT = true;
-            mtval = PC;
+			            mtval = PC;
             PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            write_tval = false;
-            switch(cp){
-                case MMODE : 
-                    mtval = mtval;
-                    break;
-                case SMODE :
-                    stval = mtval;
-                    mtval = 0;
-                    break;
-                case UMODE :
-                    utval = mtval;
-                    mtval = 0;
-                    break;
-            }
-        continue;
+            
+               utval=mtval;
+			   stval=mtval; 
+            
+        	continue;
             //continue; //exception will not occur if continue is there
         }
 
@@ -652,6 +651,12 @@ int main(){
             bitset<32> ins(instruction);
             cout << "Instruction : "<<ins << endl;
         #endif
+		if (cp==0){
+		}
+			// if(PC==(0x1555631e8c)){
+				
+   //          		cout << "Instruction : "<<hex<<instruction << endl;
+   //              }
 
         opcode = static_cast<opcode_t>((instruction) & 0b1111111);
 
@@ -672,7 +677,14 @@ int main(){
         imm_j    = ((((instruction)>>31) & 0b1)<<20) + ((instruction) & (0b11111111<<12)) + ((((instruction)>>20) & 0b1)<<11) + ((((instruction)>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
         imm_b    = ((((instruction)>>31) & 0b1)<<12) + ((((instruction)>>7) & 0b1)<<11) + ((((instruction)>>25) & 0b111111)<<5) + (((instruction)>>7) & 0b11110) ;
         imm_s    = ((((instruction)>>25) & 0b1111111)<<5) + (((instruction)>>7) & 0b11111) ;
-
+         imm = rd | ((instruction >> (25 - 5)) & 0xfe0);
+            imm = (imm << 20) >> 20;
+        // if(imm_s!=imm){
+        //     cout<<"this "<<endl;
+        //     exit(0);
+        // }
+ 
+           
         amo_op   = ((instruction) >> 27) & 0b11111 ;
 
 
@@ -786,7 +798,10 @@ int main(){
                     printf("LOAD\n");
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
-                
+      //          if(PC==(0x1555631e8c+4)){
+				  //  cout<<"load addr : "<<hex << load_addr <<endl;
+				  //  exit(0);
+			   // }
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     {
                         //cout << "load addr not translate : "<<hex<<load_addr<<endl;
@@ -823,6 +838,7 @@ int main(){
                                 exit(0);
                             }
                         load_data = memory.at(load_addr_phy/8);
+                      
 
                         }
                         else{ // mapping to peripheral
@@ -930,6 +946,8 @@ int main(){
                                 cout<<  "func3 : "<<ins<<endl;
                                 break;
                         }
+                        // if(cp ==0)
+                        //     printf("load pc=0x%016llx insn=0x%08x addr 0x%016llx val 0x%016llx \n",PC-4,instruction,load_addr,wb_data);
                     }
                 } else if ( load_addr == FIFO_ADDR_RX ) {
                     
@@ -937,8 +955,12 @@ int main(){
                     reg_file[rd] = wb_data;
                 }
                 else if ( load_addr == FIFO_ADDR_TX ){
-                    wb_data = 64;//(uint_t)getchar() ;
+                    // if(kbhit())
+                        wb_data = (uint_t)getchar() ;
+                    // else
+                    //     wb_data = -1;
                     reg_file[rd] = wb_data;
+
                 }
                 break;
 
@@ -947,7 +969,10 @@ int main(){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
-                
+     //         	if(store_addr==(0x3fffcf6738)){
+					// cout<<"PC : " <<hex << PC-4<<" " <<hex<<reg_file[rs2]<<" "  <<reg_file[rs1]<<endl;
+
+			  //  }   
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
 
                     store_addr_phy = translate(store_addr, STOR, cp);
@@ -1017,9 +1042,9 @@ int main(){
                                 if (!ls_success){
                                     //cout << "Mis-aligned store exception"<<endl;
                                     //PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
-                                    STORE_ADDR_MISSALIG = true;
-                                    mtval = store_addr;
                                 }else {
+                                    // if(cp ==0)
+                                    // printf("stor pc=0x%016llx insn=0x%08x addr 0x%016llx val 0x%016llx \n",PC-4,instruction,store_addr,store_data);
                                     memory.at(store_addr_phy/8) = wb_data;
                                 }
                             }
@@ -1060,7 +1085,7 @@ int main(){
                     #ifdef DEBUG
                         printf("STORE2\n");
                     #endif
-                    cout << (char)reg_file[rs2] ;
+                    cout << (char)reg_file[rs2]<<std::flush;
                 }
                 break;
             
@@ -1318,6 +1343,7 @@ int main(){
                 break;
 
             case amo :
+               
                 if (func3 == 0b010) { //AMO.W-32
                     #ifdef DEBUG
                         printf("AMO 32\n");
@@ -1354,6 +1380,10 @@ int main(){
                         exit(0);
                     }
                     load_data = memory.at(load_addr_phy/8);
+                     if(cp ==0){
+                    // cout<<"amo op "<<hex<<reg_file[rs1]<< "  " <<hex<< amo_op <<endl;
+                    // exit(0);
+                }
                     switch (amo_op){
                         case 0b00010 : //LR.W
                             
@@ -1474,7 +1504,7 @@ int main(){
                                 wb_data = ((wb_data & MASK32) | (reg_file[rs2] & MASK32)) & MASK32;
                                 ls_success = store_word(load_addr,load_data,wb_data, store_data);
                                 memory.at(load_addr_phy/8) = store_data;
-                            }
+                           }
                             break;
 
                         case 0b10000 : //AMOMIN.W
@@ -1916,7 +1946,6 @@ int main(){
 								
 								//cout<<"sret"<<hex<<(int)sstatus.spie<<endl;
                                 cp = (plevel_t)mstatus.spp;
-                                mstatus.mpp = 0b00; //setting to umode
                                 mstatus.spp = 0b0;
                                 sstatus.sie = sstatus.spie;
                                 sstatus.spie = 1;
@@ -1926,6 +1955,7 @@ int main(){
 
 
                             case 2 : //uret
+								exit(0);
                                 PC = uepc;
                                 cp = (plevel_t)UMODE;
                                 mstatus.mpp = 0b00; //setting to umode
@@ -2014,6 +2044,13 @@ int main(){
             cout << "Infinite loop!"<<(int)mip.STIP<<endl;
             break;
         }
+		if (cp ==0) 
+			{
+				//cout << "user mode 0"<<endl;
+				//cout <<hex << PC <<endl;
+				//cout <<hex <<PC_phy<<endl;
+		//		exit(0);
+				}
         //cout << "mtime    : "<<mtime<<endl;
         //cout << "mtimecmp : "<<mtimecmp<<endl;
         //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
@@ -2109,23 +2146,7 @@ int main(){
             write_tval = true;
         }
 
-        if(write_tval){
-            write_tval = false;
-            switch(cp){
-                case MMODE : 
-                    mtval = mtval;
-                    break;
-                case SMODE :
-                    stval = mtval;
-                    mtval = 0;
-                    break;
-                case UMODE :
-                    utval = mtval;
-                    mtval = 0;
-                    break;
-            }
-        }
-
+        
 /*
         if (mip.MTIP == 0b1){
             switch(cp) {
