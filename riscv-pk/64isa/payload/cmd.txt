@@ -1,3 +1,0 @@
-riscv64-unknown-elf-gcc hello.c -o hello_new -nostartfiles -march=rv64g -mabi=lp64 -fPIC
-
-riscv64-unknown-elf-gcc -nostdlib -I. -march=rv64g -mabi=lp64 -fPIC hello.c stdlib.c -o hello_new -fno-builtin

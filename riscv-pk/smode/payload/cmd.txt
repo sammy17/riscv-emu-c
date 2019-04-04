@@ -1,1 +1,0 @@
-riscv64-unknown-elf-gcc hello.c -o hello_new -nostartfiles -march=rv64g -mabi=lp64 -fPIC

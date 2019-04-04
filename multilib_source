@@ -1,3 +1,0 @@
-#!/bin/bash -fx
-export PATH=/home/dean/Linux-ext/riscv-tools/build/bin:$PATH
-export RISCV=/home/dean/Linux-ext/riscv-tools/build/bin
