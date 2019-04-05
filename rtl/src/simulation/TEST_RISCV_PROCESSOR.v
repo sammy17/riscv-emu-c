@@ -372,7 +372,7 @@ axi_interconnect_0_new master_interconnect (
    ) uut (
        // Standard inputs
        .CLK(CLK),
-       .RSTN(RSTN),
+       .RSTN(m00_axi_areset_out_n),
        .peripheral_interface_aclk(CLK),
        // Output address bus from Instruction Cache to Memory               
        //axi interface

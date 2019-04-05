@@ -691,6 +691,11 @@ myip_v1_0_M00_AXI # (
 	wire [63:0] data_to_dcache_from_dtlb;
 
     always@(posedge CLK) begin
+        if(~RSTN) begin
+            dtlb_ready_d2 <=0; 
+            dtlb_ready_d3 <=0; 
+            dtlb_ready_d4 <=0; 
+        end
         if(cache_ready_dat) begin
             dtlb_ready_d2 <= dtlb_ready;     
             dtlb_ready_d3 <= dtlb_ready_d2;     
@@ -910,7 +915,7 @@ ITLB
             DATA_FROM_AXIM_VALID <=0;
             DATA_FROM_AXIM <=0;
         end
-        if(ADDR_TO_AXIM_VALID) begin
+        else if(ADDR_TO_AXIM_VALID) begin
             off_translation_for_itlb_request <= 1;
             addr_to_dcache_from_itlb    <= ADDR_TO_AXIM;
             control_to_dcache_from_itlb <=1; // 1 for load 2 for store

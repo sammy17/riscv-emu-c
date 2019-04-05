@@ -541,6 +541,7 @@ module PIPELINE #(
                 page_fault_fb_ex<=0;
                 sfence_id_fb <=0;
                 sfence_fb_ex <=0;
+                stall_enable_fb_ex <=1;
 
 
 

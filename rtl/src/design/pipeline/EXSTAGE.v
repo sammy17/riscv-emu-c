@@ -343,9 +343,12 @@ rv64m
             flush_internal<=0;
             counter_1<=0;
             counter_2 <=0;
+            cache_ready_ex <= 0;
+            cache_ready_ex2 <=0;
+
             // flush_out
         end
-        if (CACHE_READY)
+        else if (CACHE_READY)
         begin
 
              // cache_ready_fb <= 1                ;

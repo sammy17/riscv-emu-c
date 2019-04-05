@@ -335,7 +335,7 @@ module Dcache
         if (RST)
         begin
 
-
+            dirty_reg               <= 0        ;
             dirty_wren              <= 0        ;
             dirty_waddr             <= 0        ;
             state_wren              <= 0        ;
@@ -623,6 +623,8 @@ module Dcache
                     
                 end
             end
+            default:
+                data_to_be_writen = data;
 
 
         endcase
