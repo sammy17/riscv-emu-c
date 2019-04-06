@@ -52,7 +52,8 @@ module DTLB
 	input [4:0] AMO_IN,
 	output OP32_OUT,
 	output FLUSH_OUT,
-	output [4:0] AMO_OUT
+	output [4:0] AMO_OUT,
+    output  [ADDR_WIDTH-1:0] VIRT_ADDR_OUT
 
     );
 
@@ -165,6 +166,7 @@ module DTLB
 		amo_in_reg <=0;
 		op32_in_reg <=0;
 		flush_in_reg<=0;
+
         end
         else if (tlb_addr_valid & VIRT_ADDR_VALID &  CACHE_READY) begin
 	    virt_addr_reg        <=   VIRT_ADDR; 
@@ -179,6 +181,7 @@ module DTLB
 		wstrb_in_reg <=WSTRB_IN;
 		flush_in_reg <= FLUSH_IN;
 		amo_in_reg <= AMO_IN;
+        op32_in_reg <= OP32_IN;
         end  
         else
             tlb_flush_reg <=0;    
@@ -354,7 +357,8 @@ module DTLB
 	assign WSTRB_OUT= wstrb_in_reg;
 	assign AMO_OUT = amo_in_reg;
 	assign FLUSH_OUT = flush_in_reg & PHY_ADDR_VALID;
-	assign OP32_OUT = op32_in_reg; 
+	assign OP32_OUT = op32_in_reg;
+    assign VIRT_ADDR_OUT = virt_addr_reg; 
     function integer logb2;
         input integer depth;
         for (logb2 = 0; depth > 1; logb2 = logb2 + 1)

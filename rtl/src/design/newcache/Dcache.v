@@ -34,7 +34,8 @@ module Dcache
         input OP32,
         input PAGE_FAULT,
         input ACCESS_FAULT,
-        output DCACHE_flusing
+        output DCACHE_flusing,
+        input [address_width-1:0] VIRT_ADDR
 
     );
     `include "PipelineParams.vh"
@@ -42,7 +43,13 @@ module Dcache
     reg  [address_width-1:0] addr_d1             ;
     reg  [address_width-1:0] addr_d2             ;
     reg  [address_width-1:0] addr_d3             ;
-    reg  [address_width-1:0] addr_d4             ;
+    reg  [address_width-1:0] addr_d4             ; 
+
+    reg  [address_width-1:0] vaddr_d0             ;
+    reg  [address_width-1:0] vaddr_d1             ;
+    reg  [address_width-1:0] vaddr_d2             ;
+    reg  [address_width-1:0] vaddr_d3             ;
+    reg  [address_width-1:0] vaddr_d4             ;
     reg op32_d0;
     reg op32_d1;
     reg op32_d2;
@@ -207,7 +214,15 @@ module Dcache
             addr_d0 <=0;
             addr_d1 <=   0;
             addr_d2 <=   0;
-            addr_d3 <=   0;
+            addr_d3 <=   0;    
+            addr_d4 <=   0;    
+
+            vaddr_d0 <=0;
+            vaddr_d1 <=   0;
+            vaddr_d2 <=   0;
+            vaddr_d3 <=   0;
+            vaddr_d4 <=   0;
+
             control_d0 <= 0;    
             control_d1 <=0;
             control_d2 <=0;
@@ -238,6 +253,12 @@ module Dcache
             addr_d2  <= addr_d1 ;
             addr_d3  <= addr_d2 ;
             addr_d4 <= addr_d3;
+
+            vaddr_d0  <= VIRT_ADDR;
+            vaddr_d1  <= VIRT_ADDR;
+            vaddr_d2  <= vaddr_d1 ;
+            vaddr_d3  <= vaddr_d2 ;
+            vaddr_d4 <=  vaddr_d3;
 
             control_d0 <= CONTROL;
             control_d1 <= CONTROL;
@@ -414,7 +435,7 @@ module Dcache
 
         else if(write_reserve & (control_d3 ==2'b10))
         begin
-            reserved_address <= addr_d3;
+            reserved_address <= vaddr_d3;
             reservation     <=1;
             re32 <=op32_d3;
         end
@@ -460,7 +481,7 @@ module Dcache
            end
            amosc:
            begin
-                if ((reservation & (addr_d3==reserved_address)) & (re32==op32_d3)) begin
+                if ((reservation & (vaddr_d3==reserved_address)) & (re32==op32_d3)) begin
                     if(op32_d3) begin
                         if(addr_d3[2]) begin
                             data_to_be_writen= {data_d3[63:32],data[31:0]};
@@ -477,7 +498,7 @@ module Dcache
                     data_to_be_writen = data;
                 end
                 // =  (reservation & (addr_d3==reserved_address))? data_d3: data;
-                write_allowed  = (reservation & (addr_d3==reserved_address)) & (re32==op32_d3);
+                write_allowed  = (reservation & (vaddr_d3==reserved_address)) & (re32==op32_d3);
                 clear_reserve    = 1;
                     
            end

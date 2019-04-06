@@ -249,6 +249,8 @@ module RISCV_PROCESSOR#(
      reg                                peri_done ;
      reg        [3 :0]                  wstrb_to_peri;
      wire       [4:0]                   amo_op;
+     reg [address_width-1: 0]           vaddr_to_dcache;
+
              
         wire fence;
      // Status signals between processor and instruction cache
@@ -751,7 +753,8 @@ myip_v1_0_M00_AXI # (
 	.FLUSH_IN(fence),
 	.FLUSH_OUT(flush_to_dcache_from_dtlb),
 	.OP32_OUT(op32_to_dcache_from_dtlb),
-	.AMO_OUT(amo_to_dcache_from_dtlb)	
+	.AMO_OUT(amo_to_dcache_from_dtlb),
+    .VIRT_ADDR_OUT(vaddr_to_dcache)
     );
 
 ITLB
@@ -813,7 +816,8 @@ ITLB
         .OP32(op32_to_dcache_from_dtlb),
         .PAGE_FAULT(page_fault_dat),
         .ACCESS_FAULT(access_fault_dat),
-        .DCACHE_flusing(DCACHE_flusing)
+        .DCACHE_flusing(DCACHE_flusing),
+        .VIRT_ADDR(vaddr_to_dcache)
 
     );
 
