@@ -542,6 +542,37 @@ module PIPELINE #(
                 sfence_id_fb <=0;
                 sfence_fb_ex <=0;
                 stall_enable_fb_ex <=1;
+                type_ex_mem1             <=                 0       ;
+                alu_ex_mem1              <=      0                  ;
+                op_type_ex_mem1          <=      0                  ;
+                feed_back_muxa_sel_id_fb <=0;
+                rs1_id_fb<=0; 
+                rs2_id_fb <=0;
+                type_ex_mem1<=0;
+                pc_ex_mem1<=0;
+                alu_ex_mem1<=0;
+                op_type_ex_mem1<=0;
+                alu_mem1_mem2<=0;
+                alu_mem2_mem3<=0;
+                alu_mem3_wb<=0;
+                type_mem1_mem2<=0;
+                type_mem2_mem3<=0;
+                type_mem3_wb<=0;
+                alu_mem1_mem2<=0;
+                alu_mem2_mem3<=0;
+                alu_mem3_wb<=0;
+                return_addr<=0;
+                alu_written_back<=0;
+                rd_mem1_mem2<=0;
+                rd_mem2_mem3<=0;
+                rd_mem3_wb<=0;
+                pc_mem1_mem2<=0;
+                pc_mem2_mem3<=0;
+                pc_mem3_wb<=0;
+                return_addr<=0;
+                op_type_mem1_mem2<=0;
+                op_type_mem2_mem3<=0;
+                op_type_mem3_wb<=0;
 
 
 
@@ -697,69 +728,56 @@ module PIPELINE #(
             rd_ex_mem1               <=    rd_ex_ex2                ;             
             pc_ex_mem1               <=    pc_fb_ex                 ;                                              
             imm_fb_ex                <=    imm_out_id_fb            ;    
-        end
-        if(RST)
-        begin
-            type_ex_mem1             <=                 0       ;
-            alu_ex_mem1              <=      0                  ;
-            op_type_ex_mem1          <=      0                  ;
-            feed_back_muxa_sel_id_fb <=0;
-            rs1_id_fb<=0; 
-            rs2_id_fb <=0;
-            type_ex_mem1<=0;
-            pc_ex_mem1<=0;
-            alu_ex_mem1<=0;
-            op_type_ex_mem1<=0;
-           alu_mem1_mem2<=0;
-           alu_mem2_mem3<=0;
-           alu_mem3_wb<=0;
-            type_mem1_mem2<=0;
-            type_mem2_mem3<=0;
-            type_mem3_wb<=0;
-            alu_mem1_mem2<=0;
-            alu_mem2_mem3<=0;
-            alu_mem3_wb<=0;
-            return_addr<=0;
-            alu_written_back<=0;
-            rd_mem1_mem2<=0;
-            rd_mem2_mem3<=0;
-            rd_mem3_wb<=0;
-            pc_mem1_mem2<=0;
-            pc_mem2_mem3<=0;
-            pc_mem3_wb<=0;
-            return_addr<=0;
-            op_type_mem1_mem2<=0;
-            op_type_mem2_mem3<=0;
-            op_type_mem3_wb<=0;
+            type_ex_mem1             <=      type_out               ;
+            pc_ex_mem1               <=      pc_fb_ex               ;            
+            alu_ex_mem1              <=      alu_out_wire           ;
+            op_type_ex_mem1          <=      op_type_ex_ex2         ;   
 
-
-        end
-        if (CACHE_READY_DATA)
-        begin       
-            if (!CACHE_READY)
-            begin
-                type_ex_mem1             <=      0                  ;
-               // pc_ex_mem1               <=      0                  ;            
-                alu_ex_mem1              <=      0                  ;
-                op_type_ex_mem1          <=      0                  ;
-                if(feed_back_muxa_sel_id_fb>2) 
-                     feed_back_muxa_sel_id_fb <=      feed_back_muxa_sel_id_fb+1;  
-                if(feed_back_muxb_sel_id_fb>2) 
-                     feed_back_muxb_sel_id_fb <=    feed_back_muxb_sel_id_fb+1;  
-                if (feed_back_muxa_sel_id_fb==7 )
-                    rs1_id_fb                <=      alu_written_back;             
-                if (feed_back_muxb_sel_id_fb==7 )
-                    rs2_id_fb                <=      alu_written_back;                                      
-            end
-            else 
-            begin
-                type_ex_mem1             <=      type_out               ;
-                pc_ex_mem1               <=      pc_fb_ex               ;            
-                alu_ex_mem1              <=      alu_out_wire           ;
-                op_type_ex_mem1          <=      op_type_ex_ex2         ;         
-            end
             type_mem1_mem2 <= type_ex_mem1; 
              type_mem2_mem3           <=      type_mem1_mem2               ;
+            if(PAGE_FAULT_DAT| ACCESS_FAULT_DAT) begin
+                type_mem3_wb <= 0;
+            end
+            else begin
+                type_mem3_wb <= type_mem2_mem3;
+            end
+            alu_mem1_mem2            <=      alu_ex_mem1                ;
+            alu_mem2_mem3            <=      alu_mem1_mem2              ;
+            alu_mem3_wb              <=      alu_mem2_mem3              ;
+            
+      
+            
+            alu_written_back         <=       wb_data_final             ;           
+            rd_mem1_mem2             <=       rd_ex_mem1                ;    
+            rd_mem2_mem3             <=       rd_mem1_mem2              ;    
+            rd_mem3_wb               <=       rd_mem2_mem3              ;                   
+            pc_mem1_mem2             <=       pc_ex_mem1                ;            
+            pc_mem2_mem3             <=       pc_mem1_mem2              ;            
+            pc_mem3_wb               <=       pc_mem2_mem3              ;    
+            op_type_mem1_mem2        <=       op_type_ex_mem1           ;                           
+            op_type_mem2_mem3        <=       op_type_mem1_mem2         ;                         
+            op_type_mem3_wb          <=       op_type_mem2_mem3         ; 
+       
+        end
+        else if (CACHE_READY_DATA)
+        begin       
+            
+            type_ex_mem1             <=      0                  ;
+            // pc_ex_mem1               <=      0                  ;            
+            alu_ex_mem1              <=      0                  ;
+            op_type_ex_mem1          <=      0                  ;
+            if(feed_back_muxa_sel_id_fb>2) 
+                 feed_back_muxa_sel_id_fb <=      feed_back_muxa_sel_id_fb+1;  
+            if(feed_back_muxb_sel_id_fb>2) 
+                 feed_back_muxb_sel_id_fb <=    feed_back_muxb_sel_id_fb+1;  
+            if (feed_back_muxa_sel_id_fb==7 )
+                rs1_id_fb                <=      alu_written_back;             
+            if (feed_back_muxb_sel_id_fb==7 )
+                rs2_id_fb                <=      alu_written_back;                                      
+          
+        
+            type_mem1_mem2            <=      type_ex_mem1              ; 
+             type_mem2_mem3           <=      type_mem1_mem2            ;
             if(PAGE_FAULT_DAT| ACCESS_FAULT_DAT) begin
                 type_mem3_wb <= 0;
             end

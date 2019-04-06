@@ -74,14 +74,14 @@ module Peripheral(
     begin
         if(~RSTN)
         begin
-            DONE<=0;
+           
             DATA_TO_PERI <=0;
             DATA_FROM_PERI_READY <=0;
             DATA_TO_PERI <=0;
-            WR_TO_PERI_VALID <=0;
+           
             RD_ADDR_TO_PERI_VALID <= 0;
         end
-        if(START & !DONE)
+        else if(START & !DONE)
             begin
             if (WRITE)
             begin
@@ -90,6 +90,13 @@ module Peripheral(
                 WR_TO_PERI_VALID <= 1;
                 WSTRB_OUT <= WSTRB;
             end
+            else if (RD_ADDR_TO_PERI_VALID && ready_ra)
+                RD_ADDR_TO_PERI_VALID <= 0;
+            else if (DATA_FROM_PERI_READY && valid_rd)
+                DATA_FROM_PERI_READY <= 0;
+            else if (WR_TO_PERI_VALID && ready_wa)
+                WR_TO_PERI_VALID <= 0;
+
             else
             begin
                 RD_ADDR_TO_PERI <= ADDRESS;
@@ -99,16 +106,19 @@ module Peripheral(
         end
         if (valid_rd)
             DATA_OUT <= DATA_FROM_PERI;
-        if(TRANSACTION_COMPLETE_PERI & !DONE)
+        if(RST) begin
+             DONE<=0;
+        end
+        else if(TRANSACTION_COMPLETE_PERI & !DONE) begin
             DONE <=1;
-        if (DONE & CACHE_READY_DAT)
+        end
+        else if (DONE & CACHE_READY_DAT) begin
             DONE <=0;
-        if (WR_TO_PERI_VALID && ready_wa)
-            WR_TO_PERI_VALID <= 0;
-        if (RD_ADDR_TO_PERI_VALID && ready_ra)
-            RD_ADDR_TO_PERI_VALID <= 0;
-        if (DATA_FROM_PERI_READY && valid_rd)
-            DATA_FROM_PERI_READY <= 0;
+        end
+      
+
+       
+        
             
     //valid_rd <= DATA_FROM_PERI_VALID;
         

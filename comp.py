@@ -9,7 +9,6 @@ filename=str(sys.argv[1])
 
 os.system('riscv64-unknown-elf-objcopy '+filename+' -O verilog g.hex');
 
-os.system('riscv64-unknown-elf-objdump -D '+filename+' -d >  test.txt');
 mile = open('g.hex','r')
 out = open('data_hex.txt','w')
 lines= mile.readlines()

@@ -404,31 +404,31 @@ module RISCV_PROCESSOR#(
     .PREDICTED(predicted)
     );
     
-    Peripheral peripheral
-    (
-    .CLK(CLK),
-    .RSTN(RSTN),
-    .START(peri_start),
-    .ADDRESS(addr_to_peri),
-    .WRITE(control_to_peri),
-    .DATA_IN(data_to_peri),
-    .DATA_OUT(data_from_peri),
-    .DONE(peri_complete),
-    .WSTRB(wstrb_to_peri),
-    .RD_ADDR_TO_PERI(RD_ADDR_TO_PERI),
-    .RD_ADDR_TO_PERI_VALID(RD_ADDR_TO_PERI_VALID),
-    .RD_ADDR_TO_PERI_READY(RD_ADDR_TO_PERI_READY),
-    .WR_ADDR_TO_PERI(WR_ADDR_TO_PERI),
-    .WR_TO_PERI_VALID(WR_TO_PERI_VALID),
-    .WR_TO_PERI_READY(WR_TO_PERI_READY),
-    .DATA_TO_PERI(DATA_TO_PERI),
-    .DATA_FROM_PERI(DATA_FROM_PERI),
-    .DATA_FROM_PERI_READY(DATA_FROM_PERI_READY),
-    .DATA_FROM_PERI_VALID(DATA_FROM_PERI_VALID),
-    .TRANSACTION_COMPLETE_PERI(TRANSACTION_COMPLETE_PERI),
-    .CACHE_READY_DAT(cache_ready_dat &dtlb_ready_d4),
-    .WSTRB_OUT(WSTRB_OUT)
-    );
+    // Peripheral peripheral
+    // (
+    // .CLK(CLK),
+    // .RSTN(RSTN),
+    // .START(peri_start),
+    // .ADDRESS(addr_to_peri),
+    // .WRITE(control_to_peri),
+    // .DATA_IN(data_to_peri),
+    // .DATA_OUT(data_from_peri),
+    // .DONE(peri_complete),
+    // .WSTRB(wstrb_to_peri),
+    // .RD_ADDR_TO_PERI(RD_ADDR_TO_PERI),
+    // .RD_ADDR_TO_PERI_VALID(RD_ADDR_TO_PERI_VALID),
+    // .RD_ADDR_TO_PERI_READY(RD_ADDR_TO_PERI_READY),
+    // .WR_ADDR_TO_PERI(WR_ADDR_TO_PERI),
+    // .WR_TO_PERI_VALID(WR_TO_PERI_VALID),
+    // .WR_TO_PERI_READY(WR_TO_PERI_READY),
+    // .DATA_TO_PERI(DATA_TO_PERI),
+    // .DATA_FROM_PERI(DATA_FROM_PERI),
+    // .DATA_FROM_PERI_READY(DATA_FROM_PERI_READY),
+    // .DATA_FROM_PERI_VALID(DATA_FROM_PERI_VALID),
+    // .TRANSACTION_COMPLETE_PERI(TRANSACTION_COMPLETE_PERI),
+    // .CACHE_READY_DAT(cache_ready_dat &dtlb_ready_d4),
+    // .WSTRB_OUT(WSTRB_OUT)
+    // );
     
     
     // Intercepting and extracting certain data writes
@@ -451,54 +451,61 @@ module RISCV_PROCESSOR#(
 
             
         end
-        else if  ((addr_from_proc_dat ==EXT_FIFO_ADDRESS | addr_from_proc_dat==32'he000102c)&&  control_from_proc_dat != 0 && dtlb_ready && !stop_dat_cache && cache_ready_ins && cache_ready_dat & dtlb_ready_d4 && counter==0 )
-        begin
-            data_to_peri <= data_from_proc_dat;
-            addr_to_peri <= addr_from_proc_dat;
-            control_to_peri <= (control_from_proc_dat == 2) ? 1'b1:1'b0;
-            wstrb_to_peri <= byte_enb_proc;
-            peri_start <=1;
-            stop_ins_cache <=1;
-            counter <= counter +1;
-            peri_done <= 0;
-        end
-        else if (cache_ready_dat & dtlb_ready_d4 && counter>0)
-        begin
-            if(peri_complete)
-            begin
-                peri_done <= 1;
-            end
-                        
-            if (counter == 3 && !peri_done)
-            begin
-                stop_dat_cache <=1;
-                p_flag         <=0;
-                stop_ins_cache <=0;     
-            end
-            else if (counter == 3 && peri_done)
-            begin
-                stop_ins_cache <=0;  
-                p_flag         <=1;
-
-                counter        <=0;
-                stop_dat_cache <=0;
-            end
-            else if (counter!=0)
-            begin
-                counter       <=counter + 1;
-                peri_start    <=0;
-            end    
-        end
-        
-        if (p_flag && peri_done & peri_start)
-        begin
-            peri_start <=0;
-        end
-        if (p_flag & cache_ready_dat & dtlb_ready_d4 & !stop_dat_cache)
-        begin
-            p_flag <= 0;
+    end
+    always@(posedge CLK) begin
+        if((control_from_proc_dat ==2 )& (addr_from_proc_dat== EXT_FIFO_ADDRESS) & dtlb_ready & cache_ready_ins & cache_ready_ins & dtlb_ready & dtlb_ready_d4) begin
+            $write("%c",data_from_proc_dat[7:0]);
         end
     end
+    //     else if  ((addr_from_proc_dat ==EXT_FIFO_ADDRESS | addr_from_proc_dat==32'he000102c)&&  control_from_proc_dat != 0 && dtlb_ready && !stop_dat_cache && cache_ready_ins 
+    //&& cache_ready_dat & dtlb_ready_d4 && counter==0 )
+    //     begin
+    //         data_to_peri <= data_from_proc_dat;
+    //         addr_to_peri <= addr_from_proc_dat;
+    //         control_to_peri <= (control_from_proc_dat == 2) ? 1'b1:1'b0;
+    //         wstrb_to_peri <= byte_enb_proc;
+    //         peri_start <=1;
+    //         stop_ins_cache <=1;
+    //         counter <= counter +1;
+    //         peri_done <= 0;
+    //     end
+    //     else if (cache_ready_dat & dtlb_ready_d4 && counter>0)
+    //     begin
+    //         if(peri_complete)
+    //         begin
+    //             peri_done <= 1;
+    //         end
+                        
+    //         if (counter == 3 && !peri_done)
+    //         begin
+    //             stop_dat_cache <=1;
+    //             p_flag         <=0;
+    //             stop_ins_cache <=0;     
+    //         end
+    //         else if (counter == 3 && peri_done)
+    //         begin
+    //             stop_ins_cache <=0;  
+    //             p_flag         <=1;
+
+    //             counter        <=0;
+    //             stop_dat_cache <=0;
+    //         end
+    //         else if (counter!=0)
+    //         begin
+    //             counter       <=counter + 1;
+    //             peri_start    <=0;
+    //         end    
+    //     end
+        
+    //     if (p_flag && peri_done & peri_start)
+    //     begin
+    //         peri_start <=0;
+    //     end
+    //     if (p_flag & cache_ready_dat & dtlb_ready_d4 & !stop_dat_cache)
+    //     begin
+    //         p_flag <= 0;
+    //     end
+    // end
     
 
     function integer logb2;
@@ -803,47 +810,7 @@ ITLB
 
     );
 
-          PERIPHERAL_INTERFACE # ( 
 
-       ) peripheral_interface (
-       .INIT_AXI_TXN(RSTN),
-       .ERROR                           (peripheral_interface_error)            ,
-       .TXN_DONE                        (peripheral_interface_txn_done)         ,
-       .M_AXI_ACLK                      (peripheral_interface_aclk)             ,
-       .M_AXI_ARESETN                   (RSTN)                                  ,
-       .M_AXI_AWADDR                    (peripheral_interface_awaddr)               ,
-       .M_AXI_AWPROT                    (peripheral_interface_awprot)               ,
-       .M_AXI_AWVALID                   (peripheral_interface_awvalid)              ,
-       .M_AXI_AWREADY                   (peripheral_interface_awready)              ,
-       .M_AXI_WDATA                     (peripheral_interface_wdata),
-       .M_AXI_WSTRB                     (peripheral_interface_wstrb),
-       .M_AXI_WVALID                    (peripheral_interface_wvalid),
-       .M_AXI_WREADY                    (peripheral_interface_wready),
-       .M_AXI_BRESP                     (peripheral_interface_bresp),
-       .M_AXI_BVALID                    (peripheral_interface_bvalid),
-       .M_AXI_BREADY                    (peripheral_interface_bready),
-       .M_AXI_ARADDR                    (peripheral_interface_araddr),
-       .M_AXI_ARPROT                    (peripheral_interface_arprot),
-       .M_AXI_ARVALID                   (peripheral_interface_arvalid),
-       .M_AXI_ARREADY                   (peripheral_interface_arready),
-       .M_AXI_RDATA                     (peripheral_interface_rdata),
-       .M_AXI_RRESP                     (peripheral_interface_rresp),
-       .M_AXI_RVALID                    (peripheral_interface_rvalid),
-       .M_AXI_RREADY                    (peripheral_interface_rready),
-       .wstrb(          WSTRB_OUT                                       ),
-       //Peripheral Side Ports
-       .dout_ra                         (RD_ADDR_TO_PERI),
-       .valid_ra                        (RD_ADDR_TO_PERI_VALID),
-       .ready_ra                        (RD_ADDR_TO_PERI_READY),
-       .dout_wa                         (WR_ADDR_TO_PERI),
-       .valid_wa                        (WR_TO_PERI_VALID),
-       .ready_wa                        (WR_TO_PERI_READY),
-       .dout_wd                         (DATA_TO_PERI),
-       .dout                            (DATA_FROM_PERI),
-       .ready_rd                        (DATA_FROM_PERI_READY),
-       .valid_rd                        (DATA_FROM_PERI_VALID),
-       .ack                             (TRANSACTION_COMPLETE_PERI)
-       );
     reg [2:0] itlb_data_counter;
     reg [2:0] dtlb_data_counter;
     always@(posedge CLK)

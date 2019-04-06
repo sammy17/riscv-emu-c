@@ -179,7 +179,9 @@ module DTLB
 		wstrb_in_reg <=WSTRB_IN;
 		flush_in_reg <= FLUSH_IN;
 		amo_in_reg <= AMO_IN;
-        end    
+        end  
+        else
+            tlb_flush_reg <=0;    
     end
 
     always@(posedge CLK)
@@ -334,7 +336,7 @@ module DTLB
     assign valid_raddr    = virt_addr_reg[PAGE_OFFSET_WIDTH+:TLB_ADDR_WIDTH];
     assign CURR_ADDR      = virt_addr_reg;
 
-    assign translation_off=off_translation_from_tlb_reg| ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0)|tlb_flush_reg;
+    assign translation_off=off_translation_from_tlb_reg| ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0);
 
     assign tlb_hit        = ((tag_mem_data_out == virt_addr_reg[(PAGE_OFFSET_WIDTH+TLB_ADDR_WIDTH) +: ((3*VPN_LEN)-TLB_ADDR_WIDTH)]) & valid_out);
 

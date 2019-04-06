@@ -157,7 +157,9 @@ module ITLB
 	    curr_prev_reg	 <=   CURR_PREV;
         tlb_flush_reg<=TLB_FLUSH;
         off_translation_from_tlb_reg <= OFF_TRANSLATION_FROM_TLB;
-        end    
+        end  
+        else
+            tlb_flush_reg <=0;  
     end
 
     always@(posedge CLK)
@@ -311,7 +313,7 @@ module ITLB
     assign valid_raddr    = virt_addr_reg[PAGE_OFFSET_WIDTH+:TLB_ADDR_WIDTH];
     assign CURR_ADDR      = virt_addr_reg;
 
-    assign translation_off=off_translation_from_tlb_reg| ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0)|tlb_flush_reg;
+    assign translation_off=off_translation_from_tlb_reg| ((satp_mode == 0) | ((satp_mode == 8) & (curr_prev_reg == mmode) & ~mprv_reg) | ((satp_mode == 8) & (curr_prev_reg == mmode) & mprv_reg & (op_type_reg == 3)) | (mprv_reg & (mpp_reg == mmode)))| (op_type_reg == 0);
 
     assign tlb_hit        = ((tag_mem_data_out == virt_addr_reg[(PAGE_OFFSET_WIDTH+TLB_ADDR_WIDTH) +: ((3*VPN_LEN)-TLB_ADDR_WIDTH)]) & valid_out);
 

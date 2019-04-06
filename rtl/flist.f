@@ -23,7 +23,7 @@ $XILINX_VIVADO/data/verilog/src/glbl.v
 ./src/design/pipeline/IMM_EXT.v
 ./src/design/pipeline/INS_TYPE_ROM.v
 ./src/design/pipeline/PIPELINE.v
-./src/design/pipeline/Peripheral.v
+//./src/design/pipeline/Peripheral.v
 ./src/design/pipeline/REG_ARRAY.v
 ./src/design/pipeline/STATE_REG.v
 ./src/simulation/TEST_RISCV_PROCESSOR.v
