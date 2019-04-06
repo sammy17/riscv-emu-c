@@ -353,7 +353,7 @@ module DTLB
 	assign DATA_OUT = data_in_reg;
 	assign WSTRB_OUT= wstrb_in_reg;
 	assign AMO_OUT = amo_in_reg;
-	assign FLUSH_OUT = flush_in_reg;
+	assign FLUSH_OUT = flush_in_reg & PHY_ADDR_VALID;
 	assign OP32_OUT = op32_in_reg; 
     function integer logb2;
         input integer depth;

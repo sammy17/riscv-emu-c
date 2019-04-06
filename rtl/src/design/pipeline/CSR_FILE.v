@@ -143,7 +143,7 @@ module CSR_FILE (
     wire    [63 : 0] mideleg_r   = mideleg_reg                                                                                  ;
     wire    [63 : 0] mscratch_r  = mscratch_reg                                                                                 ;
     wire    [63 : 0] mepc_r      = mepc_reg                                                                                     ;
-    wire    [63 : 0] mcycle_r    = mcycle_reg;                                                                         ;
+    wire    [63 : 0] mcycle_r    = mcycle_reg;                                                                         
     // wire    [31 : 0] mcycleh_r   = mcycle_reg[63 : 32]                                                                          ;
     wire    [63 : 0] mcounteren_r= {61'b0,mir,mtm,mcy}                                                                          ;
     wire    [63 : 0] mcause_r    = {minterrupt,mecode_reg}                                                                      ;

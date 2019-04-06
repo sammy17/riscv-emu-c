@@ -367,7 +367,8 @@ axi_interconnect_0_new master_interconnect (
   .M00_AXI_RVALID(M00_AXI_RVALID),              // input wire M00_AXI_RVALID
   .M00_AXI_RREADY(M00_AXI_RREADY)              // output wire M00_AXI_RREADY
 );
-
+    wire [7:0] char;
+    wire  char_write;
    RISCV_PROCESSOR # (
    ) uut (
        // Standard inputs
@@ -485,10 +486,16 @@ axi_interconnect_0_new master_interconnect (
       .peripheral_interface_rdata  (peripheral_interface_rdata),   
       .peripheral_interface_rresp   (peripheral_interface_rresp),   
       .peripheral_interface_rvalid  (peripheral_interface_rvalid),  
-      .peripheral_interface_rready  (peripheral_interface_rready)
+      .peripheral_interface_rready  (peripheral_interface_rready),
+      .char(char),
+      .char_write(char_write)
 
     );
-            
+         
+    always@(posedge CLK) begin
+        if(char_write)
+            $write("%c",char); 
+    end
 
     
   

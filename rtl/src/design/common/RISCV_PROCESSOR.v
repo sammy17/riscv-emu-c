@@ -188,7 +188,9 @@ module RISCV_PROCESSOR#(
         input  wire [C_Peripheral_Interface_DATA_WIDTH-1 : 0]   peripheral_interface_rdata,
         input  wire [1 : 0]                                     peripheral_interface_rresp,
         input  wire                                             peripheral_interface_rvalid,
-        output wire                                             peripheral_interface_rready 
+        output wire                                             peripheral_interface_rready ,
+        output reg [7:0] char,
+        output reg char_write
 
 
 
@@ -454,7 +456,12 @@ module RISCV_PROCESSOR#(
     end
     always@(posedge CLK) begin
         if((control_from_proc_dat ==2 )& (addr_from_proc_dat== EXT_FIFO_ADDRESS) & dtlb_ready & cache_ready_ins & cache_ready_ins & dtlb_ready & dtlb_ready_d4) begin
-            $write("%c",data_from_proc_dat[7:0]);
+            char_write  <= 1;
+            char <=data_from_proc_dat[7:0];
+        end
+        else begin
+            char <=0;
+            char_write<=0;
         end
     end
     //     else if  ((addr_from_proc_dat ==EXT_FIFO_ADDRESS | addr_from_proc_dat==32'he000102c)&&  control_from_proc_dat != 0 && dtlb_ready && !stop_dat_cache && cache_ready_ins 

@@ -206,7 +206,7 @@ module Icache
     assign tag_porta_raddr      = cache_porta_raddr                                         ;
     assign state_raddr          = cache_porta_raddr                                         ;
     assign tag_addr             = addr_d4[address_width-1:offset_width+line_width]             ;
-    assign cache_ready          =  ((tag_porta_data_out == tag_addr) & state )| page_fault_d4|access_fault_d4  |flush_d3|flush_d2|flush_d1|FLUSH               ;
+    assign cache_ready          =  ((tag_porta_data_out == tag_addr) & state )| page_fault_d4|access_fault_d4  |flush_d3|flush_d2|flush_d1               ;
     assign ADDR_TO_L2_VALID     = addr_to_l2_valid                                          ;
     assign ADDR_TO_L2           = addr_to_l2                                                ;
     assign ADDR_OUT             = addr_d4_vir                                                   ;

@@ -587,6 +587,7 @@ module PIPELINE #(
             
             if (stall_enable_id_fb||flush_e_i||flush_e)   
             begin  
+  
                 sfence_id_fb             <= sfence_wire             ;
                 sfence_fb_ex             <= sfence_id_fb            ;
 

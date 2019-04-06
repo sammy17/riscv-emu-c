@@ -317,7 +317,7 @@ rv64m
             DATA_ADDRESS        <= (A_signed+B_signed)                                  ;
         end
     end
-    
+    reg crd;
     Multiplexer #(
         .ORDER(3),
         .WIDTH(1)  
@@ -345,6 +345,7 @@ rv64m
             counter_2 <=0;
             cache_ready_ex <= 0;
             cache_ready_ex2 <=0;
+            
 
             // flush_out
         end
@@ -391,6 +392,12 @@ rv64m
              begin
                 counter_2 <= 3'd0;
              end
+        end
+        if(RST) begin 
+            crd<=0;
+        end
+        else begin
+            crd<= CACHE_READY;
         end
     end
 
@@ -452,8 +459,8 @@ rv64m
     assign DATA_CACHE_CONTROL   = data_cache_control & {2{!flush_internal}}   & {2{!priv_jump}}                             ;
     assign TYPE_OUT             = type_out & {2{!flush_internal}} & {2{!priv_jump}}                                         ;
     assign FLUSH_I              = flush_internal                                                                            ;
-    assign EXSTAGE_STALLED      = ((ALU_CNT==alu_mstd) & !rv32m_ready ) & !flush_internal & {!priv_jump}                    ;
-    assign FENCE_OUT            = (FENCE) & !flush_internal& CACHE_READY;
+    assign EXSTAGE_STALLED      = ((ALU_CNT==alu_mstd) & !rv32m_ready ) & !flush_internal                    ;
+    assign FENCE_OUT            = (FENCE) & !flush_internal ;
     assign AMO_OP_out         = AMO_OP_in & {5{!flush_internal}};
     assign OP_32_out       =  OPS_32 & !flush_internal;
     assign SFENCE          = SFENCE_in & !flush_internal;
