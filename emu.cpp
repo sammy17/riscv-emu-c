@@ -359,7 +359,21 @@ void plic_set_irq_emu(int irq_num, int state)
 }
 
 
-int main(){
+int main(int argc, char** argv){
+
+    if (argc<2){
+        cout << "ERROR : Please provide the ELF image to run" << endl;
+        cout << "USAGE : ./emu bbl" <<endl;
+        exit(1);
+    }
+
+    char a[150] = "utils/elf2hex/elf2hex --bit-width 32 --input ";
+
+    strcat(a ,argv[1]);
+
+    strcat(a ," --output data_hex.txt");
+
+    exec(a);
 
     /////////////////////////////// tinyemu init begin //////////////////////////////////
     VirtMachine *s;

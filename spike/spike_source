@@ -1,2 +1,0 @@
-#!/bin/bash -fx
-export PATH=/home/dean/Desktop/new/riscv-tools/riscv-isa-sim/build:$PATH

@@ -13,6 +13,7 @@
 #include <algorithm> 
 #include <map>
 #include <memory.h>
+#include <stdexcept>
 
 int emu_main();
 using namespace std::this_thread; // sleep_for, sleep_until
