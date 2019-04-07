@@ -82,7 +82,8 @@ module EXSTAGE(
     output   [63:0]     SATP,
     input [63:0] PC_EX_MEM1,
     input SFENCE_in,
-    output SFENCE
+    output SFENCE,
+    output LOAD_WORD
 
      
     );
@@ -464,5 +465,5 @@ rv64m
     assign AMO_OP_out         = AMO_OP_in & {5{!flush_internal}};
     assign OP_32_out       =  OPS_32 & !flush_internal;
     assign SFENCE          = SFENCE_in & !flush_internal;
-    
+    assign LOAD_WORD       = (LDST_TYPE!=load_double);
 endmodule

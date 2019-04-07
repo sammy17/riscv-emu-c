@@ -53,7 +53,9 @@ module DTLB
 	output OP32_OUT,
 	output FLUSH_OUT,
 	output [4:0] AMO_OUT,
-    output  [ADDR_WIDTH-1:0] VIRT_ADDR_OUT
+    output  [ADDR_WIDTH-1:0] VIRT_ADDR_OUT,
+	input LWORD_IN,
+	output reg LWORD_OUT
 
     );
 
@@ -156,32 +158,34 @@ module DTLB
         if (RST) begin
             virt_addr_reg        <=   virt_addr_init;
             op_type_reg          <=   init_op;
-	    satp_reg		 <=   0;
-	    mpp_reg		 <=   0; // mpp intial value * should check
-	    mprv_reg		 <=   0;
-	    curr_prev_reg	 <=   mmode; // *should check	    
-        tlb_flush_reg<=0;
-		wstrb_in_reg <=0;
-		data_in_reg <=0;
-		amo_in_reg <=0;
-		op32_in_reg <=0;
-		flush_in_reg<=0;
+			satp_reg		 <=   0;
+			mpp_reg		 <=   0; // mpp intial value * should check
+			mprv_reg		 <=   0;
+			curr_prev_reg	 <=   mmode; // *should check	    
+			tlb_flush_reg<=0;
+			wstrb_in_reg <=0;
+			data_in_reg <=0;
+			amo_in_reg <=0;
+			op32_in_reg <=0;
+			flush_in_reg<=0;
+			LWORD_OUT <=0;
 
         end
         else if (tlb_addr_valid & VIRT_ADDR_VALID &  CACHE_READY) begin
-	    virt_addr_reg        <=   VIRT_ADDR; 
-            op_type_reg          <=   OP_TYPE;
-	    satp_reg		 <=   SATP;
-	    mpp_reg		 <=   MPP;
-	    mprv_reg		 <=   MPRV;
-	    curr_prev_reg	 <=   CURR_PREV;
-        tlb_flush_reg<=TLB_FLUSH;
-        off_translation_from_tlb_reg <= OFF_TRANSLATION_FROM_TLB;
-		data_in_reg <= DATA_IN;
-		wstrb_in_reg <=WSTRB_IN;
-		flush_in_reg <= FLUSH_IN;
-		amo_in_reg <= AMO_IN;
-        op32_in_reg <= OP32_IN;
+			virt_addr_reg        <=   VIRT_ADDR; 
+			op_type_reg          <=   OP_TYPE;
+			satp_reg		 <=   SATP;
+			mpp_reg		 <=   MPP;
+			mprv_reg		 <=   MPRV;
+			curr_prev_reg	 <=   CURR_PREV;
+			tlb_flush_reg<=TLB_FLUSH;
+			off_translation_from_tlb_reg <= OFF_TRANSLATION_FROM_TLB;
+			data_in_reg <= DATA_IN;
+			wstrb_in_reg <=WSTRB_IN;
+			flush_in_reg <= FLUSH_IN;
+			amo_in_reg <= AMO_IN;
+			op32_in_reg <= OP32_IN;
+			LWORD_OUT <=LWORD_IN;
         end  
         else
             tlb_flush_reg <=0;    
@@ -208,13 +212,13 @@ module DTLB
             else if(state != IDLE) begin
         		if (DATA_FROM_AXIM_VALID)begin
         		    if(~pte_v)begin
-        			addr_to_axim_valid_reg  <= 0;
-        			page_fault_reg 		<= 1;
-        			fault_type_reg 		<= op_type_reg;
-        			state      		<= IDLE;
+						addr_to_axim_valid_reg  <= 0;
+						page_fault_reg 		<= 1;
+						fault_type_reg 		<= op_type_reg;
+						state      		<= IDLE;
         		    end
         		    else if(pte_r | pte_x)begin // some other conditions are there for page fault
-        			addr_to_axim_valid_reg    <= 0;
+						addr_to_axim_valid_reg    <= 0;
         			if(~pte_a | ((op_type_reg == 2) & ~pte_d))begin
         			   page_fault_reg <= 1;
         			   fault_type_reg <= op_type_reg;
@@ -252,7 +256,7 @@ module DTLB
 	else;
 
 	if(RST)begin
-		pa_mem_wren            <= 0;
+				pa_mem_wren            <= 0;
             	tag_mem_wren           <= 0;
             	valid_wren             <= 0;
 	end

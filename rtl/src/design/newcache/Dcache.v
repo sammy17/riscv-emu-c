@@ -35,7 +35,18 @@ module Dcache
         input PAGE_FAULT,
         input ACCESS_FAULT,
         output DCACHE_flusing,
-        input [address_width-1:0] VIRT_ADDR
+        input [address_width-1:0] VIRT_ADDR,
+		input LOAD_WORD,
+		output PERI_ACCESS,
+		output reg ADDR_TO_PERI_VALID,
+		output reg [address_width-1:0] ADDR_TO_PERI,
+		output reg [data_width -1:0] DATA_TO_PERI,
+		output reg DATA_TO_PERI,
+		output reg WRITE_TO_PERI,
+		input [data_width-1:0] DATA_FROM_PERI 
+		output reg  PERI_WORD_ACCESS,
+		input DATA_FROM_PERI_READY,
+		output reg [7:0]  WSTRB_TO_PERI
 
     );
     `include "PipelineParams.vh"
@@ -44,6 +55,14 @@ module Dcache
     reg  [address_width-1:0] addr_d2             ;
     reg  [address_width-1:0] addr_d3             ;
     reg  [address_width-1:0] addr_d4             ; 
+	reg 					 load_word_d0	     ;
+	reg 					 load_word_d1	     ;
+	reg 					 load_word_d2	     ;
+	reg 					 load_word_d3	     ;
+	reg 					 peri_access_d1      ;
+	reg 					 peri_access_d2      ;
+	reg 					 peri_access_d3      ;
+
 
     reg  [address_width-1:0] vaddr_d0             ;
     reg  [address_width-1:0] vaddr_d1             ;
@@ -245,9 +264,16 @@ module Dcache
             op32_d2 <=0;
             op32_d3 <=0;
             op32_d0 <=0;
-            
+			load_word_d0 <=0;
+			load_word_d1 <=0;
+			load_word_d2 <=0;
+			load_word_d3 <=0;
+			peri_access_d1 <=0;
+			peri_access_d2 <=0;
+			peri_access_d3 <=0;
+            WSTRB_TO_PERI <= 0;
         end
-        else if (cache_ready & ADDR_VALID) begin
+		else if (cache_ready & ADDR_VALID) begin
             addr_d0  <= ADDR;
             addr_d1  <= ADDR;
             addr_d2  <= addr_d1 ;
@@ -297,13 +323,21 @@ module Dcache
             page_fault_d2 <= PAGE_FAULT;
             page_fault_d3 <= page_fault_d2;
             page_fault_d4 <= page_fault_d3;
+			
+			load_word_d1 <= LOAD_WORD;
+			load_word_d2 <= load_word_d1;
+			load_word_d3 <= load_word_d2;
+
+			peri_access_d1 <= PERI_ACCESS;
+			peri_access_d2 <= peri_access_d1;
+			peri_access_d3 <= peri_access_d2;
 
         end
     
     
     end
     
-     assign   DATA    = clear_reserve?!write_allowed: data ;
+     assign   DATA    = clear_reserve?!write_allowed: (DATA_FROM_L2_VALID? DATA_FROM_PERI : data) ;
  
      reg re32;
     always@(posedge CLK) 
@@ -314,10 +348,13 @@ module Dcache
             addr_to_l2_valid  <=0;
             addr_to_l2        <=0;
             flag              <=0;
+			ADDR_TO_PERI_VALID <=0;
+			ADDR_TO_PERI <=0;
+			PERI_WORD_ACCESS <=0;
             DATA_TO_L2_VALID <=0;
 
         end
-        else if (~cache_ready  )
+        else if (~cache_ready  & ~peri_access_d3)
         begin
             if(~addr_to_l2_valid & ~flag & ~dirty_reg  & ~state_wren & ~writing & ~flush_d3)
             begin
@@ -339,6 +376,21 @@ module Dcache
             end
 
         end
+		else if (~cache_ready & peri_access_d3) begin
+			ADDR_TO_PERI_VALID <=1;
+			ADDR_TO_PERI       <= addr_d3;
+			PERI_WORD_ACCESS   <= load_word_d3;
+			DATA_TO_PERI	   <= data_d3;
+			WRITE_TO_PERI 	   <= (control_d3 ==2'b10);
+			WSTRB_TO_PERI      <= wstrb_d3;
+		end
+		else
+			WRITE_TO_PERI      <=0;
+			ADDR_TO_PERI_VALID <=0;
+		end
+
+
+
 
         if(RST)
         begin
@@ -352,7 +404,7 @@ module Dcache
         begin
             writing <=0;
         end
-        
+  		     
         if (RST)
         begin
 
@@ -364,17 +416,16 @@ module Dcache
             cache_porta_wren        <= 0        ;
             cache_porta_waddr       <= 0        ;   
             cache_porta_data_in     <= 0        ;
-            flush_addr              <= -1        ;
+            flush_addr              <= -1       ;
         end
         else if (cache_ready & control_d3 == 2'b10 &ADDR_VALID & !access_fault_d4 & !page_fault_d4)
         begin
-            cache_porta_wren      <= 1;
+            cache_porta_wren     <= 1;
             cache_porta_data_in  <=  cache_porta_data_in_int;
             cache_porta_waddr    <= cache_porta_raddr;
             dirty_wren           <= 1;
             dirty_waddr          <= dirty_raddr;
-            dirty_din            <=1;
-
+            dirty_din            <= 1;
         end
         else if (DATA_FROM_L2_VALID)
         begin
@@ -395,7 +446,6 @@ module Dcache
                 dirty_waddr        <= dirty_raddr;
                 addr_reg            <= {tag_porta_data_out,addr_d3[address_width-tag_width-1 : offset_width]};
                 state_wdata        <=1;
-
             end      
 
         end
@@ -425,12 +475,11 @@ module Dcache
             dirty_din          <=  0            ;
             dirty_reg          <=  0            ;
         if (~dirty_reg & ~writing)
-            flush_addr         <=  -1            ;
+            flush_addr         <=  -1           ;
         end
         if (RST) begin
 	       reservation<=0;
-           re32 <=0;
-           reserved_address <=0;
+           re32 <=0; reserved_address <=0;
         end
 
         else if(write_reserve & (control_d3 ==2'b10))
@@ -681,7 +730,7 @@ module Dcache
     assign tag_porta_raddr      = cache_porta_raddr                                         ;
     assign state_raddr          = cache_porta_raddr                                         ;
     assign tag_addr             = addr_d3[address_width-1:offset_width+line_width]          ;
-    assign cache_ready          =  (((((tag_porta_data_out == tag_addr) & state  & ~writing ) | (control_d3!==2'b01 & control_d3!==2'b10)|access_fault_d4|page_fault_d4 )) & (~flush_d3| ~full_state)  & ~writing ) ;
+    assign cache_ready          =  ((((((tag_porta_data_out == tag_addr) & state  & ~writing )|DATA_FROM_PERI_READY) | (control_d3!==2'b01 & control_d3!==2'b10)|access_fault_d4|page_fault_d4 )) & (~flush_d3| ~full_state)  & ~writing ) ;
     assign ADDR_TO_L2_VALID     = addr_to_l2_valid                                          ;
     assign ADDR_TO_L2           = addr_to_l2                                                ;
     

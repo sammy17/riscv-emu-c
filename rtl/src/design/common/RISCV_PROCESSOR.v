@@ -54,6 +54,8 @@ module RISCV_PROCESSOR#(
     parameter integer C_Peripheral_Interface_ADDR_WIDTH             = 32,
     parameter integer C_Peripheral_Interface_DATA_WIDTH             = 32,
     parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
+	parameter RAM_HIGH_ADDR  = 32'h9000_0000;
+	parameter RAM_LOW_ADDR   = 32'h8000_0000;
         // Fixed parameters
         localparam ADDR_WIDTH           = 64,
         localparam DATA_WIDTH           = 64,
@@ -228,7 +230,6 @@ module RISCV_PROCESSOR#(
     wire [DATA_WIDTH/2      - 1 : 0]  DATA_TO_PERI;
     wire [DATA_WIDTH/2      - 1 : 0]  DATA_FROM_PERI;
     wire                            DATA_FROM_PERI_READY;
-    wire                            DATA_FROM_PERI_VALID;
     wire                            TRANSACTION_COMPLETE_PERI;
     wire [3:0]                      wstrb;
      // Peripheral signals
@@ -249,7 +250,9 @@ module RISCV_PROCESSOR#(
      reg                                peri_done ;
      reg        [3 :0]                  wstrb_to_peri;
      wire       [4:0]                   amo_op;
-     reg [address_width-1: 0]           vaddr_to_dcache;
+     wire  [address_width-1: 0]           vaddr_to_dcache;
+	 wire lword_to_dtlb;
+	 wire lword_to_dcache;
 
              
         wire fence;
@@ -344,7 +347,7 @@ module RISCV_PROCESSOR#(
      
 
     wire op32;
-     PIPELINE pipeline(
+ PIPELINE pipeline(
     .CLK(CLK),
     .RST(~RSTN),
     // Towards instruction cache
@@ -383,8 +386,8 @@ module RISCV_PROCESSOR#(
     .MPRV(MPRV),
     .SATP(SATP),
     .CURR_PREV(CURR_PREV),
-     .MPP(MPP),
-     .SFENCE(sfence_wire)
+    .MPP(MPP),
+    .SFENCE(sfence_wire)
     );
     
 
@@ -667,7 +670,7 @@ myip_v1_0_M00_AXI # (
         .data_written(write_done)
     );
 
-   wire [1:0] final_dcache_control= (off_translation_for_itlb_request? control_to_dcache_from_itlb : ((addr_from_proc_dat != EXT_FIFO_ADDRESS & addr_from_proc_dat!=32'he000102c & cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)  ) ;
+   wire [1:0] final_dcache_control= (off_translation_for_itlb_request? control_to_dcache_from_itlb : ((cache_ready_ins & itlb_ready & tlb_ready_d3)? control_from_proc_dat : 2'b0)  ) ;
 
         Icache
     #(
@@ -754,7 +757,9 @@ myip_v1_0_M00_AXI # (
 	.FLUSH_OUT(flush_to_dcache_from_dtlb),
 	.OP32_OUT(op32_to_dcache_from_dtlb),
 	.AMO_OUT(amo_to_dcache_from_dtlb),
-    .VIRT_ADDR_OUT(vaddr_to_dcache)
+    .VIRT_ADDR_OUT(vaddr_to_dcache),
+	.LWORD_IN(lword_to_dtlb),
+	.LWORD_OUT(lword_to_dcache)
     );
 
 ITLB
@@ -785,6 +790,17 @@ ITLB
             
             
     );
+	wire peri_access;
+	assign peri_access = ((addr_to_dat_cache_from_tlb< RAM_LOW_ADDR) | (addr_to_dat_cache_from_tlb>RAM_HIGH_ADDR));
+	wire   ADDR_TO_PERI_VALID;
+	wire    [address_width-1:0] ADDR_TO_PERI;
+	wire    [data_width -1:0] DATA_TO_PERI;
+	wire     DATA_TO_PERI;
+	wire     WRITE_TO_PERI;
+	wire    [data_width-1:0] DATA_FROM_PERI;
+	wire        PERI_WORD_ACCESS;
+	wire     DATA_FROM_PERI_READY;
+	wire [7:0] WSTRB_TO_PERI;
    Dcache
     #(
         .data_width     (64)                                        ,
@@ -817,10 +833,55 @@ ITLB
         .PAGE_FAULT(page_fault_dat),
         .ACCESS_FAULT(access_fault_dat),
         .DCACHE_flusing(DCACHE_flusing),
-        .VIRT_ADDR(vaddr_to_dcache)
-
+        .VIRT_ADDR(vaddr_to_dcache),
+		.LOAD_WORD(lword_to_dcache),
+		.PERI_ACCESS(peri_access),
+		.ADDR_TO_PERI_VALID(ADDR_TO_PERI_VALID),
+		.ADDR_TO_PERI(ADDR_TO_PERI),
+		.DATA_TO_PERI(DATA_TO_PERI),
+		.PERI_WORD_ACCESS(PERI_WORD_ACCESS),
+		.DATA_FROM_PERI(DATA_FROM_PERI),
+		.DATA_FROM_PERI_READY(DATA_FROM_PERI_READY),
+		.DATA_TO_PERI(DATA_TO_PERI),
+		.WRITE_TO_PERI(WRITE_TO_PERI),
+		.PERI_WORD_ACCESS(PERI_WORD_ACCESS),
+		.WSTRB(WSTRB_TO_PERI )
     );
-
+   
+	peripheral_master peripheral_master_inst(
+		
+		.ADDR_TO_PERI_VALID(ADDR_TO_PERI_VALID),
+		.ADDR_TO_PERI(ADDR_TO_PERI),
+		.DATA_TO_PERI(DATA_TO_PERI),
+		.PERI_WORD_ACCESS(PERI_WORD_ACCESS),
+		.WRITE_TO_PERI(WRITE_TO_PERI),
+		.PERI_WORD_ACCESS(PERI_WORD_ACCESS),
+		.DATA_FROM_PERI(DATA_FROM_PERI),
+		.DATA_FROM_PERI_READY(DATA_FROM_PERI_READY),
+       .M_AXI_ACLK                      (peripheral_interface_aclk)             ,
+       .M_AXI_ARESETN                   (RSTN)             ,
+       .M_AXI_AWADDR                    (peripheral_interface_awaddr)               ,
+       .M_AXI_AWPROT                    (peripheral_interface_awprot)               ,
+       .M_AXI_AWVALID                   (peripheral_interface_awvalid)              ,
+       .M_AXI_AWREADY                   (peripheral_interface_awready)              ,
+       .M_AXI_WDATA                     (peripheral_interface_wdata),
+       .M_AXI_WSTRB                     (peripheral_interface_wstrb),
+       .M_AXI_WVALID                    (peripheral_interface_wvalid),
+       .M_AXI_WREADY                    (peripheral_interface_wready),
+       .M_AXI_BRESP                     (peripheral_interface_bresp),
+       .M_AXI_BVALID                    (peripheral_interface_bvalid),
+       .M_AXI_BREADY                    (peripheral_interface_bready),
+       .M_AXI_ARADDR                    (peripheral_interface_araddr),
+       .M_AXI_ARPROT                    (peripheral_interface_arprot),
+       .M_AXI_ARVALID                   (peripheral_interface_arvalid),
+       .M_AXI_ARREADY                   (peripheral_interface_arready),
+       .M_AXI_RDATA                     (peripheral_interface_rdata),
+       .M_AXI_RRESP                     (peripheral_interface_rresp),
+       .M_AXI_RVALID                    (peripheral_interface_rvalid),
+       .M_AXI_RREADY                    (peripheral_interface_rready),
+	   .WSTRB(WSTRB_TO_PERI )
+		
+	);
 
     reg [2:0] itlb_data_counter;
     reg [2:0] dtlb_data_counter;
@@ -834,9 +895,9 @@ ITLB
         end
         else if(cache_ready_ins & !exstage_stalled  & !stop_ins_cache & dtlb_ready & itlb_ready )
         begin
-            tlb_ready_d1  <=1;
-            tlb_ready_d2  <= tlb_ready_d1;
-            tlb_ready_d3  <= tlb_ready_d2;
+			tlb_ready_d1  <=1;
+			tlb_ready_d2  <= tlb_ready_d1;
+			tlb_ready_d3  <= tlb_ready_d2;
         end
     end
     always@(posedge CLK) begin

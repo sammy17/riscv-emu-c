@@ -88,7 +88,8 @@ module PIPELINE #(
     output              MPRV,
     output   [1:0]           CURR_PREV,
     output   [63:0]     SATP,
-    output              SFENCE
+    output              SFENCE,
+    output              LOAD_WORD
     );
     
     `include "PipelineParams.vh"
@@ -253,7 +254,8 @@ module PIPELINE #(
         .MPP(MPP),
         .PC_EX_MEM1(pc_mem3_wb),
         .SFENCE_in(sfence_fb_ex),
-        .SFENCE(SFENCE)
+        .SFENCE(SFENCE),
+		.LOAD_WORD(LOAD_WORD)
         );
    
     Multiplexer #(
