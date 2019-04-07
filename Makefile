@@ -20,7 +20,7 @@ run_debug : comp_debug
 	./emu
 
 clean : 
-	rm -rf emu.o temu/*.o temu/slirp/*.o
+	rm -rf emu.o temu/*.o temu/slirp/*.o data_hex.txt g.hex test.txt
 
 temu_comp:
 	cd temu && gcc -O2 -Wall -g -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -MMD -D_GNU_SOURCE -DCONFIG_VERSION=\"2019-02-10\" -DCONFIG_SLIRP -DCONFIG_FS_NET -DCONFIG_SDL -DCONFIG_RISCV_MAX_XLEN=128 -DCONFIG_X86EMU -c -o virtio.o virtio.c
