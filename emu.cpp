@@ -393,6 +393,8 @@ int main(int argc, char** argv){
 
     cout << ou << endl;
 
+    //cout << (uint_t)time(NULL) <<endl;
+
     /////////////////////////////// tinyemu init begin //////////////////////////////////
     VirtMachine *s;
     const char *path, *cmdline, *build_preload_file;
@@ -585,13 +587,17 @@ int main(int argc, char** argv){
 
     mstatus.fs = 1;
 
+    struct timeval tv;
+    gettimeofday(&tv,NULL);
+    uint_t time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+
     uint_t testval_pre;
     uint_t testval_pos;
 
     memory.at(MTIME_ADDR/8) = 0;
     memory.at(MTIMECMP_ADDR/8) = -1;
     uint32_t imm=0;
-    time_csr = 0;
+    time_csr = (uint_t)time(NULL);
 
     //early_stage_bootloader();
 
@@ -610,11 +616,13 @@ int main(int argc, char** argv){
         // }
 
         cycle_count += 1;
-
         cycle  = cycle_count ;
         instret  = cycle ;
-        time_csr = cycle;
-        mtime += 1;
+        gettimeofday(&tv,NULL);
+        time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
+        mtime = (uint_t)(time_in_micros*10);
+        time_csr = mtime;
+        
 
         //#ifdef DEBUG
             //sleep_for(milliseconds(500));

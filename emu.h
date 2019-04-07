@@ -14,6 +14,7 @@
 #include <map>
 #include <memory.h>
 #include <stdexcept>
+#include <sys/time.h>
 
 int emu_main();
 using namespace std::this_thread; // sleep_for, sleep_until
