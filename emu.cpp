@@ -389,7 +389,9 @@ int main(int argc, char** argv){
 
     strcat(a ," --output data_hex.txt");
 
-    exec(a);
+    string ou = exec(a);
+
+    cout << ou << endl;
 
     /////////////////////////////// tinyemu init begin //////////////////////////////////
     VirtMachine *s;
