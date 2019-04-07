@@ -32,6 +32,7 @@ module RISCV_PROCESSOR#(
     localparam tag_width            = address_width - line_width -  offset_width   ,
     localparam cache_width          = block_size*instruction_width                        ,
     parameter  C_M00_AXI_TARGET_SLAVE_BASE_ADDR    = 32'h00000000,
+    parameter data_width =64,
     parameter integer C_M00_AXI_BURST_LEN    = block_size,
     parameter integer C_M00_AXI_ID_WIDTH    = 1,
     parameter integer C_M00_AXI_ADDR_WIDTH    = 32,
@@ -54,8 +55,8 @@ module RISCV_PROCESSOR#(
     parameter integer C_Peripheral_Interface_ADDR_WIDTH             = 32,
     parameter integer C_Peripheral_Interface_DATA_WIDTH             = 32,
     parameter integer C_Peripheral_Interface_TRANSACTIONS_NUM       = 4,
-	parameter RAM_HIGH_ADDR  = 32'h9000_0000;
-	parameter RAM_LOW_ADDR   = 32'h8000_0000;
+	parameter RAM_HIGH_ADDR  = 32'h1000_0000,
+	parameter RAM_LOW_ADDR   = 32'h0000_0000,
         // Fixed parameters
         localparam ADDR_WIDTH           = 64,
         localparam DATA_WIDTH           = 64,
@@ -221,16 +222,7 @@ module RISCV_PROCESSOR#(
     reg off_translation_for_itlb_request;
     reg [address_width-1:0] addr_to_dcache_from_itlb;
     reg [1:0] control_to_dcache_from_itlb;
-    wire [ADDR_WIDTH      - 1 : 0]  RD_ADDR_TO_PERI;
-    wire                            RD_ADDR_TO_PERI_VALID;
-    wire                            RD_ADDR_TO_PERI_READY;
-    wire [ADDR_WIDTH      - 1 : 0]  WR_ADDR_TO_PERI;
-    wire                            WR_TO_PERI_VALID;
-    wire                            WR_TO_PERI_READY;
-    wire [DATA_WIDTH/2      - 1 : 0]  DATA_TO_PERI;
-    wire [DATA_WIDTH/2      - 1 : 0]  DATA_FROM_PERI;
-    wire                            DATA_FROM_PERI_READY;
-    wire                            TRANSACTION_COMPLETE_PERI;
+
     wire [3:0]                      wstrb;
      // Peripheral signals
      reg                                p_flag ;
@@ -387,7 +379,8 @@ module RISCV_PROCESSOR#(
     .SATP(SATP),
     .CURR_PREV(CURR_PREV),
     .MPP(MPP),
-    .SFENCE(sfence_wire)
+    .SFENCE(sfence_wire),
+    .LOAD_WORD(lword_to_dtlb)
     );
     
 
@@ -795,7 +788,6 @@ ITLB
 	wire   ADDR_TO_PERI_VALID;
 	wire    [address_width-1:0] ADDR_TO_PERI;
 	wire    [data_width -1:0] DATA_TO_PERI;
-	wire     DATA_TO_PERI;
 	wire     WRITE_TO_PERI;
 	wire    [data_width-1:0] DATA_FROM_PERI;
 	wire        PERI_WORD_ACCESS;
@@ -845,7 +837,7 @@ ITLB
 		.DATA_TO_PERI(DATA_TO_PERI),
 		.WRITE_TO_PERI(WRITE_TO_PERI),
 		.PERI_WORD_ACCESS(PERI_WORD_ACCESS),
-		.WSTRB(WSTRB_TO_PERI )
+		.WSTRB_TO_PERI(WSTRB_TO_PERI )
     );
    
 	peripheral_master peripheral_master_inst(

@@ -41,9 +41,8 @@ module Dcache
 		output reg ADDR_TO_PERI_VALID,
 		output reg [address_width-1:0] ADDR_TO_PERI,
 		output reg [data_width -1:0] DATA_TO_PERI,
-		output reg DATA_TO_PERI,
 		output reg WRITE_TO_PERI,
-		input [data_width-1:0] DATA_FROM_PERI 
+		input [data_width-1:0] DATA_FROM_PERI ,
 		output reg  PERI_WORD_ACCESS,
 		input DATA_FROM_PERI_READY,
 		output reg [7:0]  WSTRB_TO_PERI
@@ -340,6 +339,7 @@ module Dcache
      assign   DATA    = clear_reserve?!write_allowed: (DATA_FROM_L2_VALID? DATA_FROM_PERI : data) ;
  
      reg re32;
+     reg peri_busy;
     always@(posedge CLK) 
     begin
 
@@ -352,6 +352,7 @@ module Dcache
 			ADDR_TO_PERI <=0;
 			PERI_WORD_ACCESS <=0;
             DATA_TO_L2_VALID <=0;
+            peri_busy <=0;
 
         end
         else if (~cache_ready  & ~peri_access_d3)
@@ -376,33 +377,37 @@ module Dcache
             end
 
         end
-		else if (~cache_ready & peri_access_d3) begin
+		else if (~cache_ready & peri_access_d3 & ~peri_busy) begin
 			ADDR_TO_PERI_VALID <=1;
 			ADDR_TO_PERI       <= addr_d3;
 			PERI_WORD_ACCESS   <= load_word_d3;
 			DATA_TO_PERI	   <= data_d3;
 			WRITE_TO_PERI 	   <= (control_d3 ==2'b10);
 			WSTRB_TO_PERI      <= wstrb_d3;
+            peri_busy          <=1;
 		end
-		else
+        else if(DATA_FROM_PERI_READY) begin
+            peri_busy <=0;
+            WRITE_TO_PERI      <=0;
+            ADDR_TO_PERI_VALID <=0;
+        end
+		else begin
 			WRITE_TO_PERI      <=0;
 			ADDR_TO_PERI_VALID <=0;
 		end
 
 
-
-
         if(RST)
         begin
-            writing <=0;
+            writing <= 0;
         end
         else if (dirty_reg)
         begin
-            writing <=1;
+            writing <= 1;
         end
         else if (WRITE_DONE)
         begin
-            writing <=0;
+            writing <= 0;
         end
   		     
         if (RST)

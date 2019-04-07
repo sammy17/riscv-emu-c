@@ -6,6 +6,7 @@
 $XILINX_VIVADO/data/verilog/src/glbl.v
 ./src/design/common/Multiplexer.v
 ./src/design/common/RISCV_PROCESSOR.v
+./src/design/common/peripheral_master.v
 ./src/design/m_standard/Division.v
 ./src/design/m_standard/Multiplication.v
 ./src/design/m_standard/RV32M.v

@@ -492,10 +492,10 @@ axi_interconnect_0_new master_interconnect (
 
     );
          
-    always@(posedge CLK) begin
-        if(char_write)
-            $write("%c",char); 
-    end
+    // always@(posedge CLK) begin
+    //     if(char_write)
+    //         $write("%c",char); 
+    // end
 
     
   
