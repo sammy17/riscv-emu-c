@@ -327,7 +327,7 @@ module Dcache
 			load_word_d2 <= load_word_d1;
 			load_word_d3 <= load_word_d2;
 
-			peri_access_d1 <= PERI_ACCESS;
+			peri_access_d1 <= (CONTROL==0?0: PERI_ACCESS);
 			peri_access_d2 <= peri_access_d1;
 			peri_access_d3 <= peri_access_d2;
 
@@ -377,7 +377,7 @@ module Dcache
             end
 
         end
-		else if (~cache_ready & peri_access_d3 & ~peri_busy) begin
+		else if (~cache_ready & peri_access_d3 & ~peri_busy ) begin
 			ADDR_TO_PERI_VALID <=1;
 			ADDR_TO_PERI       <= addr_d3;
 			PERI_WORD_ACCESS   <= load_word_d3;

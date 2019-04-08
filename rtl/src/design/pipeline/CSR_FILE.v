@@ -77,7 +77,8 @@ module CSR_FILE (
     output   [63:0]     SATP,
     input [63:0]   PC_EX_MEM1,
     input [63:0]   JUMP_ADD,
-    input [31:0] INS_FB_EX
+    input [31:0] INS_FB_EX,
+    output reg satp_update
                       
     );  
     
@@ -750,7 +751,7 @@ module CSR_FILE (
             {misa_reg[0],misa_reg[8],misa_reg[13],misa_reg[12],misa_reg[18],misa_reg[20]}<=-1;
              err_addr <= 0;  
              uepc_reg <=0;                                                                                                       
-                                                                                                                              
+             satp_update <=0;                                                                                                    
                                                                                                                               
 
         end
@@ -915,6 +916,7 @@ module CSR_FILE (
 
             end
             else begin
+                satp_update <=0;
                 case (CSR_ADDRESS)
                     ustatus         :   {upie,u_ie}         <=  {
                                                                 input_data_final[4]         ,
@@ -964,8 +966,10 @@ module CSR_FILE (
                                                                 input_data_final[5:4]       ,
                                                                 input_data_final[1:0]
                                                                 }                           ;
-                    satp           :    {smode_reg,
-                                         asid,ppn}          <=  input_data_final            ;
+                    satp           :    begin
+                                             {   smode_reg,asid,ppn}          <=  input_data_final            ;
+                                             satp_update <=1;
+                                        end
                     mstatus        :    {sxl,uxl,TSR,TW,TVM,
                                         mxr,sum,mprv,fs,mpp,
                                         spp,mpie,spie,

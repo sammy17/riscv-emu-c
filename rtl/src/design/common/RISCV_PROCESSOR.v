@@ -784,7 +784,7 @@ ITLB
             
     );
 	wire peri_access;
-	assign peri_access = ((addr_to_dat_cache_from_tlb< RAM_LOW_ADDR) | (addr_to_dat_cache_from_tlb>RAM_HIGH_ADDR));
+	assign peri_access = ((addr_to_dat_cache_from_tlb< RAM_LOW_ADDR) | (addr_to_dat_cache_from_tlb>RAM_HIGH_ADDR)) & dtlb_ready ;
 	wire   ADDR_TO_PERI_VALID;
 	wire    [address_width-1:0] ADDR_TO_PERI;
 	wire    [data_width -1:0] DATA_TO_PERI;
