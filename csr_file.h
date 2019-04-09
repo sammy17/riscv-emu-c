@@ -845,6 +845,170 @@ bool csr_write(uint_t csr_addr, uint_t val){
 }
 
 
+
+static uint_t clint_read( uint_t offset)
+{
+
+    uint_t val;
+
+    switch(offset) {
+    case 0xbff8:    //rtc time
+        val = mtime;
+        break;
+    case 0x4000:    //timecmp
+        val = mtimecmp;
+        break;
+    default:
+        val = 0;
+        break;
+    }
+    return val;
+}
+
+static void clint_write(uint_t offset, uint_t val)
+{
+    switch(offset) {
+        case 0x4000:
+            mtimecmp = val;
+            mip.STIP=0;
+            break;
+        default:
+            break;
+    }
+}
+
+static uint_t virtio_read( uint_t offset)
+{
+    return 0;
+    uint_t val;
+
+    switch(offset) {
+    case 0xbff8:    //rtc time
+        val = mtime;
+        break;
+    case 0x4000:    //timecmp
+        val = mtimecmp;
+        break;
+    default:
+        val = 0;
+        break;
+    }
+    return val;
+}
+
+
+extern "C" uint32_t mem_read32(uint64_t addr){
+    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    load_word(addr, load_data, wb_data);
+
+    return (uint32_t)wb_data;
+}
+
+extern "C" void mem_write32(uint64_t addr, uint64_t data){
+    uint64_t store_data = 0;
+    store_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    store_word(addr, store_data, data, wb_data);
+    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
+}
+
+extern "C" uint16_t mem_read16(uint64_t addr){
+    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    load_halfw(addr, load_data, wb_data);
+    return (uint16_t)wb_data;
+}
+
+extern "C" void mem_write16(uint64_t addr, uint64_t data){
+    uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    store_halfw(addr, store_data, data, wb_data);
+    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
+}
+
+extern "C" uint8_t mem_read8(uint64_t addr){
+    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    load_byte(addr, load_data, wb_data);
+    return (uint8_t)wb_data;
+}
+
+extern "C" void mem_write8(uint64_t addr, uint64_t data){
+    uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
+    uint64_t wb_data = 0;
+    store_byte(addr, store_data, data, wb_data);
+    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
+}
+
+////////////////////////////////////////PLIC Related things///////////////////////////////
+#define PLIC_HART_BASE 0x200000
+#define PLIC_HART_SIZE 0x1000
+static uint_t plic_read( uint_t offset)
+{
+    
+    uint_t val;
+
+    switch(offset) {
+        case PLIC_HART_BASE:
+            val = 0;
+            break;
+        case PLIC_HART_BASE + 4:
+         
+            if (mip.SEIP==1){
+                
+                plic_served_irq = true;
+                val =1;
+                mip.SEIP = 0;
+            }
+            else 
+                val = 0;
+            break;
+        default:
+            val =0;
+            break;
+    }
+    return val;
+}
+
+static void plic_write(uint_t offset, uint_t val)
+{
+
+    switch(offset) {
+  
+        case PLIC_HART_BASE + 4:
+            plic_served_irq = false;
+            if (plic_pending_irq)
+                mip.SEIP = 1;
+            else
+                mip.SEIP = 0;
+            break;
+        default:
+            break;
+    }
+
+}
+
+
+void plic_set_irq_emu(int irq_num, int state)
+{
+    uint32_t mask;
+
+    mask = 1 << (irq_num - 1);
+    if (state){
+        plic_pending_irq = true;
+        if (~plic_served_irq)
+            mip.SEIP = 1;
+        else
+            mip.SEIP = 0;
+    }
+    else{
+        plic_pending_irq = false;
+        mip.SEIP = 0;
+    }
+    //plic_update_mip(s);
+}
+
 plevel_t trap_mode_select(uint_t cause, bool interrupt, plevel_t current_privilage){
 	uint_t mtrap_deleg_reg = 0;
 	uint_t strap_deleg_reg = 0;

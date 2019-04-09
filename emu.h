@@ -1,9 +1,9 @@
 #ifndef _EMU_H_
 #define _EMU_H_
 
-#include <stdio.h>
-
 #include <string>
+#include <stdio.h>
+#include <iostream>
 #include <fstream>
 #include <vector>
 #include <bits/stdc++.h>
@@ -12,9 +12,52 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
+#include <curses.h>
 #include <memory.h>
 #include <stdexcept>
 #include <sys/time.h>
+
+extern "C" {
+#include "temu/temu.h"
+#include "temu/cutils.h"
+#include "temu/iomem.h"
+#include "temu/virtio.h"
+#include "temu/machine.h"
+#ifdef CONFIG_FS_NET
+#include "temu/fs_utils.h"
+#include "temu/fs_wget.h"
+#endif
+#ifdef CONFIG_SLIRP
+#include "temu/slirp/libslirp.h"
+#endif
+}
+
+
+#include <stdarg.h>
+#include <string.h>
+#include <inttypes.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <unistd.h>
+#include <time.h>
+#include <getopt.h>
+#ifndef _WIN32
+#include <termios.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <linux/if_tun.h>
+#endif
+#include <sys/stat.h>
+#include <signal.h>
+using namespace std::this_thread; // sleep_for, sleep_until
+using namespace std::chrono; // nanoseconds, system_clock, seconds
+using namespace std;
+
+
+
+
+
 
 int emu_main();
 using namespace std::this_thread; // sleep_for, sleep_until
@@ -332,5 +375,141 @@ bool load_byte(uint_t load_addr, uint_t load_data, uint_t &wb_data){
     }
     return true;
 }
+
+std::string exec(const char* cmd) {
+    char buffer[128];
+    std::string result = "";
+    FILE* pipe = popen(cmd, "r");
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    try {
+        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
+            result += buffer;
+        }
+    } catch (...) {
+        pclose(pipe);
+        throw;
+    }
+    pclose(pipe);
+    return result;
+}
+
+bool plic_served_irq = false; 
+bool plic_pending_irq = false;
+
+//#define DEBUG
+
+template<class T>
+T sign_extend(T x, const int bits) {
+    T m = 1;
+    m <<= bits - 1;
+    return (x ^ m) - m;
+}
+
+template<class T>
+T divi(T num1, T num2,int s) {
+    if (num2==0){
+        switch(s){
+            case(0)  : return (T)(-1); break;
+            case(1) : return (T)MASK64; break;
+            case(2)  : return num1; break;
+            case(3) : return num1; break;
+        }
+    } else if(num1==(-pow(2ull,63)) && num2==-1){
+        if (s==0 || s==2){
+            switch(s){
+                case(0)  : return -pow(2ull,63); break;
+                case(2)  : return 0; break;
+            }
+        }
+    } else {
+        ldiv_t div_result;
+        switch(s){
+            case(0)  :
+                div_result = div((int64_t)num1,(int64_t)num2);
+                return div_result.quot;
+                break;
+            case(1) :
+                return num1/num2;
+                break;
+            case(2)  :
+                div_result = div((int64_t)num1,(int64_t)num2);
+                return div_result.rem;
+                break;
+            case(3) :
+                return num1%num2;
+                break;
+        }
+    }
+}
+
+template<class T>
+T divi32(T num1, T num2,int s) {
+    if (num2==0){
+        switch(s){
+            case(0)  : return (T)(-1); break;
+            case(1) : return (T)MASK32; break;
+            case(2)  : return num1; break;
+            case(3) : return num1; break;
+        }
+    } else if(num1==(-pow(2,31)) && num2==-1){
+        if (s==0 || s==2){
+            switch(s){
+                case(0)  : return -pow(2ull,31); break;
+                case(2)  : return 0; break;
+            }
+        }
+    } else {
+        div_t div_result;
+        switch(s){
+            case(0)  :
+                div_result = div((int32_t)num1,(int32_t)num2);
+                return div_result.quot;
+                break;
+            case(1) :
+                return num1/num2;
+                break;
+            case(2)  :
+                div_result = div((int32_t)num1,(int32_t)num2);
+                return div_result.rem;
+                break;
+            case(3) :
+                return num1%num2;
+                break;
+        }
+    }
+}
+
+int64_t signed_value(uint_t x){
+  if (((x>>63) & 0b1) == 1)
+      return (x ^ (1llu<<63)) - (1llu<<63);
+  else
+      return x;
+}
+
+int32_t signed_value32(uint_t x){
+    uint32_t y = x & MASK32;
+  if (((y>>31) & 0b1) == 1)
+      return (y ^ (1lu<<31)) - (1lu<<31);
+  else
+      return y;
+}
+
+string reg_file_names [] = {"zero","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6",\
+                              "a7","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","t3","t4","t5","t6"};
+
+void print_reg_file(vector<uint_t> reg_file){
+    
+    for (int i=0;i<32;i++){
+        printf("%s : %lu\n",reg_file_names[i].c_str(),reg_file[i]);
+    }
+}
+
+uint_t getINST(uint_t PC,vector<uint_t> * memory){
+    if(PC%2==0)
+        return ((MASK32) & (memory->at(PC/2)));
+    else
+        return ((memory->at(PC/2))>>32);
+}
+
 
 #endif

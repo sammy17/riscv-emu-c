@@ -1,379 +1,17 @@
-#include <stdio.h>
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <bits/stdc++.h>
-#include <math.h>
-#include <chrono>
-#include <thread>
-#include <algorithm> 
-#include <map>
-#include <curses.h>
-
-extern "C" {
-#include "temu/temu.h"
-#include "temu/cutils.h"
-#include "temu/iomem.h"
-#include "temu/virtio.h"
-#include "temu/machine.h"
-#ifdef CONFIG_FS_NET
-#include "temu/fs_utils.h"
-#include "temu/fs_wget.h"
-#endif
-#ifdef CONFIG_SLIRP
-#include "temu/slirp/libslirp.h"
-#endif
-}
-
-#include "csr_file.h"
 #include "emu.h"
-
-#include <stdarg.h>
-#include <string.h>
-#include <inttypes.h>
-#include <assert.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <unistd.h>
-#include <time.h>
-#include <getopt.h>
-#ifndef _WIN32
-#include <termios.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
-#include <linux/if_tun.h>
-#endif
-#include <sys/stat.h>
-#include <signal.h>
-using namespace std::this_thread; // sleep_for, sleep_until
-using namespace std::chrono; // nanoseconds, system_clock, seconds
-using namespace std;
-
-    
-bool plic_served_irq = false; 
-bool plic_pending_irq = false;
-
-//#define DEBUG
-
-template<class T>
-T sign_extend(T x, const int bits) {
-    T m = 1;
-    m <<= bits - 1;
-    return (x ^ m) - m;
-}
-
-template<class T>
-T divi(T num1, T num2,int s) {
-    if (num2==0){
-        switch(s){
-            case(0)  : return (T)(-1); break;
-            case(1) : return (T)MASK64; break;
-            case(2)  : return num1; break;
-            case(3) : return num1; break;
-        }
-    } else if(num1==(-pow(2ull,63)) && num2==-1){
-        if (s==0 || s==2){
-            switch(s){
-                case(0)  : return -pow(2ull,63); break;
-                case(2)  : return 0; break;
-            }
-        }
-    } else {
-        ldiv_t div_result;
-        switch(s){
-            case(0)  :
-                div_result = div((int64_t)num1,(int64_t)num2);
-                return div_result.quot;
-                break;
-            case(1) :
-                return num1/num2;
-                break;
-            case(2)  :
-                div_result = div((int64_t)num1,(int64_t)num2);
-                return div_result.rem;
-                break;
-            case(3) :
-                return num1%num2;
-                break;
-        }
-    }
-}
-
-template<class T>
-T divi32(T num1, T num2,int s) {
-    if (num2==0){
-        switch(s){
-            case(0)  : return (T)(-1); break;
-            case(1) : return (T)MASK32; break;
-            case(2)  : return num1; break;
-            case(3) : return num1; break;
-        }
-    } else if(num1==(-pow(2,31)) && num2==-1){
-        if (s==0 || s==2){
-            switch(s){
-                case(0)  : return -pow(2ull,31); break;
-                case(2)  : return 0; break;
-            }
-        }
-    } else {
-        div_t div_result;
-        switch(s){
-            case(0)  :
-                div_result = div((int32_t)num1,(int32_t)num2);
-                return div_result.quot;
-                break;
-            case(1) :
-                return num1/num2;
-                break;
-            case(2)  :
-                div_result = div((int32_t)num1,(int32_t)num2);
-                return div_result.rem;
-                break;
-            case(3) :
-                return num1%num2;
-                break;
-        }
-    }
-}
-
-int64_t signed_value(uint_t x){
-  if (((x>>63) & 0b1) == 1)
-      return (x ^ (1llu<<63)) - (1llu<<63);
-  else
-      return x;
-}
-
-int32_t signed_value32(uint_t x){
-    uint32_t y = x & MASK32;
-  if (((y>>31) & 0b1) == 1)
-      return (y ^ (1lu<<31)) - (1lu<<31);
-  else
-      return y;
-}
-
-string reg_file_names [] = {"zero","ra","sp","gp","tp","t0","t1","t2","s0","s1","a0","a1","a2","a3","a4","a5","a6",\
-                              "a7","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11","t3","t4","t5","t6"};
-
-void print_reg_file(vector<uint_t> reg_file){
-    
-    for (int i=0;i<32;i++){
-        printf("%s : %lu\n",reg_file_names[i].c_str(),reg_file[i]);
-    }
-}
-
-uint_t getINST(uint_t PC,vector<uint_t> * memory){
-    if(PC%2==0)
-        return ((MASK32) & (memory->at(PC/2)));
-    else
-        return ((memory->at(PC/2))>>32);
-}
-
-void early_stage_bootloader(){
-    reg_file.at(10) = 0; //setting hart id to a0 = 0
-    reg_file.at(11) = 0x00202000;
-}
+#include "csr_file.h"
 
 
-static uint_t clint_read( uint_t offset)
-{
-
-    uint_t val;
-
-    switch(offset) {
-    case 0xbff8:    //rtc time
-        val = mtime;
-        break;
-    case 0x4000:    //timecmp
-        val = mtimecmp;
-        break;
-    default:
-        val = 0;
-        break;
-    }
-    return val;
-}
-
-static void clint_write(uint_t offset, uint_t val)
-{
-    switch(offset) {
-        case 0x4000:
-            mtimecmp = val;
-			mip.STIP=0;
-            break;
-        default:
-            break;
-    }
-}
-
-static uint_t virtio_read( uint_t offset)
-{
-    return 0;
-    uint_t val;
-
-    switch(offset) {
-    case 0xbff8:    //rtc time
-        val = mtime;
-        break;
-    case 0x4000:    //timecmp
-        val = mtimecmp;
-        break;
-    default:
-        val = 0;
-        break;
-    }
-    return val;
-}
-
-
-
-
-
-extern "C" uint32_t mem_read32(uint64_t addr){
-    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
-    uint64_t wb_data = 0;
-    load_word(addr, load_data, wb_data);
-
-    return (uint32_t)wb_data;
-}
-
-extern "C" void mem_write32(uint64_t addr, uint64_t data){
-    uint64_t store_data = 0;
-    store_data = memory.at((addr - DRAM_BASE)/8);
-    uint64_t wb_data = 0;
-    store_word(addr, store_data, data, wb_data);
-    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
-}
-
-extern "C" uint16_t mem_read16(uint64_t addr){
-    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
-    uint64_t wb_data = 0;
-    load_halfw(addr, load_data, wb_data);
-    return (uint16_t)wb_data;
-}
-
-extern "C" void mem_write16(uint64_t addr, uint64_t data){
-    uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
-    uint64_t wb_data = 0;
-    store_halfw(addr, store_data, data, wb_data);
-    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
-}
-
-extern "C" uint8_t mem_read8(uint64_t addr){
-    uint64_t load_data = memory.at((addr - DRAM_BASE)/8);
-    uint64_t wb_data = 0;
-    load_byte(addr, load_data, wb_data);
-    return (uint8_t)wb_data;
-}
-
-extern "C" void mem_write8(uint64_t addr, uint64_t data){
-    uint64_t store_data = memory.at((addr - DRAM_BASE)/8);
-    uint64_t wb_data = 0;
-    store_byte(addr, store_data, data, wb_data);
-    memory.at((addr - DRAM_BASE)/8) = (  wb_data);
-}
-
-
-/*
-typedef enum {
-    BF_MODE_RO,
-    BF_MODE_RW,
-    BF_MODE_SNAPSHOT,
-} BlockDeviceModeEnum;
-*/
 
 BlockDevice drive1, *drive=&drive1;
 
 char *fname;
 
-//BlockDeviceModeEnum drive_mode;
 
-VIRTIODevice *block_dev;//=&block_dev_sf;
-
-#define PLIC_HART_BASE 0x200000
-#define PLIC_HART_SIZE 0x1000
-static uint_t plic_read( uint_t offset)
-{
-    
-    uint_t val;
-
-    switch(offset) {
-        case PLIC_HART_BASE:
-            val = 0;
-            break;
-        case PLIC_HART_BASE + 4:
-         
-            if (mip.SEIP==1){
-                
-                plic_served_irq = true;
-                val =1;
-                mip.SEIP = 0;
-            }
-            else 
-                val = 0;
-            break;
-		default:
-			val =0;
-			break;
-    }
-    return val;
-}
-
-static void plic_write(uint_t offset, uint_t val)
-{
-
-    switch(offset) {
-  
-        case PLIC_HART_BASE + 4:
-            plic_served_irq = false;
-            if (plic_pending_irq)
-                mip.SEIP = 1;
-            else
-                mip.SEIP = 0;
-            break;
-        default:
-            break;
-    }
-
-}
+VIRTIODevice *block_dev;
 
 
 
-
-void plic_set_irq_emu(int irq_num, int state)
-{
-    uint32_t mask;
-
-    mask = 1 << (irq_num - 1);
-    if (state){
-        plic_pending_irq = true;
-        if (~plic_served_irq)
-            mip.SEIP = 1;
-        else
-            mip.SEIP = 0;
-    }
-    else{
-        plic_pending_irq = false;
-        mip.SEIP = 0;
-    }
-    //plic_update_mip(s);
-}
-
-std::string exec(const char* cmd) {
-    char buffer[128];
-    std::string result = "";
-    FILE* pipe = popen(cmd, "r");
-    if (!pipe) throw std::runtime_error("popen() failed!");
-    try {
-        while (fgets(buffer, sizeof buffer, pipe) != NULL) {
-            result += buffer;
-        }
-    } catch (...) {
-        pclose(pipe);
-        throw;
-    }
-    pclose(pipe);
-    return result;
-}
 
 int main(int argc, char** argv){
 
@@ -391,9 +29,6 @@ int main(int argc, char** argv){
 
     string ou = exec(a);
 
-    cout << ou << endl;
-
-    //cout << (uint_t)time(NULL) <<endl;
 
     /////////////////////////////// tinyemu init begin //////////////////////////////////
     VirtMachine *s;
@@ -440,8 +75,7 @@ int main(int argc, char** argv){
         {
             drive = block_device_init(fname, drive_mode);
             printf("block device init\n");
-            // emu_main();
-            // exit(0);
+            
         }
         free(fname);
         p->tab_drive[ii].block_dev = drive;
@@ -468,10 +102,6 @@ int main(int argc, char** argv){
 
     p->rtc_real_time = TRUE;
 
-    //s = virt_machine_init(p);
-    //if (!s)
-    //    exit(1);
-
     IRQSignal plic_irq;
 
     irq_init(&plic_irq, plic_set_irq_emu, 1);
@@ -492,20 +122,7 @@ int main(int argc, char** argv){
     virt_machine_free_config(p);
 
     /////////////////////////////// tinyemu init end //////////////////////////////////
-//    VIRTIOBusDef vbus_sf;
-//    VIRTIOBusDef *vbus= &vbus_sf;
-//    IRQSignal plic_irq;
-//    //fname="/home/vithurson/buildroot-riscv-2018-10-20/output/images/rootfs.ext2";
-//    fname="/home/dean/Linux-ext/buildroot/buildroot-2019.02/output/images/rootfs.ext2";
-//    drive = block_device_init(fname, drive_mode);
-//    ////////////////////////////////////////////////////////
-//    vbus->addr = 0x40010000;
-//    vbus->irq = &plic_irq;
-//    block_dev=virtio_block_init(vbus, drive);
-//    cout <<" value" <<hex<<virtio_mmio_read(block_dev,0 ,2 )<<endl;
-    //exit(0);
-//  exit(0);
-    //////////////////////////////////////////////////////
+
     ifstream infile("data_hex.txt");
     string line;
 
@@ -560,9 +177,6 @@ int main(int argc, char** argv){
     uint_t amo_reserve_addr = 0;
     uint_t amo_reserve_addr64 = 0;
 
-    //initializing reg file
-    //reg_file[2]  = 0x80040000 ; //SP
-    //reg_file[11] = 0x80010000 ;
 
     bool ls_success = false;
 
@@ -599,21 +213,12 @@ int main(int argc, char** argv){
     uint32_t imm=0;
     time_csr = (uint_t)time(NULL);
 
-    //early_stage_bootloader();
-
-    //reg_file.at(10) = 0; //setting hart id to a0 = 0
-    //reg_file.at(11) = 0x00202000;
-
     mhartid = 0;
+
+    auto start = chrono::steady_clock::now();
     
     while (1){
 
-        // cout << "a0 : "<<hex<<reg_file.at(11)<<endl;
-        // if (PC == 0xffffffff80344b60){
-        //    cout << "a0 : "<<hex<<reg_file.at(10)<<endl;
-        //    cout << "a5 : "<<hex<<reg_file.at(15)<<endl;
-
-        // }
 
         cycle_count += 1;
         cycle  = cycle_count ;
@@ -624,54 +229,32 @@ int main(int argc, char** argv){
         time_csr = mtime;
         
 
-        //#ifdef DEBUG
-            //sleep_for(milliseconds(500));
-        //cout << "PC : "<<PC<<endl;
-        //#endif
-        //sleep_for(milliseconds(10));
-
-        //cout << "mstatus.mpp : "<<(uint_t)mstatus.mpp<<endl;
-
-        //cout << "mstatus.mie : "<<(uint_t)mstatus.mie<<endl;
-
-        //cout << "sp : "<<reg_file.at(2)<<endl;
-
-        //cout << "PRIV : "<< (uint_t)cp<<endl;
-
-        //cout << "a0 : "<<reg_file.at(10)<<endl;
-
-        //cout << "t0 : "<<reg_file.at(5)<<endl;
-        //cout << "t1 : "<<reg_file.at(6)<<endl;
-        //cout << "t2 : "<<reg_file.at(7)<<endl;
 
         PC_phy = translate(PC, INST, cp);
-            // cout << "PC : "<< hex << PC <<"PC_phy : "<<hex<<PC_phy<< endl;
-			if(cp ==0 & PC==0  ) 
-			{
-				cout <<"instruction " << hex<<instruction<<endl;
-				exit(0);
-				}
-				else if (cp ==0 & PC_phy != -1 ) 
-					{
-						
-						}
+
+		if(cp ==0 & PC==0  ) 
+		{
+			cout <<"instruction " << hex<<instruction<<endl;
+			exit(0);
+		}
+		else if (cp ==0 & PC_phy != -1 ) 
+		{
+			
+		}
 
 
         if (PC_phy==-1){
-            //PC = excep_function(PC,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
-            //cout << "instruction fetch page fault PC: " <<hex<<PC<<endl;
-            //INS_PAGE_FAULT = true;
-			            mtval = PC;
+
+    		mtval = PC;
             PC = excep_function(PC+4,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,CAUSE_FETCH_PAGE_FAULT,cp);
             
-               utval=mtval;
-			   stval=mtval; 
+            utval=mtval;
+            stval=mtval; 
             
         	continue;
-            //continue; //exception will not occur if continue is there
         }
 
-        //cout << "PC_phy  : "<< hex << PC_phy << endl;
+
 
         if (PC_phy >= DRAM_BASE){ // mapping to RAM
             PC_phy = PC_phy - DRAM_BASE; // mapping to emulator array memory
@@ -680,7 +263,7 @@ int main(int argc, char** argv){
             //cout << "peripheral access PC :"<< hex << PC_phy << endl;
             break;
         }
-        //cout << "PC_phy converted : "<< hex << PC_phy << endl;
+
 
         instruction = getINST(PC_phy/4,&memory);
 
@@ -691,17 +274,10 @@ int main(int argc, char** argv){
             bitset<32> ins(instruction);
             cout << "Instruction : "<<ins << endl;
         #endif
-		if (cp==0){
-		}
-			// if(PC==(0x1555631e8c)){
-				
-   //          		cout << "Instruction : "<<hex<<instruction << endl;
-   //              }
+
 
         opcode = static_cast<opcode_t>((instruction) & 0b1111111);
 
-        //cout << "mtimecmp : "<< mtimecmp<<endl;
-        //cout << "mtime    : "<< mtime<<endl;
 
         wb_data = 0;
 
@@ -717,12 +293,9 @@ int main(int argc, char** argv){
         imm_j    = ((((instruction)>>31) & 0b1)<<20) + ((instruction) & (0b11111111<<12)) + ((((instruction)>>20) & 0b1)<<11) + ((((instruction)>>21) & 0b1111111111)<<1); //((instruction>>31) & 0b1)<<20 + (instruction & (0b11111111<<12)) + ((instruction>>20) & 0b1)<<11 +
         imm_b    = ((((instruction)>>31) & 0b1)<<12) + ((((instruction)>>7) & 0b1)<<11) + ((((instruction)>>25) & 0b111111)<<5) + (((instruction)>>7) & 0b11110) ;
         imm_s    = ((((instruction)>>25) & 0b1111111)<<5) + (((instruction)>>7) & 0b11111) ;
-         imm = rd | ((instruction >> (25 - 5)) & 0xfe0);
-            imm = (imm << 20) >> 20;
-        // if(imm_s!=imm){
-        //     cout<<"this "<<endl;
-        //     exit(0);
-        // }
+        imm = rd | ((instruction >> (25 - 5)) & 0xfe0);
+        imm = (imm << 20) >> 20;
+
  
            
         amo_op   = ((instruction) >> 27) & 0b11111 ;
@@ -824,13 +397,10 @@ int main(int argc, char** argv){
                     case 0b111 : branch = (reg_file[rs1] >= reg_file[rs2]); break; //BGEU
 
                     default : printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,instruction & 0b1111111);
-                        bitset<3> ins(func3);
-                        cout<<  "func3 : "<<ins<<endl;
                         break;
                 }
                 if (branch==true)
                     PC = PC - 4 + sign_extend<uint_t>(imm_b,13);
-
                 break;
 
             case load :
@@ -838,35 +408,29 @@ int main(int argc, char** argv){
                     printf("LOAD\n");
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
-      //          if(PC==(0x1555631e8c+4)){
-				  //  cout<<"load addr : "<<hex << load_addr <<endl;
-				  //  exit(0);
-			   // }
+
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     {
-                        //cout << "load addr not translate : "<<hex<<load_addr<<endl;
+
                         load_addr_phy = translate(load_addr, LOAD, cp);
 
                         if (load_addr_phy==-1){
                             mtval = load_addr;
-                            // LD_PAGE_FAULT = true;
-                            
-                                 //cout << "Page fault exception load : "<< hex << load_addr << "PC: " <<hex << PC<< " Physical PC : " <<hex <<PC_phy<< endl; 
-                               PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
-                                switch(cp){
-                                    case MMODE : 
-                                    mtval = mtval;
-                                    break;
-                                    case SMODE :
-                                    stval = mtval;
-                                    mtval = 0;
-                                    break;
-                                    case UMODE :
-                                    utval = mtval;
-                                    mtval = 0;
-                                    break;
-                                }
-
+                             
+                            PC = excep_function(PC,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,CAUSE_LOAD_PAGE_FAULT,cp);
+                            switch(cp){
+                                case MMODE : 
+                                mtval = mtval;
+                                break;
+                                case SMODE :
+                                stval = mtval;
+                                mtval = 0;
+                                break;
+                                case UMODE :
+                                utval = mtval;
+                                mtval = 0;
+                                break;
+                            }
                             continue;
                         }
 
@@ -882,7 +446,6 @@ int main(int argc, char** argv){
 
                         }
                         else{ // mapping to peripheral
-                            //cout << "peripheral access read"<< hex << load_addr_phy << endl;
 
                             if ((load_addr_phy >= CLINT_BASE) & (load_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                                 load_data = clint_read(load_addr_phy-CLINT_BASE);
@@ -899,11 +462,6 @@ int main(int argc, char** argv){
                             }
                         }
 
-                        //  if (load_addr_phy >= ((1llu)<<MEM_SIZE)){
-                        //     //cout << "Physical memory limit          : "<<hex<<((1llu)<<MEM_SIZE)<<endl;
-                        //     cout << "Physical memory limit exceeded : "<<hex<<load_addr_phy<<endl;
-                        //     exit(0);
-                        // }
                         switch(func3){
                             case 0b000 : 
                                 if (!load_byte(load_addr_phy,load_data, wb_data)){
@@ -986,8 +544,7 @@ int main(int argc, char** argv){
                                 cout<<  "func3 : "<<ins<<endl;
                                 break;
                         }
-                        // if(cp ==0)
-                        //     printf("load pc=0x%016llx insn=0x%08x addr 0x%016llx val 0x%016llx \n",PC-4,instruction,load_addr,wb_data);
+
                     }
                 } else if ( load_addr == FIFO_ADDR_RX ) {
                     
@@ -1009,18 +566,15 @@ int main(int argc, char** argv){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
-     //         	if(store_addr==(0x3fffcf6738)){
-					// cout<<"PC : " <<hex << PC-4<<" " <<hex<<reg_file[rs2]<<" "  <<reg_file[rs1]<<endl;
-
-			  //  }   
+ 
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
 
                     store_addr_phy = translate(store_addr, STOR, cp);
 
                     if (store_addr_phy==-1){
-                            //cout << "Page fault exception store"<<endl;
+
                             PC = excep_function(PC,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,CAUSE_STORE_PAGE_FAULT,cp);
-                            // STORE_PAGE_FAULT = true;
+
                             mtval = store_addr;
                             switch(cp){
                                     case MMODE : 
@@ -1083,20 +637,13 @@ int main(int argc, char** argv){
                                     //cout << "Mis-aligned store exception"<<endl;
                                     //PC = excep_function(PC,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,CAUSE_MISALIGNED_STORE,cp);
                                 }else {
-                                    // if(cp ==0)
-                                    // printf("stor pc=0x%016llx insn=0x%08x addr 0x%016llx val 0x%016llx \n",PC-4,instruction,store_addr,store_data);
+                                    
                                     memory.at(store_addr_phy/8) = wb_data;
                                 }
                             }
                     }
                     else{ // mapping to peripheral
-                        // cout << "peripheral access write"<< hex << store_addr_phy << endl;
-                        // cout << "mtime : " <<hex<<mtime<<endl;
-                        // cout << "write value : "<<hex<<reg_file[rs2]<<endl;
-                        // cout  << "offset : "<<hex<<store_addr_phy-CLINT_BASE<<endl;
-                        // continue;
-                        //cout << "peripheral access write addr "<< hex << store_addr_phy << endl;
-                        //cout << "peripheral access write data "<< hex << reg_file[rs2] << endl;
+
                         if ((store_addr_phy >= CLINT_BASE) & (store_addr_phy <= (CLINT_BASE+CLINT_SIZE))){
                             clint_write(store_addr_phy-CLINT_BASE, reg_file[rs2]);
                         }
@@ -1109,16 +656,6 @@ int main(int argc, char** argv){
                             exit(0);
                         }
                     }
-
-                    /*if (store_addr >= ((1llu)<<MEM_SIZE)){ //memory access exception
-                        cout << "Mem access exception : "<<hex<<store_addr<<endl;
-                        mtval = store_addr;
-                        PC = excep_function(PC,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,CAUSE_STORE_ACCESS,cp);   //access excep should be handled by translate function
-                    }
-                    else {*/
-                    
-                    
-                  
 
                 } 
                 else if(store_addr == FIFO_ADDR_TX){
@@ -1237,9 +774,7 @@ int main(int argc, char** argv){
 
                         case 0b100 : //DIV
                             reg_file[rd] = (uint_t)divi<int64_t>(signed_value(reg_file[rs1]), signed_value(reg_file[rs2]),0);
-                            //cout << hex << reg_file[rs1] <<endl;
-                            //cout << hex << reg_file[rs2] <<endl;
-                            //cout << divi<int64_t>(signed_value(reg_file[rs1]), signed_value(reg_file[rs2]),0) <<endl;
+
                             break;
 
                         case 0b101 : //DIVU
@@ -1420,10 +955,6 @@ int main(int argc, char** argv){
                         exit(0);
                     }
                     load_data = memory.at(load_addr_phy/8);
-                     if(cp ==0){
-                    // cout<<"amo op "<<hex<<reg_file[rs1]<< "  " <<hex<< amo_op <<endl;
-                    // exit(0);
-                }
                     switch (amo_op){
                         case 0b00010 : //LR.W
                             
@@ -1614,8 +1145,7 @@ int main(int argc, char** argv){
                         default :
                             printf("******INVALID INSTRUCTION******\nINS :%lu\nOPCODE :%lu\n",instruction,(uint_t)opcode);
                             bitset<5> ins(amo_op);
-                            cout<<  "amo op : "<<ins<<endl;
-                            //PC = excep_function(PC,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,CAUSE_ILLEGAL_INSTRUCTION,cp);
+
                             mtval = instruction;
                             ILL_INS = true;
                             break;   
@@ -1836,17 +1366,14 @@ int main(int argc, char** argv){
                 continue;
 
             case systm :
-                if (imm11_0==CYCLE){
-                    //cout << "culprit PC : "<<hex<<PC_phy<<endl;
-                    //cout << func3 << endl;
-                }
+
                 switch(func3){
                     case 0b001 : // CSRRW
-                        //csr_data = csr_file[imm11_0];
+
                         csr_data = csr_read(imm11_0);
                         if (csr_read_success){
                             store_data = reg_file[rs1];
-                            //csr_file[imm11_0] = store_data;
+
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
@@ -1861,18 +1388,18 @@ int main(int argc, char** argv){
                         break;
 
                     case 0b010 : // CSRRS     rdtime, rdcycle, rdinsret should be handled here
-                        //csr_data = csr_file[imm11_0];
+
                         csr_data = csr_read(imm11_0);
-                        //cout << csr_read_success << endl;
+
                         if (csr_read_success) {
                             if ( (imm11_0==CYCLE) | (imm11_0==TIME) | (imm11_0==INSTRET) ){
-                                // Acout << hex << imm11_0 << " read : "<<store_data<<endl;
+
                                 reg_file[rd] = csr_data;
                             }
                             else {
                                 store_data = reg_file[rs1];
                                 store_data = (store_data | csr_data);
-                                //csr_file[imm11_0] = store_data;
+
                                 csr_bool = csr_write(imm11_0,store_data);
                                 if(!csr_bool){
                                     mtval = instruction;
@@ -1888,12 +1415,12 @@ int main(int argc, char** argv){
                         break;
 
                     case 0b011 : // CSRRC
-                        //csr_data = csr_file[imm11_0];
+
                         csr_data = csr_read(imm11_0);
                         if (csr_read_success){
                             store_data = reg_file[rs1];
                             store_data = (csr_data & (MASK64 - store_data));
-                            //csr_file[imm11_0] = store_data;
+
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
@@ -1907,10 +1434,10 @@ int main(int argc, char** argv){
                         break;
 
                     case 0b101 : // CSRRWI
-                        //csr_data = csr_file[imm11_0];
+
                         csr_data = csr_read(imm11_0);
                         if (csr_read_success){
-                            //csr_file[imm11_0] = rs1;
+
                             csr_bool = csr_write(imm11_0,rs1);
                             if(!csr_bool){
                                 mtval = instruction;
@@ -1925,11 +1452,11 @@ int main(int argc, char** argv){
                         break;
 
                     case 0b110 : // CSRRSI
-                        //csr_data = csr_file[imm11_0];
+
                         csr_data = csr_read(imm11_0);
                         if (csr_read_success){
                             store_data = (rs1 | csr_data);
-                            //csr_file[imm11_0] = store_data;
+
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
@@ -1943,11 +1470,11 @@ int main(int argc, char** argv){
                         break;
 
                     case 0b111 : // CSRRCI
-                        //csr_data = csr_file[imm11_0];
+
                         csr_data = csr_read(imm11_0);
                         if (csr_read_success){
                             store_data = (csr_data & (MASK64 - rs1));
-                            //csr_file[imm11_0] = store_data;
+
                             csr_bool = csr_write(imm11_0,store_data);
                             if(!csr_bool){
                                 mtval = instruction;
@@ -1968,7 +1495,7 @@ int main(int argc, char** argv){
                                 break;
 
                             case 1 : //ebreak
-                                //PC = excep_function(PC,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,CAUSE_BREAKPOINT,cp);
+
                                 EBREAK = true;
                                 break;
 
@@ -1984,16 +1511,13 @@ int main(int argc, char** argv){
                             case 258 : //sret
                                 PC = sepc;
 								
-								//cout<<"sret"<<hex<<(int)sstatus.spie<<endl;
                                 cp = (plevel_t)mstatus.spp;
                                 mstatus.spp = 0b0;
                                 sstatus.sie = sstatus.spie;
                                 sstatus.spie = 1;
-								//cout<<"sret"<<hex<<(int)sstatus.sie<<endl;
+
                                 break;
 						
-
-
                             case 2 : //uret
 								exit(0);
                                 PC = uepc;
@@ -2005,7 +1529,6 @@ int main(int argc, char** argv){
                                 break;
 
                             default :
-                                // cout << "Invalid EXCEP"<<endl;
                                 break;
                         }
                         break;
@@ -2060,9 +1583,6 @@ int main(int argc, char** argv){
 
             default :
                 printf("default\n");
-                bitset<32> ins1(instruction);
-                cout << "Instruction : "<<ins1 << endl;
-                cout << "PC : " << PC-4 <<endl;
                 break;
         }
         
@@ -2074,31 +1594,12 @@ int main(int argc, char** argv){
             mstatus.sd = 0;
         }
 
-        //if (PC >= ((1llu)<<MEM_SIZE)){ //instruction access exception
-        //    mtval = PC;
-        //    PC = excep_function(PC,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,CAUSE_FETCH_ACCESS,cp);   
-        //}
 
-        if (lPC==PC){
-            //infinite loop
-            cout << "Infinite loop!"<<(int)mip.STIP<<endl;
-            break;
-        }
-		if (cp ==0) 
-			{
-				//cout << "user mode 0"<<endl;
-				//cout <<hex << PC <<endl;
-				//cout <<hex <<PC_phy<<endl;
-		//		exit(0);
-				}
-        //cout << "mtime    : "<<mtime<<endl;
-        //cout << "mtimecmp : "<<mtimecmp<<endl;
-        //cout << "mstatus.mie : "<< (uint_t)mstatus.mie <<endl;
-         //timer interrupt
-            mip.STIP = (mtime >= mtimecmp );
+        
 
-            //cout << "cp : "<< (uint_t)cp <<endl;
-            //cout << "sie : "<<(uint_t)mstatus.sie<<endl;
+        mip.STIP = (mtime >= mtimecmp );
+
+
 
         //exception/interupt finding combo
 
@@ -2118,12 +1619,7 @@ int main(int argc, char** argv){
             PC = interrupt_function(PC, CAUSE_MACHINE_EXT_INT, cp);
         }
         else if( mie.MTIE & mip.MTIP) {
-            //  if(mstatus.mie) {
-            //     cout<<"timer interrupt"<<hex<<(int)mip.STIP<<endl;
-            // }
-            // //cout << "because of this"<<hex<<cp<<endl;
-            //cout << "mstatus.mie : "<<(uint_t)mstatus.mie<<endl; 
-            //exit(0);
+
             PC = interrupt_function(PC, CAUSE_MACHINE_TIMER_INT, cp);
         }
         else if( mie.MSIE & mip.MSIP) {
@@ -2132,11 +1628,7 @@ int main(int argc, char** argv){
         else if( mie.SEIE & mip.SEIP) {
             PC = interrupt_function(PC, CAUSE_SUPERVISOR_EXT_INT, cp);  
         }
-        // else if(ECALL) {
-        //     ECALL = false;
-        //     PC = excep_function(PC,CAUSE_MACHINE_ECALL,CAUSE_SUPERVISOR_ECALL,CAUSE_USER_ECALL,cp);
-        //     write_tval = false;
-        // }
+
         else if( mie.STIE & mip.STIP) {
             PC = interrupt_function(PC, CAUSE_SUPERVISOR_TIMER_INT, cp);
         }
@@ -2186,42 +1678,19 @@ int main(int argc, char** argv){
             write_tval = true;
         }
 
-        
-/*
-        if (mip.MTIP == 0b1){
-            switch(cp) {
-                case MMODE : 
-                    if ((mie.MTIE == 0b1) & (mstatus.mie==0b1)){
-                        //cout << "\nM : Timer interrupt fired" <<endl;
-                        //print_reg_file(reg_file);
-                        PC = interrupt_function(PC, 7, 5, 4, cp);
-                        //mstatus.mie = 0b0;
-                    }
-                    break;
-                case SMODE : 
-                    if ((mie.STIE == 0b1) & (mstatus.sie==0b1)){
-                        //cout << "\nS : Timer interrupt fired" <<endl;
-                        PC = interrupt_function(PC, 7, 5, 4, cp);
-                        //mstatus.sie = 0b0;
-                    }
-                    //cout << "S : not set" <<endl;
-                    break;
-                case UMODE : 
-                    if ((mie.UTIE == 0b1) & (mstatus.uie==0b1)){
-                        //cout << "\nU : Timer interrupt fired" <<endl;
-                        PC = interrupt_function(PC, 7, 5, 4, cp);
-                        //mstatus.uie = 0b0;
-                    }
-                    break;
-                default : 
-                    cout << "illegel mode for timer intterupt"<<endl;
-                    break;
-            }
-        }*/
+
+        if (lPC==PC){
+            cout << "Infinite loop!"<<endl;
+            auto end = chrono::steady_clock::now();
+            cout << "Elapsed time in seconds : " << chrono::duration_cast<chrono::seconds>(end - start).count()<<endl;
+            cout << "Nanoseconds per cycle : " << ((double)chrono::duration_cast<chrono::nanoseconds>(end - start).count() / cycle) <<endl;
+
+            break;
+        }
 
     }
 
     return 0;
 }
 
-//mcycle, ins
+
