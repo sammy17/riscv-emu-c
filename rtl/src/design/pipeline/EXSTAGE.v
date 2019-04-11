@@ -51,7 +51,7 @@ module EXSTAGE(
     input                   MEIP                    ,   //machine external interupt pending
     input                   MTIP                    ,   //machine timer interupt pending
     input                   MSIP                    ,   //machine software interupt pending, from external hart
-
+    input           [63:0] emu_wb                   ,
     output                  JUMP_FINAL              ,
     output          [63:0]  WB_DATA                 ,   
     output reg      [63:0]  JUMP_ADDR               ,
@@ -457,7 +457,7 @@ rv64m
     end
     
     assign JUMP_FINAL           = ((SFENCE_in|FENCE|satp_update) ? 1:((priv_jump ? priv_jump : (cbranch ? comp_out_w :jump_reg|jumpr_reg )))) & !flush_internal   ; 
-    assign WB_DATA              = wb_data                                                          ;
+    assign WB_DATA              =  wb_data                                                          ;
     assign DATA_CACHE_CONTROL   = data_cache_control & {2{!flush_internal}}   & {2{!priv_jump}}           & {2{!satp_update}}                         ;
     assign TYPE_OUT             = type_out & {2{!flush_internal}} & {2{!priv_jump}}       & {2{!satp_update}}                                   ;
     assign FLUSH_I              = flush_internal                                                                            ;

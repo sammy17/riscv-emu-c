@@ -224,6 +224,16 @@ module Dcache
     begin
         CACHE_READY = cache_ready;
     end
+    always@(posedge CLK) begin
+     //   if(cache_ready) begin
+     //      if(control_d3==2) begin
+     //          $display("addr %h padr %h amo %h wdata %h, wstrb %b, DATA %h" , vaddr_d3, addr_d3, amo_d3,  data_d3,wstrb_d3,DATA,$time );
+     //      end
+     //      else if ( control_d3==1) begin
+     //          $display("addr %h padr %h rdata %h" , vaddr_d3, addr_d3,  DATA,$time);
+     //      end
+     //  end
+    end
     always @(posedge CLK) begin
     	// if(CONTROL==2) begin
     	// 	$display("%h %h",ADDR,DATA_in);
@@ -336,7 +346,7 @@ module Dcache
     
     end
     
-     assign   DATA    = clear_reserve?!write_allowed: (DATA_FROM_L2_VALID? DATA_FROM_PERI : data) ;
+     assign   DATA    = clear_reserve?!write_allowed: (DATA_FROM_PERI_READY ? DATA_FROM_PERI : data) ;
  
      reg re32;
      reg peri_busy;
@@ -423,7 +433,7 @@ module Dcache
             cache_porta_data_in     <= 0        ;
             flush_addr              <= -1       ;
         end
-        else if (cache_ready & control_d3 == 2'b10 &ADDR_VALID & !access_fault_d4 & !page_fault_d4)
+        else if (cache_ready & control_d3 == 2'b10 &ADDR_VALID & ~peri_access_d3 & !access_fault_d4 & !page_fault_d4)
         begin
             cache_porta_wren     <= 1;
             cache_porta_data_in  <=  cache_porta_data_in_int;

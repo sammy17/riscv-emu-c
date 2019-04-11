@@ -156,7 +156,18 @@ module CSR_FILE (
     wire    [63 : 0] marchid_r   = 32'd0                                                                                        ;
     wire    [63 : 0] mimpid_r    = 32'd0                                                                                        ;
     wire    [63 : 0] misa_r      = misa_reg                                                         ;  //I M U S extentions enabled
-        
+    reg [63:0] pmpaddr0_r; 
+    reg [63:0] pmpaddr1_r; 
+    reg [63:0] pmpaddr2_r; 
+    reg [63:0] pmpaddr3_r; 
+    reg [63:0] pmpaddr4_r; 
+    reg [63:0] pmpaddr5_r; 
+    reg [63:0] pmpaddr6_r; 
+    reg [63:0] pmpaddr7_r; 
+    reg [63:0] pmpcfg0_r;
+    reg [63:0] pmpcfg1_r;
+    reg [63:0] pmpcfg2_r;
+    reg [63:0] pmpcfg3_r;
     // supervisor mode wires
     wire    [63 : 0] sstatus_r   =  {sd,29'b0,uxl,12'b0,mxr,sum,1'b0,2'b0,fs,2'b0,2'b0,spp,1'b0,1'b0,spie,upie,1'b0,1'b0,s_ie,u_ie}  ;    
     wire    [63 : 0] stvec_r     = {st_base,st_mode}                                            ;
@@ -304,7 +315,7 @@ module CSR_FILE (
             frm            :    OUTPUT_DATA =  frm_r         ;
             fcsr           :    OUTPUT_DATA =  fcsr_r        ;     */
             cycle          :    OUTPUT_DATA =  cycle_r       ;
-//            timer          :    OUTPUT_DATA =  timer_r       ;
+            timer          :    OUTPUT_DATA =  cycle_r       ;
             instret        :    OUTPUT_DATA =  instret_r     ;
 /*          hpmcounter3    :    OUTPUT_DATA =  hpmcounter3_r ;
             hpmcounter4    :    OUTPUT_DATA =  hpmcounter4_r ;
@@ -343,13 +354,18 @@ module CSR_FILE (
             mcause         :    OUTPUT_DATA =  mcause_r      ;
             mtval          :    OUTPUT_DATA =  mtval_r       ;
             mip            :    OUTPUT_DATA =  mip_r         ;
-/*          pmpcfg0        :    OUTPUT_DATA =  pmpcfg0_r     ;
+            pmpcfg0        :    OUTPUT_DATA =  pmpcfg0_r     ;
             pmpcfg1        :    OUTPUT_DATA =  pmpcfg1_r     ;
             pmpcfg2        :    OUTPUT_DATA =  pmpcfg2_r     ;
             pmpcfg3        :    OUTPUT_DATA =  pmpcfg3_r     ;
             pmpaddr0       :    OUTPUT_DATA =  pmpaddr0_r    ;
             pmpaddr1       :    OUTPUT_DATA =  pmpaddr1_r    ;
-            pmpaddr15      :    OUTPUT_DATA =  pmpaddr15_r   ;  */
+            pmpaddr2       :    OUTPUT_DATA =  pmpaddr2_r    ;
+            pmpaddr3       :    OUTPUT_DATA =  pmpaddr3_r    ;
+            pmpaddr4       :    OUTPUT_DATA =  pmpaddr4_r    ;
+            pmpaddr5       :    OUTPUT_DATA =  pmpaddr5_r    ;
+            pmpaddr6       :    OUTPUT_DATA =  pmpaddr6_r    ;
+            pmpaddr7       :    OUTPUT_DATA =  pmpaddr7_r    ;  
             mcycle         :    OUTPUT_DATA =  mcycle_r      ;
             minstret       :    OUTPUT_DATA =  minstret_r    ;
 /*          mhpmcounter3   :    OUTPUT_DATA =  mhpmcounter3_r;
@@ -361,7 +377,7 @@ module CSR_FILE (
             mhpmcounter4h  :    OUTPUT_DATA =  mhpmcounter4h_r;
             mhpmcounter31h :    OUTPUT_DATA =  mhpmcounter31h_r;
             mhpmevent3     :    OUTPUT_DATA =  mhpmevent3_r   ;
-            mhpmevent4     :    OUTPUT_DATA =  mhpmevent4_r   ;
+            mhpmevent4     :    OUTPUT_DATA =  mhpmeven5t4_r   ;
             mhpmevent31    :    OUTPUT_DATA =  mhpmevent31_r  ;
             tselect        :    OUTPUT_DATA =  tselect_r      ;
             tdata1         :    OUTPUT_DATA =  tdata1_r       ;
@@ -670,7 +686,8 @@ module CSR_FILE (
         end
 
     end
-    
+    integer dump_file;
+    initial dump_file=$fopen("rtllog.log","w");
     //Write to CSR Registers and Increment counters
     always@(posedge CLK)
     begin 
@@ -702,6 +719,7 @@ module CSR_FILE (
         else begin
             fault_while_idle <=0;
         end
+        
         if(RST)
         begin
             minsret_reg <= 0;
@@ -710,8 +728,8 @@ module CSR_FILE (
             TW             <= 0     ;                                                                                             
              fs <=1'b1;   
              uxl<=2'b10;
-             sxl<=2'b10;                                                                                                                                                                                                    
-            {mxr,sum,mprv,mpp,spp,mpie,spie,upie,m_ie,s_ie,u_ie}           <= 32'b100        ;                        
+             sxl<=2'b0;                                                                                                                                                                                                    
+            {mxr,sum,mprv,mpp,spp,mpie,spie,upie,m_ie,s_ie,u_ie}           <= 32'b110        ;                        
             {heip,seip,ueip,htip,stip,utip,hsip,ssip,usip}                    <= 9'd0                    ;                        
             {meie,heie,seie,ueie,mtie,htie,stie,utie,msie,hsie,ssie,usie}     <= 12'd0                   ;                        
             mpp             <=2'b0                      ;                                                                    
@@ -746,20 +764,36 @@ module CSR_FILE (
             ut_mode <=0;
             ut_base <=0;
             uinsret_reg <=0;
-            misa_reg<=0;
-            misa_reg[63:62] <=2'b10;
-            {misa_reg[0],misa_reg[8],misa_reg[13],misa_reg[12],misa_reg[18],misa_reg[20]}<=-1;
+            misa_reg<= (64'b101000001000100000001 | (1<<63)); 
              err_addr <= 0;  
              uepc_reg <=0;                                                                                                       
              satp_update <=0;                                                                                                    
+            pmpaddr0_r <=0;
+            pmpaddr1_r <=0;
+            pmpaddr2_r <=0;
+            pmpaddr3_r <=0;
+            pmpaddr4_r <=0;
+            pmpaddr5_r <=0;
+            pmpaddr7_r <=0;
+            pmpaddr6_r <=0;
                                                                                                                               
 
         end
         else if (!PROC_IDLE) begin
       
-            //external interupts >> software interupts >> timer interupts >> synchornous traps
+            //external interupts >> software interupts >> timer interupts >> synchornous trapsL:
+             
+            satp_update <=0;
             err_addr <=ERR_ADDR;
             minsret_reg <= minsret_reg + 1'b1   ;
+            if(minsret_reg%10000==0) begin
+                $display(minsret_reg, " %h %h",PC,INS_FB_EX);
+            end
+                    if(exception) begin 
+                        if (ecode_reg == 9) begin
+                  //          $fatal("system call : %h " ,PC);
+                        end
+                    end
             if(interrupt_final|exception) begin
                 if(handling_priviledge==mmode) begin
                     mpp <= curr_prev;
@@ -849,6 +883,9 @@ module CSR_FILE (
                         sepc_reg <=PC;
 
                     end
+                   
+                    
+                        
                  
                 end   
                 else begin
@@ -898,25 +935,24 @@ module CSR_FILE (
             end
             else if( CSR_CNT == sys_mret) begin
                 curr_prev <= mpp;
-                mpie     <= 1'b0;
+                mpie     <= 1'b1;
                 m_ie     <= mpie;
 
             end
             else if( CSR_CNT == sys_sret) begin
                 curr_prev <= spp;
-                mpie     <= 1'b0;
+                mpie     <= 1'b1;
                 s_ie     <= spie;
             
 
             end
             else if( CSR_CNT == sys_uret) begin
                 curr_prev <= umode;
-                upie     <= 1'b0;
+                upie     <= 1'b1;
                 u_ie     <= upie;
 
             end
-            else begin
-                satp_update <=0;
+            else if (csr_op)begin
                 case (CSR_ADDRESS)
                     ustatus         :   {upie,u_ie}         <=  {
                                                                 input_data_final[4]         ,
@@ -938,8 +974,10 @@ module CSR_FILE (
                                                                 input_data_final[4]         ,
                                                                 input_data_final[0]
                                                                 }                           ;
-                    sstatus        :    {mxr,sum,spp,spie,
+                    sstatus        :    {fs,uxl,mxr,sum,spp,spie,
                                         upie,s_ie,u_ie}     <=  {
+                                                                input_data_final[14:13] ,
+                                                                input_data_final[33:32] ,
                                                                 input_data_final[19:18]     ,
                                                                 input_data_final[8]         ,
                                                                 input_data_final[5:4]       ,
@@ -968,6 +1006,7 @@ module CSR_FILE (
                                                                 }                           ;
                     satp           :    begin
                                              {   smode_reg,asid,ppn}          <=  input_data_final            ;
+
                                              satp_update <=1;
                                         end
                     mstatus        :    {sxl,uxl,TSR,TW,TVM,
@@ -992,6 +1031,18 @@ module CSR_FILE (
                                                                 input_data_final[5:3]       ,
                                                                 input_data_final[1:0]
                                                                 }                           ;
+                    pmpcfg0        :    pmpcfg0_r            <= input_data_final            ;
+                    pmpcfg1        :    pmpcfg1_r            <= input_data_final            ;
+                    pmpcfg2        :    pmpcfg2_r            <= input_data_final            ;
+                    pmpcfg3        :    pmpcfg3_r            <= input_data_final            ;
+                    pmpaddr0       :    pmpaddr0_r          <= input_data_final             ;
+                    pmpaddr1       :    pmpaddr1_r          <= input_data_final             ;
+                    pmpaddr2       :    pmpaddr2_r          <= input_data_final             ;
+                    pmpaddr3       :    pmpaddr3_r          <= input_data_final             ;
+                    pmpaddr4       :    pmpaddr4_r          <= input_data_final             ;
+                    pmpaddr5       :    pmpaddr5_r          <= input_data_final             ;
+                    pmpaddr6       :    pmpaddr6_r          <= input_data_final             ;
+                    pmpaddr7       :    pmpaddr7_r          <= input_data_final             ;
                     mtvec          :    {mt_base,mt_mode}   <=  input_data_final            ;
                     mcounteren     :    {mir,mtm,mcy}       <=  input_data_final[2:0]       ;
                     mscratch       :    mscratch_reg        <=  input_data_final            ;

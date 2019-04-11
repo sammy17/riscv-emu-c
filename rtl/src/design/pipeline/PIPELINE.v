@@ -130,6 +130,7 @@ module PIPELINE #(
     reg  [63:0] rs1_ex_ex2                  ;
     reg  [63:0] imm_ex_ex2                  ;
     reg  [63:0] imm_fb_ex                   ;
+    reg  [63:0] emu_wb                   ;
           
     wire [63:0] data_cache_address          ;
     wire [ 1:0] rs1_type                    ;
@@ -155,7 +156,7 @@ module PIPELINE #(
    reg access_fault_id_fb,access_fault_fb_ex;
     DECODE_UNIT decode_unit(
         .CLK                (CLK)                           ,
-        .TYPE_MEM3_WB       (/*(~DATA_CACHE_READY & ~PAGE_FAULT_DAT)? */type_mem3_wb)                  ,
+        .TYPE_MEM3_WB       ((~CACHE_READY_DATA |  PAGE_FAULT_DAT)? 0 : type_mem3_wb)                  ,
         .DATA_CACHE_READY   (CACHE_READY_DATA)              ,
         .INS_CACHE_READY    (CACHE_READY)                   ,
         .INSTRUCTION        (ins_if_id)                     ,
@@ -206,6 +207,7 @@ module PIPELINE #(
         //.A_signed           ( ins_fb_ex == 32'hc0002573 ? clock: (ins_fb_ex == 32'hc0202573 ? ins : a_bus_fb_ex ))             ,
         .A_signed           (a_bus_fb_ex)                           ,
         .B_signed           (b_bus_fb_ex)                           ,
+        .emu_wb (emu_wb ),
         .PC_FB_EX           (pc_fb_ex)                              ,
         .ALU_CNT            (alu_cnt_fb_ex)                         , 
         .JUMP               (jump_fb_ex)                            ,
@@ -467,9 +469,31 @@ module PIPELINE #(
 
     assign rs1_count = (flush_e|flush_e_i)?0:(rs1_type_fb==2'b10 ? 5:(rs1_type_fb==2'b00 ? 1:0))    ;
     assign rs2_count = (flush_e|flush_e_i)?0:(rs2_type_fb==2'b10 ? 5:(rs2_type_fb==2'b00 ?1:0))     ;
-    
+
+ 
+    integer dump_file;
+    initial dump_file=$fopen("rtllog.log","w");
+    integer read_file;
+    initial read_file=$fopen("vmruns/pc_log.txt","r");
+    integer wb_file;
+    initial wb_file=$fopen("vmruns/wb_log.txt","r");
+    string values; 
+    string wb_datas; 
+    reg [63:0] PC_VAL;
+    always@(*)
+        emu_wb = wb_datas.atohex();
     always@(posedge CLK)
     begin
+//        if(~exstage.satp_update & ~(exstage.PAGE_FAULT_INS) & ~(exstage.PROC_IDLE) & stall_enable_fb_ex & |pc_fb_ex & ~fence_fb_ex) begin
+//               $fgets(values,read_file);
+//               $fgets(wb_datas,wb_file);
+//               if(((pc_fb_ex !== values.atohex())|(alu_out_wire !== wb_datas.atohex()))&!cbranch_fb_ex & |rd_fb_ex &(ins_fb_ex[31:20]!=32'hc01 | !exstage.csr_file.csr_op)) begin
+//                   $fatal("seqeunce fail expected PC : %h comming PC %h wb %h %h",values.atohex(),pc_fb_ex,wb_datas.atohex(),alu_out_wire,$time*1000);
+//               end
+//
+//        end
+           
+
         // cache_ready_data            <= CACHE_READY_DATA             ;//dummy
         if(RST)
         begin
@@ -712,16 +736,16 @@ module PIPELINE #(
                 imm_ex_ex2               <=    0                    ; 
                  fence_id_fb             <= 0                       ;
                 fence_fb_ex              <= 0                       ;
-                ilegal_id_fb <=0;
+                // ilegal_id_fb <=0;
                 ilegal_fb_ex <=0;
-                op_32_id_fb<=0;
+                // op_32_id_fb<=0;
                 op_32_fb_ex<=0;
                
-                page_fault_id_fb <=0;
+                // page_fault_id_fb <=0;
                 page_fault_fb_ex <=0;
 
                 access_fault_fb_ex <=0;
-                access_fault_id_fb<=0;
+                // access_fault_id_fb<=0;
                 sfence_id_fb <=0;
                 sfence_fb_ex <=0;
 

@@ -48,6 +48,7 @@ module mul_top1
         if(RST) begin
            N <=data_width+1;
            DONE <=1;
+           C <=0;
         end
         else if(!STALL_MUL) begin
             if (START) begin

@@ -245,7 +245,12 @@
     localparam     pmpcfg3        =    12'h3A3      ;
     localparam     pmpaddr0       =    12'h3B0      ;
     localparam     pmpaddr1       =    12'h3B1      ;
-    localparam     pmpaddr15      =    12'h3BF      ;
+    localparam     pmpaddr2       =    12'h3B2      ;
+    localparam     pmpaddr3       =    12'h3B3      ;
+    localparam     pmpaddr4       =    12'h3B4      ;
+    localparam     pmpaddr5       =    12'h3B5      ;
+    localparam     pmpaddr6       =    12'h3B6      ;
+    localparam     pmpaddr7       =    12'h3B7      ;
     localparam     mcycle         =    12'hB00      ;
     localparam     minstret       =    12'hB02      ;
     localparam     mhpmcounter3   =    12'hB03      ;
