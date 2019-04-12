@@ -76,7 +76,7 @@ typedef uint64_t data_t;
 
 #define DRAM_BASE 0x80000000
 
-#define DRAM_SIZE ((1llu)<<(MEM_SIZE))
+#define DRAM_SIZE (((1llu)<<(MEM_SIZE))*8)
 
 #define MASK64 0xFFFFFFFFFFFFFFFFllu
 #define MASK32 0xFFFFFFFFllu
@@ -88,7 +88,9 @@ enum plevel_t {
     UMODE = 0b00
 };
 
-vector<uint_t> memory(1<<MEM_SIZE); // main memory
+//vector<uint_t> memory(1<<MEM_SIZE); // main memory
+
+uint8_t memory[DRAM_SIZE];
 
 vector<uint_t> reg_file(32);       // register file
 

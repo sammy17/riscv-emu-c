@@ -50,6 +50,17 @@ int main(){
 
 	memory[2] = 128;
 
+	write_double((uint64_t)8, memory, (uint64_t)4567);
+
+
+	uint64_t &mtime = read_double((uint64_t)8, memory);
+
+	cout << "value : "<< read_double((uint64_t)8, memory)<<endl;
+
+	mtime = 1234;
+
+	cout << "value : "<< read_double((uint64_t)8, memory)<<endl;
+
 	//uint16_t* ptr_32t ;
 	//ptr_32t = (uint16_t*) memory;
 
