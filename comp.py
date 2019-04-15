@@ -35,9 +35,12 @@ for val in lines:
 		# print hex(curr_addr)
 
 
+index = (1<<24)
 
-
-
+out.write('uint64_t data_hex['+str(index)+'] = { ')
 
 for i in xrange (1<<24):
-	out.write(''.join(mem[i])+'\n')
+	if (i>=index-1):
+		out.write('0x'+''.join(mem[i])+' };\n')
+	else :
+		out.write('0x'+''.join(mem[i])+', \n')

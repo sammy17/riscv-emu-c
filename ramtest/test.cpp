@@ -9,7 +9,7 @@
 #include <thread>
 #include <algorithm> 
 #include <map>
-
+#include "data_hex.h"
 
 using namespace std;
 
@@ -53,11 +53,11 @@ int main(){
 	write_double((uint64_t)8, memory, (uint64_t)4567);
 
 
-	uint64_t &mtime = read_double((uint64_t)8, memory);
+	//uint64_t &mtime = (uint64_t*)(&memory;
 
 	cout << "value : "<< read_double((uint64_t)8, memory)<<endl;
 
-	mtime = 1234;
+	//mtime = 1234;
 
 	cout << "value : "<< read_double((uint64_t)8, memory)<<endl;
 

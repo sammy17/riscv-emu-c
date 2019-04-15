@@ -553,7 +553,7 @@ int main(int argc, char** argv){
                 }
                 else if ( load_addr == FIFO_ADDR_TX ){
                     // if(kbhit())
-                        wb_data = (uint_t)getchar() ;
+                        wb_data = (uint_t)-1 ;
                     // else
                     //     wb_data = -1;
                     reg_file[rd] = wb_data;

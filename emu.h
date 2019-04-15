@@ -88,9 +88,9 @@ enum plevel_t {
     UMODE = 0b00
 };
 
-//vector<uint_t> memory(1<<MEM_SIZE); // main memory
+vector<uint_t> memory(1<<MEM_SIZE); // main memory
 
-uint8_t memory[DRAM_SIZE];
+//uint8_t memory[DRAM_SIZE];
 
 vector<uint_t> reg_file(32);       // register file
 
