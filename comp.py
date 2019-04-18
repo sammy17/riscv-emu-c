@@ -10,7 +10,7 @@ filename=str(sys.argv[1])
 os.system('riscv64-unknown-elf-objcopy '+filename+' -O verilog g.hex');
 
 mile = open('g.hex','r')
-out = open('data_hex.txt','w')
+out = open('data_hex.h','w')
 lines= mile.readlines()
 
 int_addr=int(lines.pop(0)[1:],16)

@@ -164,6 +164,8 @@ int main(int argc, char** argv){
     uint_t LR_count = 0;
     bool csr_bool = false;
 
+    queue<int> fifo_queue; 
+
     uint_t load_addr_phy_virt = 0;
 
     bool write_tval = false;
@@ -547,15 +549,26 @@ int main(int argc, char** argv){
 
                     }
                 } else if ( load_addr == FIFO_ADDR_RX ) {
+                    int c = getchar();
                     
-                    wb_data = 0 ;
+                    if (c != EOF){
+                        wb_data = 2 ;
+                        fifo_queue.push(c);
+                    }
+                    else
+                        wb_data = 0 ;
+
                     reg_file[rd] = wb_data;
                 }
                 else if ( load_addr == FIFO_ADDR_TX ){
                     // if(kbhit())
+                    if (fifo_queue.empty()){
                         wb_data = (uint_t)-1 ;
-                    // else
-                    //     wb_data = -1;
+                    }
+                    else{
+                        wb_data = fifo_queue.front();
+                        fifo_queue.pop();
+                    }
                     reg_file[rd] = wb_data;
 
                 }

@@ -50,6 +50,9 @@ extern "C" {
 #endif
 #include <sys/stat.h>
 #include <signal.h>
+
+#include <queue>
+
 using namespace std::this_thread; // sleep_for, sleep_until
 using namespace std::chrono; // nanoseconds, system_clock, seconds
 using namespace std;
@@ -97,6 +100,7 @@ vector<uint_t> reg_file(32);       // register file
 plevel_t cp     = (plevel_t)MMODE;
 
 bool csr_read_success = false;
+
 
 
 #define CLINT_BASE 0x2000000
