@@ -10,10 +10,12 @@ void interrupt_init();
 
 char* hscanf();
 void hprintf(const char *format, ...);
+#define STACK_POINTER 0x80004000
 
+//__asm__("li sp,0x80004000");
+int main_func()
+{	
 
-int main()
-{		
 	interrupt_init();
 
 	for (int i=0;i<100;i++){
@@ -111,11 +113,13 @@ void hprintf(const char *format, ...){
 }
 
 char hscanf_c(){
-	volatile int *x = (int*)0xe000102c;
-	while ((*x&2)==2);
-	volatile char c =*(int*)0xe0001030;
-	hprintf_c(c);
-	return c;
+  volatile int *x = (int*)0xe000102c;
+  if((*x&0x2)==2){                     //checking the data available bit in line status reg
+    return -1;
+  }else{
+    int *c =(int *) 0xe0001030;
+    return *c;
+  }
 }
 
 char* hscanf(){

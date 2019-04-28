@@ -17,6 +17,8 @@
 #include <stdexcept>
 #include <sys/time.h>
 
+#ifdef TEMU
+
 extern "C" {
 #include "temu/temu.h"
 #include "temu/cutils.h"
@@ -32,6 +34,7 @@ extern "C" {
 #endif
 }
 
+#endif
 
 #include <stdarg.h>
 #include <string.h>

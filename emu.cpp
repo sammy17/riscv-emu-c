@@ -1,7 +1,7 @@
 #include "emu.h"
 #include "csr_file.h"
 
-
+#ifdef TEMU
 
 BlockDevice drive1, *drive=&drive1;
 
@@ -10,26 +10,31 @@ char *fname;
 
 VIRTIODevice *block_dev;
 
-
+#endif
 
 
 int main(int argc, char** argv){
 
-    if (argc<2){
+    if (argc==2){
+        
+        char a[150] = "utils/elf2hex/elf2hex --bit-width 32 --input ";
+
+        strcat(a ,argv[1]);
+
+        strcat(a ," --output data_hex.txt");
+
+        string ou = exec(a);
+
+    }
+    else if (argc>2){
         cout << "ERROR : Please provide the ELF image to run" << endl;
         cout << "USAGE : ./emu bbl" <<endl;
         exit(1);
     }
 
-    char a[150] = "utils/elf2hex/elf2hex --bit-width 32 --input ";
+    
 
-    strcat(a ,argv[1]);
-
-    strcat(a ," --output data_hex.txt");
-
-    string ou = exec(a);
-
-
+#ifdef TEMU
     /////////////////////////////// tinyemu init begin //////////////////////////////////
     VirtMachine *s;
     const char *path, *cmdline, *build_preload_file;
@@ -120,7 +125,7 @@ int main(int argc, char** argv){
     
     
     virt_machine_free_config(p);
-
+#endif
     /////////////////////////////// tinyemu init end //////////////////////////////////
 
     ifstream infile("data_hex.txt");
@@ -229,6 +234,12 @@ int main(int argc, char** argv){
         time_in_micros = 1000000 * tv.tv_sec + tv.tv_usec;
         mtime = (uint_t)(time_in_micros*10);
         time_csr = mtime;
+
+        // cout << "PC       : "<<hex<<PC<<endl;
+        // cout << "mtime    : "<<mtime<<endl;
+        // cout << "mtimecmp : "<<mtimecmp<<endl;
+        // cout << "mie.STIE : "<<(uint_t)mie.STIE<<endl;
+        // cout << "mip.STIP : "<<(uint_t)mip.STIP<<endl;
         
 
 
@@ -454,11 +465,15 @@ int main(int argc, char** argv){
                             }
                             else if ((load_addr_phy >= PLIC_BASE) & (load_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
                                 load_data = ((uint_t)plic_read(load_addr_phy-PLIC_BASE))<<(32*((load_addr_phy%8)!=0));
-                            }else if ((load_addr_phy >= VIRTIO_BASE) & (load_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
+                            }
+#ifdef TEMU
+                            else if ((load_addr_phy >= VIRTIO_BASE) & (load_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
                                 load_addr_phy_virt = load_addr_phy/8;
                                 load_addr_phy_virt = load_addr_phy_virt *8;
                                 load_data =( (uint_t)virtio_mmio_read(block_dev,load_addr_phy_virt -VIRTIO_BASE+4,2)<<32)+ (virtio_mmio_read (block_dev,load_addr_phy_virt -VIRTIO_BASE,2));
-                            }else {
+                            }
+#endif
+                            else {
                                 cout << "New peripheral"<< hex << load_addr_phy<<endl;
                                 exit(0);
                             }
@@ -552,11 +567,11 @@ int main(int argc, char** argv){
                     int c = getchar();
                     
                     if (c != EOF){
-                        wb_data = 2 ;
+                        wb_data = 0 ;
                         fifo_queue.push(c);
                     }
                     else
-                        wb_data = 0 ;
+                        wb_data = 2 ;
 
                     reg_file[rd] = wb_data;
                 }
@@ -610,6 +625,7 @@ int main(int argc, char** argv){
                         store_addr_phy = store_addr_phy - DRAM_BASE; // mapping to emulator array memory
                           if (store_addr_phy >= ((1llu)<<MEM_SIZE)){
                                 cout << "Physical memory limit exceeded : "<<hex<<store_addr_phy<<endl;
+                                cout << "PC : "<<hex<<PC_phy<<endl;
                                 exit(0);
                             }else{
                                 
@@ -662,9 +678,13 @@ int main(int argc, char** argv){
                         }
                         else if ((store_addr_phy >= PLIC_BASE) & (store_addr_phy <= (PLIC_BASE+PLIC_SIZE))){
                             plic_write(store_addr_phy-PLIC_BASE, reg_file[rs2]);
-                        }else if ((store_addr_phy >= VIRTIO_BASE) & (store_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
+                        }
+#ifdef TEMU
+                        else if ((store_addr_phy >= VIRTIO_BASE) & (store_addr_phy <= (VIRTIO_BASE+VIRTIO_SIZE))){
                             virtio_mmio_write(block_dev, store_addr_phy-VIRTIO_BASE, (reg_file[rs2] & 0xFFFFFFFF), 2);
-                        }else {
+                        }
+#endif
+                        else {
                             cout << "New peripheral"<< hex << load_addr_phy<<endl;
                             exit(0);
                         }
@@ -1612,6 +1632,9 @@ int main(int argc, char** argv){
 
         mip.STIP = (mtime >= mtimecmp );
 
+        //if (mtime >= mtimecmp )
+        //    cout<< "################## Timer fired ###################"<<endl;
+
 
 
         //exception/interupt finding combo
@@ -1643,6 +1666,7 @@ int main(int argc, char** argv){
         }
 
         else if( mie.STIE & mip.STIP) {
+            // printf("################## Timer fired ###################\n");
             PC = interrupt_function(PC, CAUSE_SUPERVISOR_TIMER_INT, cp);
         }
         else if( mie.SSIE & mip.SSIP) {

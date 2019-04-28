@@ -4,11 +4,9 @@ OUTPUT_ARCH( "riscv" )
 SECTIONS{
 
 	/* text: test code section */
-	. = 0x00000000;
+	. = 0x80000000;
 	.text :{
-		*(.text.main)
-		*(.text.interrupt_init)
-		*(.text.interrupt_handler)
+		*(.text)
 	} 
 	
 	/* data: ReadOnly data segment */
