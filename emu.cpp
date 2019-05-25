@@ -422,6 +422,8 @@ int main(int argc, char** argv){
                 #endif
                 load_addr = reg_file[rs1] + sign_extend<uint_t>(imm11_0,12);
 
+                // load_addr_phy = translate(load_addr, LOAD, cp);
+
                 if ((load_addr != FIFO_ADDR_RX) && ((load_addr != FIFO_ADDR_TX))){
                     {
 
@@ -594,6 +596,8 @@ int main(int argc, char** argv){
                     printf("STORE\n");
                 #endif
                 store_addr = reg_file[rs1] + sign_extend<uint_t>(imm_s,12);
+
+                // store_addr_phy = translate(store_addr, STOR, cp);
  
                 if (store_addr != FIFO_ADDR_TX){                                 //& (store_addr != MTIME_ADDR) & (store_addr != MTIMECMP_ADDR)
 

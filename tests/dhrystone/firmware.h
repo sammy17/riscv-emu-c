@@ -1,0 +1,13 @@
+
+
+#ifndef FIRMWARE_H_
+#define FIRMWARE_H_
+
+#define STACK_POINTER 	0x80040000
+#define GLOBAL_POINTER	0x80010000
+
+#define MTIME_BASE		0x10000000
+#define MTIME_CMP_BASE	0x10000008
+
+
+#endif 

@@ -1084,6 +1084,7 @@ uint_t excep_function(uint_t PC, uint_t mecode , uint_t secode, uint_t uecode, p
         ecode = mecode;
 */
     if ( handling_mode == UMODE){
+        exit(4);
         cp = UMODE;
     	ustatus.upie = ustatus.uie;
         ustatus.uie  = 0;
@@ -1139,6 +1140,8 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
     uint_t ecode = 0;
     uint_t new_PC = 0;
 
+
+
     /*if (current_privilage == UMODE)
         ecode = uecode;
     else if (current_privilage == SMODE)
@@ -1162,6 +1165,7 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
         ecode = mecode;
 */
     if ((handling_mode == UMODE) & (mstatus.uie==1)){
+        exit(1);
         cp = UMODE;
         ustatus.upie = ustatus.uie;
         ustatus.uie  = 0;
@@ -1188,11 +1192,16 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
         sepc = PC;
         //cout << "handling in smode "<<(int) sstatus.spie <<endl;
         if (stvec.mode ==0b1){
+            exit(2);
             new_PC = stvec.base + 4*ecode;
             //cout << "stvec mode 1" << endl;
         }
         else if (stvec.mode ==0b0){
+            //exit(57);
             new_PC = stvec.base ;
+            if (current_privilage == MMODE){
+                exit(5);
+            }
             //cout << "stvec mode 2"<<hex<< new_PC<< endl;
         }
     }
@@ -1206,10 +1215,16 @@ uint_t interrupt_function(uint_t PC, uint_t mecode, plevel_t current_privilage){
         mcause.ecode = ecode;
         mepc = PC;
 
-        if (mtvec.mode ==0b1)
+        if (mtvec.mode ==0b1){
+            exit(3);
             new_PC = mtvec.base + 4*ecode;
-        else if (mtvec.mode ==0b0)
+        }
+        else if (mtvec.mode ==0b0){
             new_PC = mtvec.base ;
+        if (current_privilage == MMODE){
+            exit(5);
+        }
+    }
 
     }
     else {
